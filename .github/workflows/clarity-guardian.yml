@@ -1,0 +1,137 @@
+name: Clarity Guardian
+
+on:
+  issues:
+    types: [opened, edited, labeled]
+  pull_request_target:
+    types: [opened, edited, labeled, ready_for_review]
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  clarity-guardian:
+    name: Check task clarity
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Clarity Guardian from base branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Prepare event payload
+        shell: bash
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+
+          const event = JSON.parse(fs.readFileSync(process.env.GITHUB_EVENT_PATH, 'utf8'));
+          const eventName = process.env.GITHUB_EVENT_NAME;
+
+          const isIssue = eventName === 'issues';
+          const isPullRequest = eventName === 'pull_request_target';
+
+          const item = isPullRequest ? event.pull_request : event.issue;
+
+          if (!item) {
+            throw new Error(`Unsupported event payload: ${eventName}`);
+          }
+
+          const labels = (item.labels || []).map(label => {
+            if (typeof label === 'string') return label;
+            return label.name;
+          }).filter(Boolean);
+
+          const payload = {
+            type: isPullRequest ? 'pr' : 'issue',
+            number: item.number,
+            title: item.title || '',
+            body: item.body || '',
+            labels,
+            isDraft: Boolean(item.draft),
+            action: event.action,
+            repository: event.repository.full_name,
+            htmlUrl: item.html_url
+          };
+
+          fs.writeFileSync('clarity-event.json', JSON.stringify(payload, null, 2), 'utf8');
+          NODE
+
+      - name: Analyze description
+        id: analyze
+        shell: bash
+        run: |
+          node src/analyze.js \
+            --input clarity-event.json \
+            --comment-file clarity-analysis-comment.md \
+            --json-file clarity-analysis-result.json
+
+          HAS_ERRORS=$(node -e "const r=require('./clarity-analysis-result.json'); console.log(r.hasErrors ? 'true' : 'false')")
+          HAS_NOTICES=$(node -e "const r=require('./clarity-analysis-result.json'); console.log(r.remarks.length > 0 ? 'true' : 'false')")
+
+          echo "has_errors=$HAS_ERRORS" >> "$GITHUB_OUTPUT"
+          echo "has_notices=$HAS_NOTICES" >> "$GITHUB_OUTPUT"
+
+      - name: Comment analysis result
+        if: steps.analyze.outputs.has_notices == 'true'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ITEM_NUMBER: ${{ github.event.issue.number || github.event.pull_request.number }}
+        run: |
+          gh issue comment "$ITEM_NUMBER" --body-file clarity-analysis-comment.md
+
+      - name: Detect ready-for-testing
+        id: ready
+        shell: bash
+        run: |
+          IS_READY=$(node - <<'NODE'
+          const payload = require('./clarity-event.json');
+
+          const hasReadyLabel = payload.labels.includes('ready-for-testing');
+          const becameReadyForReview =
+            payload.type === 'pr' &&
+            payload.action === 'ready_for_review' &&
+            payload.isDraft === false;
+
+          console.log(hasReadyLabel || becameReadyForReview ? 'true' : 'false');
+          NODE
+          )
+
+          echo "is_ready=$IS_READY" >> "$GITHUB_OUTPUT"
+
+      - name: Generate tester checklist
+        if: steps.ready.outputs.is_ready == 'true'
+        shell: bash
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_MODEL: gpt-4o-mini
+        run: |
+          node src/generate-test-checklist.js \
+            --input clarity-event.json \
+            --comment-file clarity-tester-checklist.md \
+            --json-file clarity-tester-checklist.json
+
+      - name: Comment tester checklist
+        if: steps.ready.outputs.is_ready == 'true'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ITEM_NUMBER: ${{ github.event.issue.number || github.event.pull_request.number }}
+        run: |
+          gh issue comment "$ITEM_NUMBER" --body-file clarity-tester-checklist.md
+
+      - name: Fail if blocking errors found
+        if: steps.analyze.outputs.has_errors == 'true'
+        shell: bash
+        run: |
+          echo "Clarity Guardian found blocking errors in task description."
+          exit 1
