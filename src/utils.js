@@ -70,8 +70,18 @@ function extractMarkdownSection(markdown, heading) {
   const normalized = normalizeText(markdown);
   const escapedHeading = heading.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
+  /**
+   * Ищем заголовок вида:
+   * ## Контекст
+   *
+   * Потом берём всё содержимое до следующего заголовка уровня ##.
+   *
+   * Важно:
+   * Не используем `$` с multiline-режимом как конец всего текста,
+   * потому что в JS `$` начинает матчиться на конец каждой строки.
+   */
   const regex = new RegExp(
-    `^##\\s+${escapedHeading}\\s*$([\\s\\S]*?)(?=^##\\s+|$)`,
+    `^##\\s+${escapedHeading}\\s*\\n([\\s\\S]*?)(?=^##\\s+|\\n*$)`,
     'im'
   );
 
