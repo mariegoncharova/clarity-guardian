@@ -1,24 +1,47 @@
 {
+
   "name": "clarity-guardian",
+
   "version": "1.0.0",
+
   "description": "GitHub bot that checks task clarity and generates QA checklists.",
+
   "main": "src/analyze.js",
+
   "type": "commonjs",
+
   "private": true,
+
   "engines": {
+
     "node": ">=20"
+
   },
+
   "scripts": {
+
     "analyze": "node src/analyze.js",
+
     "generate:test-checklist": "node src/generate-test-checklist.js"
+
   },
+
   "keywords": [
+
     "github-actions",
+
     "qa",
+
     "devops",
+
     "automation",
+
     "openai",
+
     "checklist"
+
   ],
-  "license": "MIT"
+
+  "license": "UNLICENSED"
+
 }
