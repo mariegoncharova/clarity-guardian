@@ -1,0 +1,12 @@
+node_modules/
+dist/
+
+clarity-event.json
+clarity-analysis-comment.md
+clarity-analysis-result.json
+clarity-tester-checklist.md
+clarity-tester-checklist.json
+result.json
+comment.md
+checklist.json
+checklist.md

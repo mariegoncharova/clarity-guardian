@@ -60,9 +60,11 @@
 
 ```text
 .github/workflows/clarity-guardian.yml
-src/analyze.js
-src/generate-test-checklist.js
-src/utils.js
+src/analyze.ts
+src/generate-test-checklist.ts
+src/utils.ts
+src/types.ts
+tsconfig.json
 templates/manager-checklist.md
 templates/tester-checklist.md
 docs/COMMUNICATION_GUIDE.md
@@ -124,6 +126,13 @@ Workflow использует `pull_request_target`.
 
 ## Локальный запуск
 
+Установи dev-зависимости и собери TypeScript:
+
+```bash
+npm install
+npm run build
+```
+
 Создай файл `event.json`:
 
 ```json
@@ -138,7 +147,7 @@ Workflow использует `pull_request_target`.
 Запусти анализ:
 
 ```bash
-node src/analyze.js \
+node dist/analyze.js \
   --input event.json \
   --json-file result.json \
   --comment-file comment.md
@@ -147,7 +156,7 @@ node src/analyze.js \
 Сгенерируй чек-лист:
 
 ```bash
-OPENAI_API_KEY=sk-... node src/generate-test-checklist.js \
+OPENAI_API_KEY=sk-... node dist/generate-test-checklist.js \
   --input event.json \
   --json-file checklist.json \
   --comment-file checklist.md
@@ -156,7 +165,7 @@ OPENAI_API_KEY=sk-... node src/generate-test-checklist.js \
 Без `OPENAI_API_KEY`:
 
 ```bash
-node src/generate-test-checklist.js \
+node dist/generate-test-checklist.js \
   --input event.json \
   --json-file checklist.json \
   --comment-file checklist.md
@@ -179,7 +188,7 @@ docker run --rm \
   -v "$PWD/event.json:/app/event.json" \
   -v "$PWD/out:/app/out" \
   clarity-guardian \
-  src/analyze.js \
+  dist/analyze.js \
   --input event.json \
   --json-file out/result.json \
   --comment-file out/comment.md
@@ -193,7 +202,7 @@ docker run --rm \
   -v "$PWD/event.json:/app/event.json" \
   -v "$PWD/out:/app/out" \
   clarity-guardian \
-  src/generate-test-checklist.js \
+  dist/generate-test-checklist.js \
   --input event.json \
   --json-file out/checklist.json \
   --comment-file out/checklist.md
@@ -230,7 +239,7 @@ docker run --rm \
 ### Анализ задачи
 
 ```bash
-node src/analyze.js \
+node dist/analyze.js \
   --input task.json \
   --json-file analysis.json \
   --comment-file analysis.md
@@ -239,7 +248,7 @@ node src/analyze.js \
 ### Генерация чек-листа
 
 ```bash
-node src/generate-test-checklist.js \
+node dist/generate-test-checklist.js \
   --input task.json \
   --json-file checklist.json \
   --comment-file checklist.md

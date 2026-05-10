@@ -3,6 +3,7 @@
   "version": "1.1.0",
   "description": "Task clarity guardian bot for GitHub Issues and Pull Requests.",
   "main": "dist/analyze.js",
+  "types": "dist/analyze.d.ts",
   "type": "commonjs",
   "private": true,
   "engines": {
@@ -10,8 +11,8 @@
   },
   "scripts": {
     "build": "tsc",
-    "analyze": "node dist/analyze.js",
-    "generate:test-checklist": "node dist/generate-test-checklist.js",
+    "analyze": "npm run build --silent && node dist/analyze.js",
+    "generate:test-checklist": "npm run build --silent && node dist/generate-test-checklist.js",
     "check": "tsc --noEmit"
   },
   "keywords": [
