@@ -10,15 +10,14 @@
     "node": ">=20"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc -p tsconfig.build.json",
     "analyze": "npm run build --silent && node dist/analyze.js",
     "generate:test-checklist": "npm run build --silent && node dist/generate-test-checklist.js",
     "sync:github": "npm run build --silent && node dist/sync-github.js",
     "sync:jira": "npm run build --silent && node dist/sync-jira.js",
-    "build:smoke": "rm -rf .smoke-dist && tsc --module commonjs --target ES2022 --moduleResolution node --types node --esModuleInterop --outDir .smoke-dist scripts/smoke-test.ts",
+    "build:smoke": "rm -rf .smoke-dist && tsc -p tsconfig.scripts.json",
     "smoke": "npm run build --silent && npm run build:smoke --silent && node .smoke-dist/smoke-test.js",
-    "check:smoke": "tsc --noEmit --strict --module commonjs --target ES2022 --moduleResolution node --types node --esModuleInterop scripts/smoke-test.ts",
-    "check": "tsc --noEmit && npm run check:smoke"
+    "check": "tsc --noEmit"
   },
   "keywords": [
     "github-actions",
