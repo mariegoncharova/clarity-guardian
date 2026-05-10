@@ -15,6 +15,7 @@
     "generate:test-checklist": "npm run build --silent && node dist/generate-test-checklist.js",
     "sync:github": "npm run build --silent && node dist/sync-github.js",
     "sync:jira": "npm run build --silent && node dist/sync-jira.js",
+    "smoke": "npm run build --silent && node scripts/smoke-test.js",
     "check": "tsc --noEmit"
   },
   "keywords": [

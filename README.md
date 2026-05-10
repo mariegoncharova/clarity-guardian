@@ -249,6 +249,7 @@ Workflow использует `pull_request_target`.
 ```bash
 npm ci
 npm run build
+npm run smoke
 ```
 
 Создай файл `event.json`:

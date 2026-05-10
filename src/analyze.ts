@@ -184,7 +184,9 @@ export function analyzeStopPhrases(
   const normalized = normalizeText(body).toLowerCase();
 
   for (const rule of stopPhrases) {
-    if (rule.phrase && normalized.includes(rule.phrase)) {
+    const phrase = normalizeText(rule.phrase).toLowerCase();
+
+    if (phrase && containsStopPhrase(normalized, phrase)) {
       remarks.push({
         level: applyModeToLevel(rule.level || 'warning', mode),
         code: rule.code || 'stop_phrase',
@@ -201,6 +203,16 @@ export function analyzeStopPhrases(
   }
 
   return remarks;
+}
+
+function containsStopPhrase(normalizedBody: string, normalizedPhrase: string): boolean {
+  const escapedPhrase = normalizedPhrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const regex = new RegExp(
+    `(?<![\\p{L}\\p{N}_])${escapedPhrase}(?![\\p{L}\\p{N}_])`,
+    'iu'
+  );
+
+  return regex.test(normalizedBody);
 }
 
 function getTemplatePath(baseName: string, language: TemplateLanguage): string {

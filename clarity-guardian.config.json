@@ -11,10 +11,171 @@
       "languages": ["ru"]
     },
     {
+      "phrase": "потом уточним",
+      "level": "warning",
+      "code": "deferred_context",
+      "message": "Фраза «потом уточним» оставляет незакрытый вопрос. Укажи, что именно нужно уточнить и у кого.",
+      "languages": ["ru"]
+    },
+    {
+      "phrase": "как-нибудь",
+      "level": "warning",
+      "code": "undefined_solution",
+      "message": "Фраза «как-нибудь» не задаёт проверяемый результат. Опиши ожидаемое поведение или ограничение.",
+      "languages": ["ru"]
+    },
+    {
+      "phrase": "на усмотрение разработчика",
+      "level": "warning",
+      "code": "ownership_gap",
+      "message": "Фраза «на усмотрение разработчика» перекладывает продуктовый выбор в реализацию. Зафиксируй ожидаемое поведение в задаче.",
+      "languages": ["ru"]
+    },
+    {
+      "phrase": "сделать нормально",
+      "level": "warning",
+      "code": "vague_quality",
+      "message": "Фраза «сделать нормально» слишком общая. Добавь конкретные критерии качества и приёмки.",
+      "languages": ["ru"]
+    },
+    {
+      "phrase": "сделаем нормально",
+      "level": "warning",
+      "code": "vague_quality",
+      "message": "Фраза «сделаем нормально» слишком общая. Добавь конкретные критерии качества и приёмки.",
+      "languages": ["ru"]
+    },
+    {
+      "phrase": "сделать понятно",
+      "level": "warning",
+      "code": "vague_quality",
+      "message": "Фраза «сделать понятно» субъективна. Опиши, какие тексты, состояния или подсказки должны появиться.",
+      "languages": ["ru"]
+    },
+    {
+      "phrase": "улучшить UX",
+      "level": "warning",
+      "code": "vague_ux",
+      "message": "Фраза «улучшить UX» требует конкретики: какой сценарий улучшаем, как измеряем успех, что меняется на экране.",
+      "languages": ["ru"]
+    },
+    {
+      "phrase": "добавить везде",
+      "level": "warning",
+      "code": "unclear_scope",
+      "message": "Фраза «добавить везде» размывает scope. Перечисли конкретные экраны, роли, API или состояния.",
+      "languages": ["ru"]
+    },
+    {
+      "phrase": "и так далее",
+      "level": "warning",
+      "code": "open_ended_scope",
+      "message": "Фраза «и так далее» оставляет scope открытым. Замени её полным списком ожидаемых случаев.",
+      "languages": ["ru"]
+    },
+    {
+      "phrase": "очевидно",
+      "level": "warning",
+      "code": "implicit_requirement",
+      "message": "Фраза «очевидно» часто скрывает требование. Запиши это требование явно.",
+      "languages": ["ru"]
+    },
+    {
+      "phrase": "просто",
+      "level": "warning",
+      "code": "oversimplified_requirement",
+      "message": "Слово «просто» может маскировать сложность. Укажи точное изменение и ограничения.",
+      "languages": ["ru"]
+    },
+    {
+      "phrase": "быстро",
+      "level": "warning",
+      "code": "unclear_deadline",
+      "message": "Фраза «быстро» не задаёт срок. Укажи дедлайн, приоритет и причину.",
+      "languages": ["ru"]
+    },
+    {
       "phrase": "TBD",
       "level": "warning",
       "code": "tbd_requirement",
       "message": "TBD в задаче означает незакрытое требование. Уточни его до передачи в работу.",
+      "languages": ["en"]
+    },
+    {
+      "phrase": "to be decided",
+      "level": "warning",
+      "code": "tbd_requirement",
+      "message": "\"To be decided\" means the requirement is not ready yet. Decide it before handing the task to implementation.",
+      "languages": ["en"]
+    },
+    {
+      "phrase": "figure it out later",
+      "level": "warning",
+      "code": "deferred_context",
+      "message": "\"Figure it out later\" moves an important decision out of the task. Add the open question and the decision owner.",
+      "languages": ["en"]
+    },
+    {
+      "phrase": "somehow",
+      "level": "warning",
+      "code": "undefined_solution",
+      "message": "\"Somehow\" is not testable. Describe the expected behavior or constraint.",
+      "languages": ["en"]
+    },
+    {
+      "phrase": "up to the developer",
+      "level": "warning",
+      "code": "ownership_gap",
+      "message": "\"Up to the developer\" moves product choice into implementation. Capture the expected behavior in the task.",
+      "languages": ["en"]
+    },
+    {
+      "phrase": "make it better",
+      "level": "warning",
+      "code": "vague_quality",
+      "message": "\"Make it better\" is too broad. Add concrete quality and acceptance criteria.",
+      "languages": ["en"]
+    },
+    {
+      "phrase": "improve UX",
+      "level": "warning",
+      "code": "vague_ux",
+      "message": "\"Improve UX\" needs a concrete scenario, success signal, and screen-level change.",
+      "languages": ["en"]
+    },
+    {
+      "phrase": "everywhere",
+      "level": "warning",
+      "code": "unclear_scope",
+      "message": "\"Everywhere\" makes scope unclear. List exact screens, roles, APIs, or states.",
+      "languages": ["en"]
+    },
+    {
+      "phrase": "etc",
+      "level": "warning",
+      "code": "open_ended_scope",
+      "message": "\"Etc\" leaves scope open-ended. Replace it with the full expected list.",
+      "languages": ["en"]
+    },
+    {
+      "phrase": "obviously",
+      "level": "warning",
+      "code": "implicit_requirement",
+      "message": "\"Obviously\" often hides a requirement. Write the requirement explicitly.",
+      "languages": ["en"]
+    },
+    {
+      "phrase": "just",
+      "level": "warning",
+      "code": "oversimplified_requirement",
+      "message": "\"Just\" can hide complexity. State the exact change and constraints.",
+      "languages": ["en"]
+    },
+    {
+      "phrase": "asap",
+      "level": "warning",
+      "code": "unclear_deadline",
+      "message": "\"ASAP\" does not define a deadline. Add the target date, priority, and reason.",
       "languages": ["en"]
     }
   ],
