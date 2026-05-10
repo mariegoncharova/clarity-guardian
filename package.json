@@ -1,47 +1,31 @@
 {
-
   "name": "clarity-guardian",
-
-  "version": "1.0.0",
-
-  "description": "GitHub bot that checks task clarity and generates QA checklists.",
-
-  "main": "src/analyze.js",
-
+  "version": "1.1.0",
+  "description": "Task clarity guardian bot for GitHub Issues and Pull Requests.",
+  "main": "dist/analyze.js",
   "type": "commonjs",
-
   "private": true,
-
   "engines": {
-
     "node": ">=20"
-
   },
-
   "scripts": {
-
-    "analyze": "node src/analyze.js",
-
-    "generate:test-checklist": "node src/generate-test-checklist.js"
-
+    "build": "tsc",
+    "analyze": "node dist/analyze.js",
+    "generate:test-checklist": "node dist/generate-test-checklist.js",
+    "check": "tsc --noEmit"
   },
-
   "keywords": [
-
     "github-actions",
-
     "qa",
-
     "devops",
-
     "automation",
-
     "openai",
-
-    "checklist"
-
+    "checklist",
+    "typescript"
   ],
-
-  "license": "UNLICENSED"
-
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "@types/node": "^20.11.30",
+    "typescript": "^5.4.5"
+  }
 }
