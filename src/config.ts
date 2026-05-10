@@ -7,7 +7,7 @@ import type {
   ClarityGuardianConfig,
   ClarityMode,
   ConfigLanguage,
-  ResolvedConfig,
+  ResolvedConfig, 
   RuleSetConfig,
   SectionRuleConfig,
   StopPhraseRuleConfig,
