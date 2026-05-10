@@ -1,89 +1,85 @@
-// @ts-check
+import { spawn, spawnSync, type SpawnSyncReturns } from 'node:child_process';
+import fs from 'node:fs';
+import http, { type RequestListener } from 'node:http';
+import { type AddressInfo } from 'node:net';
+import os from 'node:os';
+import path from 'node:path';
 
-const fs = require('node:fs');
-const http = require('node:http');
-const os = require('node:os');
-const path = require('node:path');
-const { spawn, spawnSync } = require('node:child_process');
+interface SmokeOptions {
+  env?: NodeJS.ProcessEnv;
+  prefix?: string;
+}
 
-/**
- * @typedef {{
- *   env?: NodeJS.ProcessEnv;
- *   prefix?: string;
- * }} SmokeOptions
- *
- * @typedef {{
- *   method: string | undefined;
- *   url: string | undefined;
- *   body: string;
- * }} RecordedCall
- *
- * @typedef {{
- *   result: any;
- *   comment: string;
- *   updatedBody: string;
- * }} AnalyzeOutput
- *
- * @typedef {{
- *   result: any;
- *   comment: string;
- * }} ChecklistOutput
- */
+interface Remark {
+  code?: string;
+  section?: string;
+  phrase?: string;
+  level?: string;
+}
+
+interface AnalysisSmokeResult {
+  hasErrors?: boolean;
+  hasWarnings?: boolean;
+  language?: string;
+  workItemType?: string;
+  shouldUpdateDescription?: boolean;
+  remarks?: Remark[];
+}
+
+interface ChecklistSmokeResult {
+  source?: string;
+  language?: string;
+  workItemType?: string;
+}
+
+interface RecordedCall {
+  method: string | undefined;
+  url: string | undefined;
+  body: string;
+}
+
+interface AnalyzeOutput {
+  result: AnalysisSmokeResult;
+  comment: string;
+  updatedBody: string;
+}
+
+interface ChecklistOutput {
+  result: ChecklistSmokeResult;
+  comment: string;
+}
 
 const rootDir = path.resolve(__dirname, '..');
 const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'clarity-smoke-'));
 
-/**
- * @param {string} message
- * @returns {never}
- */
-function fail(message) {
+function fail(message: string): never {
   throw new Error(message);
 }
 
-/**
- * @param {boolean} condition
- * @param {string} message
- */
-function assert(condition, message) {
+function assert(condition: boolean, message: string): void {
   if (!condition) {
     fail(message);
   }
 }
 
-/**
- * @param {string} fileName
- * @param {unknown} data
- * @returns {string}
- */
-function writeJson(fileName, data) {
+function writeJson(fileName: string, data: unknown): string {
   const filePath = path.join(tmpDir, fileName);
   fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf8');
   return filePath;
 }
 
-/**
- * @param {string} filePath
- * @returns {any}
- */
-function readJson(filePath) {
-  return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+function readJson<T>(filePath: string): T {
+  return JSON.parse(fs.readFileSync(filePath, 'utf8')) as T;
 }
 
-/**
- * @param {any} result
- * @returns {{ code?: string; section?: string; phrase?: string; level?: string }[]}
- */
-function getRemarks(result) {
+function getRemarks(result: AnalysisSmokeResult): Remark[] {
   return Array.isArray(result.remarks) ? result.remarks : [];
 }
 
-/**
- * @param {string[]} args
- * @param {SmokeOptions} [options]
- * @returns {import('node:child_process').SpawnSyncReturns<string>}
- */
-function runNode(args, options = {}) {
+function runNode(
+  args: string[],
+  options: SmokeOptions = {}
+): SpawnSyncReturns<string> {
   const result = spawnSync(process.execPath, args, {
     cwd: rootDir,
     encoding: 'utf8',
@@ -104,12 +100,10 @@ function runNode(args, options = {}) {
   return result;
 }
 
-/**
- * @param {string[]} args
- * @param {SmokeOptions} [options]
- * @returns {Promise<{ stdout: string; stderr: string }>}
- */
-function runNodeAsync(args, options = {}) {
+function runNodeAsync(
+  args: string[],
+  options: SmokeOptions = {}
+): Promise<{ stdout: string; stderr: string }> {
   return new Promise((resolve, reject) => {
     const child = spawn(process.execPath, args, {
       cwd: rootDir,
@@ -121,11 +115,11 @@ function runNodeAsync(args, options = {}) {
     let stdout = '';
     let stderr = '';
 
-    child.stdout.on('data', (chunk) => {
-      stdout += chunk;
+    child.stdout.on('data', (chunk: Buffer) => {
+      stdout += chunk.toString();
     });
-    child.stderr.on('data', (chunk) => {
-      stderr += chunk;
+    child.stderr.on('data', (chunk: Buffer) => {
+      stderr += chunk.toString();
     });
     child.on('error', reject);
     child.on('close', (status) => {
@@ -143,12 +137,10 @@ function runNodeAsync(args, options = {}) {
   });
 }
 
-/**
- * @param {Record<string, unknown>} payload
- * @param {SmokeOptions} [options]
- * @returns {AnalyzeOutput}
- */
-function analyze(payload, options = {}) {
+function analyze(
+  payload: Record<string, unknown>,
+  options: SmokeOptions = {}
+): AnalyzeOutput {
   const prefix = options.prefix || `analysis-${Date.now()}`;
   const inputPath = writeJson(`${prefix}-input.json`, payload);
   const resultPath = path.join(tmpDir, `${prefix}-result.json`);
@@ -168,18 +160,16 @@ function analyze(payload, options = {}) {
   ], { env: options.env });
 
   return {
-    result: readJson(resultPath),
+    result: readJson<AnalysisSmokeResult>(resultPath),
     comment: fs.readFileSync(commentPath, 'utf8'),
     updatedBody: fs.readFileSync(bodyPath, 'utf8')
   };
 }
 
-/**
- * @param {Record<string, unknown>} payload
- * @param {SmokeOptions} [options]
- * @returns {ChecklistOutput}
- */
-function checklist(payload, options = {}) {
+function checklist(
+  payload: Record<string, unknown>,
+  options: SmokeOptions = {}
+): ChecklistOutput {
   const prefix = options.prefix || `checklist-${Date.now()}`;
   const inputPath = writeJson(`${prefix}-input.json`, payload);
   const resultPath = path.join(tmpDir, `${prefix}-result.json`);
@@ -196,16 +186,14 @@ function checklist(payload, options = {}) {
   ], { env: options.env });
 
   return {
-    result: readJson(resultPath),
+    result: readJson<ChecklistSmokeResult>(resultPath),
     comment: fs.readFileSync(commentPath, 'utf8')
   };
 }
 
-/**
- * @param {Record<string, unknown>} [extra]
- * @returns {Record<string, unknown>}
- */
-function validRussianTask(extra = {}) {
+function validRussianTask(
+  extra: Record<string, unknown> = {}
+): Record<string, unknown> {
   return {
     type: 'issue',
     number: 1,
@@ -228,11 +216,9 @@ function validRussianTask(extra = {}) {
   };
 }
 
-/**
- * @param {Record<string, unknown>} [extra]
- * @returns {Record<string, unknown>}
- */
-function validEnglishStory(extra = {}) {
+function validEnglishStory(
+  extra: Record<string, unknown> = {}
+): Record<string, unknown> {
   return {
     type: 'issue',
     number: 2,
@@ -258,16 +244,14 @@ function validEnglishStory(extra = {}) {
   };
 }
 
-/**
- * @param {import('node:http').RequestListener} handler
- * @param {(baseUrl: string) => Promise<void>} callback
- * @returns {Promise<void>}
- */
-async function withServer(handler, callback) {
+async function withServer(
+  handler: RequestListener,
+  callback: (baseUrl: string) => Promise<void>
+): Promise<void> {
   const server = http.createServer(handler);
 
-  await new Promise((resolve) => {
-    server.listen({ port: 0, host: '127.0.0.1' }, () => resolve(undefined));
+  await new Promise<void>((resolve) => {
+    server.listen({ port: 0, host: '127.0.0.1' }, () => resolve());
   });
 
   const address = server.address();
@@ -276,12 +260,21 @@ async function withServer(handler, callback) {
     fail('Smoke test server did not return a TCP address');
   }
 
-  const port = /** @type {import('node:net').AddressInfo} */ (address).port;
+  const port = (address as AddressInfo).port;
 
   try {
     await callback(`http://127.0.0.1:${port}`);
   } finally {
-    await new Promise((resolve) => server.close(resolve));
+    await new Promise<void>((resolve, reject) => {
+      server.close((error) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+
+        resolve();
+      });
+    });
   }
 }
 
@@ -376,16 +369,15 @@ async function smokeGitHubSync() {
     updatedBody: 'new issue body'
   });
   const commentPath = path.join(tmpDir, 'github-comment.md');
-  /** @type {RecordedCall[]} */
-  const calls = [];
+  const calls: RecordedCall[] = [];
 
   fs.writeFileSync(commentPath, '<!-- clarity-guardian:analysis -->\nnew comment', 'utf8');
 
   await withServer((request, response) => {
     let body = '';
 
-    request.on('data', (chunk) => {
-      body += chunk;
+    request.on('data', (chunk: Buffer) => {
+      body += chunk.toString();
     });
     request.on('end', () => {
       calls.push({ method: request.method, url: request.url, body });
@@ -456,16 +448,15 @@ async function smokeJiraSync() {
     descriptionMarkdown: '## Clarity Guardian\n\nOK'
   });
   const commentPath = path.join(tmpDir, 'jira-comment.md');
-  /** @type {RecordedCall[]} */
-  const calls = [];
+  const calls: RecordedCall[] = [];
 
   fs.writeFileSync(commentPath, 'analysis comment', 'utf8');
 
   await withServer((request, response) => {
     let body = '';
 
-    request.on('data', (chunk) => {
-      body += chunk;
+    request.on('data', (chunk: Buffer) => {
+      body += chunk.toString();
     });
     request.on('end', () => {
       calls.push({ method: request.method, url: request.url, body });

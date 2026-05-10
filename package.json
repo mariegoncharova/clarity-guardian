@@ -15,8 +15,9 @@
     "generate:test-checklist": "npm run build --silent && node dist/generate-test-checklist.js",
     "sync:github": "npm run build --silent && node dist/sync-github.js",
     "sync:jira": "npm run build --silent && node dist/sync-jira.js",
-    "smoke": "npm run build --silent && node scripts/smoke-test.js",
-    "check:smoke": "tsc --noEmit --allowJs --checkJs --strict --module commonjs --target ES2022 --moduleResolution node --types node scripts/smoke-test.js",
+    "build:smoke": "rm -rf .smoke-dist && tsc --module commonjs --target ES2022 --moduleResolution node --types node --esModuleInterop --outDir .smoke-dist scripts/smoke-test.ts",
+    "smoke": "npm run build --silent && npm run build:smoke --silent && node .smoke-dist/smoke-test.js",
+    "check:smoke": "tsc --noEmit --strict --module commonjs --target ES2022 --moduleResolution node --types node --esModuleInterop scripts/smoke-test.ts",
     "check": "tsc --noEmit && npm run check:smoke"
   },
   "keywords": [
