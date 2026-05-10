@@ -27,6 +27,16 @@ jobs:
         with:
           node-version: 20
 
+      - name: Install dependencies
+        shell: bash
+        run: |
+          npm install
+
+      - name: Build TypeScript
+        shell: bash
+        run: |
+          npm run build
+
       - name: Prepare event payload
         shell: bash
         run: |
@@ -69,7 +79,7 @@ jobs:
         id: analyze
         shell: bash
         run: |
-          node src/analyze.js \
+          node dist/analyze.js \
             --input clarity-event.json \
             --comment-file clarity-analysis-comment.md \
             --json-file clarity-analysis-result.json
@@ -115,7 +125,7 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           OPENAI_MODEL: gpt-4o-mini
         run: |
-          node src/generate-test-checklist.js \
+          node dist/generate-test-checklist.js \
             --input clarity-event.json \
             --comment-file clarity-tester-checklist.md \
             --json-file clarity-tester-checklist.json
