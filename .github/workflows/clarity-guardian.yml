@@ -69,7 +69,9 @@ jobs:
             isDraft: Boolean(item.draft),
             action: event.action,
             repository: event.repository.full_name,
-            htmlUrl: item.html_url
+            htmlUrl: item.html_url,
+            sourceRef: isPullRequest ? event.pull_request.head.ref : '',
+            baseRef: isPullRequest ? event.pull_request.base.ref : ''
           };
 
           fs.writeFileSync('clarity-event.json', JSON.stringify(payload, null, 2), 'utf8');
@@ -82,22 +84,37 @@ jobs:
           node dist/analyze.js \
             --input clarity-event.json \
             --comment-file clarity-analysis-comment.md \
-            --json-file clarity-analysis-result.json
+            --json-file clarity-analysis-result.json \
+            --updated-body-file clarity-updated-body.md
 
           HAS_ERRORS=$(node -e "const r=require('./clarity-analysis-result.json'); console.log(r.hasErrors ? 'true' : 'false')")
-          HAS_NOTICES=$(node -e "const r=require('./clarity-analysis-result.json'); console.log(r.remarks.length > 0 ? 'true' : 'false')")
 
           echo "has_errors=$HAS_ERRORS" >> "$GITHUB_OUTPUT"
-          echo "has_notices=$HAS_NOTICES" >> "$GITHUB_OUTPUT"
 
-      - name: Comment analysis result
-        if: steps.analyze.outputs.has_notices == 'true'
+      - name: Sync GitHub analysis result
         shell: bash
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ITEM_NUMBER: ${{ github.event.issue.number || github.event.pull_request.number }}
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
-          gh issue comment "$ITEM_NUMBER" --body-file clarity-analysis-comment.md
+          node dist/sync-github.js \
+            --payload clarity-event.json \
+            --analysis clarity-analysis-result.json \
+            --analysis-comment clarity-analysis-comment.md
+
+      - name: Sync Jira analysis result
+        shell: bash
+        env:
+          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+          JIRA_ISSUE_KEY_PATTERN: ${{ vars.JIRA_ISSUE_KEY_PATTERN }}
+          JIRA_UPDATE_DESCRIPTION: ${{ vars.JIRA_UPDATE_DESCRIPTION }}
+        run: |
+          node dist/sync-jira.js \
+            --skip-if-unconfigured \
+            --payload clarity-event.json \
+            --analysis clarity-analysis-result.json \
+            --analysis-comment clarity-analysis-comment.md
 
       - name: Detect ready-for-testing
         id: ready
@@ -130,14 +147,29 @@ jobs:
             --comment-file clarity-tester-checklist.md \
             --json-file clarity-tester-checklist.json
 
-      - name: Comment tester checklist
+      - name: Sync GitHub tester checklist
         if: steps.ready.outputs.is_ready == 'true'
         shell: bash
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ITEM_NUMBER: ${{ github.event.issue.number || github.event.pull_request.number }}
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
-          gh issue comment "$ITEM_NUMBER" --body-file clarity-tester-checklist.md
+          node dist/sync-github.js \
+            --payload clarity-event.json \
+            --checklist-comment clarity-tester-checklist.md
+
+      - name: Sync Jira tester checklist
+        if: steps.ready.outputs.is_ready == 'true'
+        shell: bash
+        env:
+          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+          JIRA_ISSUE_KEY_PATTERN: ${{ vars.JIRA_ISSUE_KEY_PATTERN }}
+        run: |
+          node dist/sync-jira.js \
+            --skip-if-unconfigured \
+            --payload clarity-event.json \
+            --checklist-comment clarity-tester-checklist.md
 
       - name: Fail if blocking errors found
         if: steps.analyze.outputs.has_errors == 'true'

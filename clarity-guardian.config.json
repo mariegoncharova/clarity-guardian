@@ -1,0 +1,55 @@
+{
+  "language": "auto",
+  "mode": "strict",
+  "updateDescription": true,
+  "stopPhrases": [
+    {
+      "phrase": "потом разберемся",
+      "level": "warning",
+      "code": "deferred_context",
+      "message": "Фраза «потом разберемся» переносит важные решения за пределы задачи. Добавь, что именно нужно решить до разработки.",
+      "languages": ["ru"]
+    },
+    {
+      "phrase": "TBD",
+      "level": "warning",
+      "code": "tbd_requirement",
+      "message": "TBD в задаче означает незакрытое требование. Уточни его до передачи в работу.",
+      "languages": ["en"]
+    }
+  ],
+  "rules": {
+    "bug": {
+      "requiredSections": [
+        {
+          "section": "Окружение",
+          "level": "warning",
+          "code": "missing_environment",
+          "message": "Для bug желательно указать окружение: prod/stage, браузер, устройство, версию приложения.",
+          "languages": ["ru"],
+          "workItemTypes": ["bug"]
+        },
+        {
+          "section": "Environment",
+          "level": "warning",
+          "code": "missing_environment",
+          "message": "For a bug, it is useful to include the environment: prod/stage, browser, device, app version.",
+          "languages": ["en"],
+          "workItemTypes": ["bug"]
+        }
+      ]
+    },
+    "story": {
+      "stopPhrases": [
+        {
+          "phrase": "как пользователь хочу",
+          "level": "warning",
+          "code": "story_template_placeholder",
+          "message": "Похоже на незаполненный шаблон user story. Укажи конкретную роль, действие и ценность.",
+          "languages": ["ru"],
+          "workItemTypes": ["story"]
+        }
+      ]
+    }
+  }
+}

@@ -76,6 +76,57 @@ export function extractMarkdownSection(markdown: string, heading: string): strin
   return normalizeText(match[1]);
 }
 
+export function extractFirstMarkdownSection(
+  markdown: string,
+  headings: string[]
+): string | null {
+  for (const heading of headings) {
+    const content = extractMarkdownSection(markdown, heading);
+
+    if (content !== null) {
+      return content;
+    }
+  }
+
+  return null;
+}
+
+export function replaceManagedBlock(
+  body: string,
+  startMarker: string,
+  endMarker: string,
+  block: string
+): string {
+  const normalizedBody = normalizeText(body);
+  const normalizedBlock = normalizeText(block);
+  const escapedStart = startMarker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const escapedEnd = endMarker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const managedBlockRegex = new RegExp(
+    `\\n*${escapedStart}[\\s\\S]*?${escapedEnd}\\n*`,
+    'm'
+  );
+
+  if (managedBlockRegex.test(normalizedBody)) {
+    return normalizeText(normalizedBody.replace(managedBlockRegex, `\n\n${normalizedBlock}\n`));
+  }
+
+  if (!normalizedBody) {
+    return normalizedBlock;
+  }
+
+  return `${normalizedBody}\n\n${normalizedBlock}`;
+}
+
+export function getBooleanEnv(name: string, defaultValue: boolean): boolean {
+  const value = process.env[name];
+
+  if (value === undefined || value === '') {
+    return defaultValue;
+  }
+
+  return ['1', 'true', 'yes', 'on'].includes(value.toLowerCase());
+}
+
 export function makeCliError(message: string): Error {
   return new Error(`[Clarity Guardian] ${message}`);
 }

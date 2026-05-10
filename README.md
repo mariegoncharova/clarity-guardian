@@ -8,6 +8,8 @@
 - `## Ожидаемый результат`
 - `## Критерии приёмки`
 
+Он умеет работать с русскими и английскими шаблонами, различать `bug`/`task`/`story`, обновлять описание задачи, редактировать свой предыдущий комментарий и синхронизироваться с Jira REST API.
+
 А при переходе задачи в тестирование генерирует чек-лист для QA.
 
 ---
@@ -34,6 +36,88 @@
 
 Если есть только предупреждения - бот оставляет совет, но не блокирует задачу.
 
+Бот также добавляет или обновляет managed-блок `Clarity Guardian` прямо в описании Issue/PR. Повторные запуски не создают новые комментарии: бот ищет свой предыдущий комментарий по скрытому маркеру и редактирует его.
+
+### Режим strict/non-strict
+
+В `strict` режиме ошибки блокируют workflow.
+
+В `non-strict` режиме блокирующие ошибки превращаются в предупреждения, поэтому workflow не падает, но комментарий и managed-блок всё равно показывают, что нужно поправить.
+
+Режим задаётся в `clarity-guardian.config.json`:
+
+```json
+{
+  "mode": "strict"
+}
+```
+
+Или переменной окружения:
+
+```bash
+CLARITY_GUARDIAN_MODE=non-strict
+```
+
+### Типы задач
+
+Тип определяется из `workItemType` во входном JSON или из labels/title:
+
+- `bug`, `defect`, `ошибка`, `баг` → `bug`;
+- `story`, `user story`, `стори`, `история` → `story`;
+- всё остальное → `task`.
+
+Для `bug` дополнительно проверяются шаги воспроизведения и фактический результат.
+
+Для `story` дополнительно проверяется user story.
+
+Для `task` используются базовые правила.
+
+### Английские шаблоны
+
+Язык определяется автоматически по заголовкам в описании или задаётся явно:
+
+```json
+{
+  "language": "auto"
+}
+```
+
+Поддерживаются английские разделы:
+
+- `## Context`
+- `## Expected result`
+- `## Acceptance criteria`
+- `## Steps to reproduce`
+- `## Actual result`
+- `## User story`
+
+Шаблоны лежат в:
+
+- `templates/manager-checklist.md`
+- `templates/tester-checklist.md`
+- `templates/manager-checklist.en.md`
+- `templates/tester-checklist.en.md`
+
+### Project-specific стоп-фразы
+
+Дополнительные стоп-фразы настраиваются в `clarity-guardian.config.json`:
+
+```json
+{
+  "stopPhrases": [
+    {
+      "phrase": "потом разберемся",
+      "level": "warning",
+      "code": "deferred_context",
+      "message": "Фраза «потом разберемся» переносит важные решения за пределы задачи.",
+      "languages": ["ru"]
+    }
+  ]
+}
+```
+
+Стоп-фразы можно ограничивать языком и типом задачи через `languages` и `workItemTypes`.
+
 ---
 
 ## При переходе в тестирование
@@ -48,7 +132,7 @@
 - берёт название и описание задачи;
 - если есть `OPENAI_API_KEY`, генерирует QA-чеклист через OpenAI API;
 - если ключа нет, использует шаблон `templates/tester-checklist.md`;
-- добавляет чек-лист комментарием.
+- добавляет или обновляет чек-лист в комментарии бота.
 
 ---
 
@@ -60,15 +144,21 @@
 
 ```text
 .github/workflows/clarity-guardian.yml
+clarity-guardian.config.json
 src/analyze.ts
 src/generate-test-checklist.ts
+src/sync-github.ts
+src/sync-jira.ts
 src/utils.ts
 src/types.ts
 tsconfig.json
 templates/manager-checklist.md
 templates/tester-checklist.md
+templates/manager-checklist.en.md
+templates/tester-checklist.en.md
 docs/COMMUNICATION_GUIDE.md
 package.json
+package-lock.json
 Dockerfile
 README.md
 ```
@@ -89,7 +179,35 @@ OPENAI_API_KEY=...
 
 Если секрет не задан, бот всё равно работает, но чек-лист для тестировщика будет стандартным шаблоном.
 
-### 3. Проверить permissions
+### 3. Добавить Jira secrets, если нужна синхронизация с Jira
+
+В GitHub Actions secrets:
+
+```text
+JIRA_BASE_URL=https://your-company.atlassian.net
+JIRA_EMAIL=name@example.com
+JIRA_API_TOKEN=...
+```
+
+Бот ищет Jira issue key в title/body/labels/branch по паттерну:
+
+```text
+[A-Z][A-Z0-9]+-\d+
+```
+
+Паттерн можно переопределить GitHub variable:
+
+```text
+JIRA_ISSUE_KEY_PATTERN=CG-\d+
+```
+
+По умолчанию Jira description тоже обновляется. Отключить можно variable:
+
+```text
+JIRA_UPDATE_DESCRIPTION=false
+```
+
+### 4. Проверить permissions
 
 В workflow уже указано:
 
@@ -119,8 +237,8 @@ Workflow использует `pull_request_target`.
 - не выполняется код из ветки PR;
 - checkout делается из default branch;
 - анализ идёт только по `github.event`;
-- GitHub API вызывается только из workflow;
-- Node.js-скрипты не знают ничего о GitHub-токенах.
+- GitHub API вызывается из `dist/sync-github.js` только с `GITHUB_TOKEN`;
+- Jira API вызывается из `dist/sync-jira.js` только если заданы Jira secrets.
 
 ---
 
@@ -150,7 +268,8 @@ npm run build
 node dist/analyze.js \
   --input event.json \
   --json-file result.json \
-  --comment-file comment.md
+  --comment-file comment.md \
+  --updated-body-file updated-body.md
 ```
 
 Сгенерируй чек-лист:
@@ -169,6 +288,28 @@ node dist/generate-test-checklist.js \
   --input event.json \
   --json-file checklist.json \
   --comment-file checklist.md
+```
+
+Синхронизация с GitHub:
+
+```bash
+GITHUB_TOKEN=... node dist/sync-github.js \
+  --payload event.json \
+  --analysis result.json \
+  --analysis-comment comment.md
+```
+
+Синхронизация с Jira:
+
+```bash
+JIRA_BASE_URL=https://your-company.atlassian.net \
+JIRA_EMAIL=name@example.com \
+JIRA_API_TOKEN=... \
+node dist/sync-jira.js \
+  --payload event.json \
+  --analysis result.json \
+  --analysis-comment comment.md \
+  --issue-key CG-123
 ```
 
 ---
@@ -242,7 +383,8 @@ docker run --rm \
 node dist/analyze.js \
   --input task.json \
   --json-file analysis.json \
-  --comment-file analysis.md
+  --comment-file analysis.md \
+  --updated-body-file updated-body.md
 ```
 
 ### Генерация чек-листа
@@ -281,12 +423,12 @@ node dist/generate-test-checklist.js \
 
 ---
 
-## Что можно докрутить дальше
+## Что уже подключено
 
-- Автоматически обновлять описание Issue/PR, а не только писать комментарий.
-- Не дублировать комментарии, а редактировать предыдущий комментарий бота.
-- Добавить project-specific словарь стоп-фраз.
-- Добавить поддержку английских шаблонов.
-- Добавить режим strict/non-strict.
-- Добавить отдельные правила для bug/task/story.
-- Подключить Jira REST API напрямую.
+- Автоматическое обновление описания Issue/PR через managed-блок.
+- Редактирование предыдущего комментария бота вместо дублей.
+- Project-specific словарь стоп-фраз в `clarity-guardian.config.json`.
+- Русские и английские шаблоны.
+- Режим `strict`/`non-strict`.
+- Отдельные правила для `bug`/`task`/`story`.
+- Прямая синхронизация с Jira REST API v3.
