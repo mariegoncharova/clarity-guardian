@@ -1,32 +1,88 @@
+// @ts-check
+
 const fs = require('node:fs');
 const http = require('node:http');
 const os = require('node:os');
 const path = require('node:path');
 const { spawn, spawnSync } = require('node:child_process');
 
+/**
+ * @typedef {{
+ *   env?: NodeJS.ProcessEnv;
+ *   prefix?: string;
+ * }} SmokeOptions
+ *
+ * @typedef {{
+ *   method: string | undefined;
+ *   url: string | undefined;
+ *   body: string;
+ * }} RecordedCall
+ *
+ * @typedef {{
+ *   result: any;
+ *   comment: string;
+ *   updatedBody: string;
+ * }} AnalyzeOutput
+ *
+ * @typedef {{
+ *   result: any;
+ *   comment: string;
+ * }} ChecklistOutput
+ */
+
 const rootDir = path.resolve(__dirname, '..');
 const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'clarity-smoke-'));
 
+/**
+ * @param {string} message
+ * @returns {never}
+ */
 function fail(message) {
   throw new Error(message);
 }
 
+/**
+ * @param {boolean} condition
+ * @param {string} message
+ */
 function assert(condition, message) {
   if (!condition) {
     fail(message);
   }
 }
 
+/**
+ * @param {string} fileName
+ * @param {unknown} data
+ * @returns {string}
+ */
 function writeJson(fileName, data) {
   const filePath = path.join(tmpDir, fileName);
   fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf8');
   return filePath;
 }
 
+/**
+ * @param {string} filePath
+ * @returns {any}
+ */
 function readJson(filePath) {
   return JSON.parse(fs.readFileSync(filePath, 'utf8'));
 }
 
+/**
+ * @param {any} result
+ * @returns {{ code?: string; section?: string; phrase?: string; level?: string }[]}
+ */
+function getRemarks(result) {
+  return Array.isArray(result.remarks) ? result.remarks : [];
+}
+
+/**
+ * @param {string[]} args
+ * @param {SmokeOptions} [options]
+ * @returns {import('node:child_process').SpawnSyncReturns<string>}
+ */
 function runNode(args, options = {}) {
   const result = spawnSync(process.execPath, args, {
     cwd: rootDir,
@@ -48,6 +104,11 @@ function runNode(args, options = {}) {
   return result;
 }
 
+/**
+ * @param {string[]} args
+ * @param {SmokeOptions} [options]
+ * @returns {Promise<{ stdout: string; stderr: string }>}
+ */
 function runNodeAsync(args, options = {}) {
   return new Promise((resolve, reject) => {
     const child = spawn(process.execPath, args, {
@@ -82,6 +143,11 @@ function runNodeAsync(args, options = {}) {
   });
 }
 
+/**
+ * @param {Record<string, unknown>} payload
+ * @param {SmokeOptions} [options]
+ * @returns {AnalyzeOutput}
+ */
 function analyze(payload, options = {}) {
   const prefix = options.prefix || `analysis-${Date.now()}`;
   const inputPath = writeJson(`${prefix}-input.json`, payload);
@@ -108,6 +174,11 @@ function analyze(payload, options = {}) {
   };
 }
 
+/**
+ * @param {Record<string, unknown>} payload
+ * @param {SmokeOptions} [options]
+ * @returns {ChecklistOutput}
+ */
 function checklist(payload, options = {}) {
   const prefix = options.prefix || `checklist-${Date.now()}`;
   const inputPath = writeJson(`${prefix}-input.json`, payload);
@@ -130,6 +201,10 @@ function checklist(payload, options = {}) {
   };
 }
 
+/**
+ * @param {Record<string, unknown>} [extra]
+ * @returns {Record<string, unknown>}
+ */
 function validRussianTask(extra = {}) {
   return {
     type: 'issue',
@@ -153,6 +228,10 @@ function validRussianTask(extra = {}) {
   };
 }
 
+/**
+ * @param {Record<string, unknown>} [extra]
+ * @returns {Record<string, unknown>}
+ */
 function validEnglishStory(extra = {}) {
   return {
     type: 'issue',
@@ -179,14 +258,25 @@ function validEnglishStory(extra = {}) {
   };
 }
 
+/**
+ * @param {import('node:http').RequestListener} handler
+ * @param {(baseUrl: string) => Promise<void>} callback
+ * @returns {Promise<void>}
+ */
 async function withServer(handler, callback) {
   const server = http.createServer(handler);
 
   await new Promise((resolve) => {
-    server.listen(0, '127.0.0.1', resolve);
+    server.listen({ port: 0, host: '127.0.0.1' }, () => resolve(undefined));
   });
 
-  const { port } = server.address();
+  const address = server.address();
+
+  if (!address || typeof address === 'string') {
+    fail('Smoke test server did not return a TCP address');
+  }
+
+  const port = /** @type {import('node:net').AddressInfo} */ (address).port;
 
   try {
     await callback(`http://127.0.0.1:${port}`);
@@ -220,7 +310,7 @@ async function smokeAnalyze() {
   }), { prefix: 'strict-bug' });
   assert(strictBug.result.hasErrors === true, 'Strict bug without bug sections should have errors');
   assert(
-    strictBug.result.remarks.some((remark) => remark.section === 'Шаги воспроизведения'),
+    getRemarks(strictBug.result).some((remark) => remark.section === 'Шаги воспроизведения'),
     'Bug rules should require reproduction steps'
   );
 
@@ -239,7 +329,7 @@ async function smokeAnalyze() {
     title: 'TBD checkout уточнения',
     body: `${validRussianTask().body}\n\nПотом уточним, как-нибудь сделаем нормально.`
   }, { prefix: 'stop-phrases' });
-  const codes = stopPhrases.result.remarks.map((remark) => remark.code);
+  const codes = getRemarks(stopPhrases.result).map((remark) => remark.code);
   assert(codes.includes('deferred_context'), 'Project stop phrase should detect deferred context');
   assert(codes.includes('undefined_solution'), 'Project stop phrase should detect undefined solution');
   assert(codes.includes('vague_quality'), 'Project stop phrase should detect vague quality');
@@ -251,7 +341,7 @@ async function smokeAnalyze() {
   assert(english.result.language === 'en', 'English story should be detected as en');
   assert(english.result.workItemType === 'story', 'English story should be detected as story');
   assert(
-    english.result.remarks.some((remark) => remark.code === 'tbd_requirement'),
+    getRemarks(english.result).some((remark) => remark.code === 'tbd_requirement'),
     'Uppercase TBD should be detected case-insensitively'
   );
 
@@ -260,7 +350,7 @@ async function smokeAnalyze() {
     body: `${validEnglishStory().body}\n\nThe getCustomer endpoint should keep returning payment status.`
   }, { prefix: 'english-no-etc-false-positive' });
   assert(
-    !englishWithoutFalsePositive.result.remarks.some((remark) => remark.code === 'open_ended_scope'),
+    !getRemarks(englishWithoutFalsePositive.result).some((remark) => remark.code === 'open_ended_scope'),
     'Short stop phrase "etc" should not match inside another word'
   );
 }
@@ -286,6 +376,7 @@ async function smokeGitHubSync() {
     updatedBody: 'new issue body'
   });
   const commentPath = path.join(tmpDir, 'github-comment.md');
+  /** @type {RecordedCall[]} */
   const calls = [];
 
   fs.writeFileSync(commentPath, '<!-- clarity-guardian:analysis -->\nnew comment', 'utf8');
@@ -365,6 +456,7 @@ async function smokeJiraSync() {
     descriptionMarkdown: '## Clarity Guardian\n\nOK'
   });
   const commentPath = path.join(tmpDir, 'jira-comment.md');
+  /** @type {RecordedCall[]} */
   const calls = [];
 
   fs.writeFileSync(commentPath, 'analysis comment', 'utf8');

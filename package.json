@@ -16,7 +16,8 @@
     "sync:github": "npm run build --silent && node dist/sync-github.js",
     "sync:jira": "npm run build --silent && node dist/sync-jira.js",
     "smoke": "npm run build --silent && node scripts/smoke-test.js",
-    "check": "tsc --noEmit"
+    "check:smoke": "tsc --noEmit --allowJs --checkJs --strict --module commonjs --target ES2022 --moduleResolution node --types node scripts/smoke-test.js",
+    "check": "tsc --noEmit && npm run check:smoke"
   },
   "keywords": [
     "github-actions",
