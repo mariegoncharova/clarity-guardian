@@ -8,6 +8,12 @@ import {
   getStopPhrases,
   loadConfig
 } from './config';
+
+import {
+  calculateClarityScore,
+  formatClarityScoreMarkdown
+} from './clarity-score';
+
 import {
   countNonWhitespaceChars,
   extractFirstMarkdownSection,
@@ -249,6 +255,16 @@ function formatRemarks(task: NormalizedTask, remarks: Remark[]): string {
   }).join('\n');
 }
 
+function buildClarityScoreBlock(task: NormalizedTask, remarks: Remark[]): string {
+  const clarityScore = calculateClarityScore({
+    title: task.title,
+    body: task.body,
+    remarks
+  });
+
+  return formatClarityScoreMarkdown(clarityScore);
+}
+
 function buildManagerChecklistComment(
   task: NormalizedTask,
   remarks: Remark[],
@@ -258,6 +274,7 @@ function buildManagerChecklistComment(
   const managerChecklist = readTextFile(managerChecklistPath);
   const text = LOCALIZED_TEXT[task.language];
   const remarksMarkdown = formatRemarks(task, remarks);
+  const clarityScoreMarkdown = buildClarityScoreBlock(task, remarks);
 
   return [
     '<!-- clarity-guardian:analysis -->',
@@ -269,6 +286,10 @@ function buildManagerChecklistComment(
     `**${text.typeLabel}:** ${task.workItemType}`,
     `**${text.modeLabel}:** ${mode}`,
     `**${text.languageLabel}:** ${task.language}`,
+    '',
+    clarityScoreMarkdown,
+    '',
+    '---',
     '',
     text.whatToFix,
     '',
@@ -291,6 +312,7 @@ function buildDescriptionBlock(
 ): string {
   const text = LOCALIZED_TEXT[task.language];
   const remarksMarkdown = formatRemarks(task, remarks);
+  const clarityScoreMarkdown = buildClarityScoreBlock(task, remarks);
 
   return [
     text.descriptionTitle,
@@ -301,6 +323,8 @@ function buildDescriptionBlock(
     `- ${text.typeLabel}: ${task.workItemType}`,
     `- ${text.modeLabel}: ${mode}`,
     `- ${text.languageLabel}: ${task.language}`,
+    '',
+    clarityScoreMarkdown,
     '',
     remarksMarkdown || text.noRemarks
   ].join('\n');
@@ -343,11 +367,13 @@ export function analyzeTask(
 ): AnalysisResult {
   const config = options.config || loadConfig();
   const normalizedTask = normalizeTask(task, config);
+
   const requiredSections = getRequiredSections(
     config,
     normalizedTask.language,
     normalizedTask.workItemType
   );
+
   const stopPhrases = getStopPhrases(
     config,
     normalizedTask.language,
@@ -372,8 +398,19 @@ export function analyzeTask(
 
   const hasErrors = remarks.some((remark) => remark.level === 'error');
   const hasWarnings = remarks.some((remark) => remark.level === 'warning');
-  const commentMarkdown = buildManagerChecklistComment(normalizedTask, remarks, config.mode);
-  const descriptionMarkdown = buildDescriptionBlock(normalizedTask, remarks, config.mode);
+
+  const commentMarkdown = buildManagerChecklistComment(
+    normalizedTask,
+    remarks,
+    config.mode
+  );
+
+  const descriptionMarkdown = buildDescriptionBlock(
+    normalizedTask,
+    remarks,
+    config.mode
+  );
+
   const updatedBody = config.updateDescription
     ? buildUpdatedBody(normalizedTask, descriptionMarkdown)
     : normalizedTask.body;
@@ -430,4 +467,4 @@ if (require.main === module) {
     console.error(message);
     process.exit(1);
   });
-} 
+}
