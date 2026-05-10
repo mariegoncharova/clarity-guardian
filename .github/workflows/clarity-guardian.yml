@@ -30,7 +30,7 @@ jobs:
       - name: Install dependencies
         shell: bash
         run: |
-          npm install
+          npm ci
 
       - name: Build TypeScript
         shell: bash

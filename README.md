@@ -129,7 +129,7 @@ Workflow использует `pull_request_target`.
 Установи dev-зависимости и собери TypeScript:
 
 ```bash
-npm install
+npm ci
 npm run build
 ```
 
