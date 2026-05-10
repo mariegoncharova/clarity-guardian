@@ -244,6 +244,84 @@ function validEnglishStory(
   };
 }
 
+function smokePrepareEventPayload(): void {
+  const eventPath = writeJson('github-event.json', {
+    action: 'ready_for_review',
+    pull_request: {
+      number: 10,
+      title: 'CG-123 Story: checkout success page',
+      body: validEnglishStory().body,
+      labels: [
+        { name: 'story' },
+        { name: 'ready-for-testing' }
+      ],
+      draft: false,
+      html_url: 'https://github.com/owner/repo/pull/10',
+      head: {
+        ref: 'CG-123-checkout'
+      },
+      base: {
+        ref: 'main'
+      }
+    },
+    repository: {
+      full_name: 'owner/repo'
+    }
+  });
+  const outputPath = path.join(tmpDir, 'prepared-event.json');
+
+  runNode([
+    'dist/prepare-event-payload.js',
+    '--event',
+    eventPath,
+    '--event-name',
+    'pull_request_target',
+    '--output',
+    outputPath
+  ]);
+
+  const payload = readJson<Record<string, unknown>>(outputPath);
+
+  assert(payload.type === 'pr', 'Prepared payload should detect PR type');
+  assert(payload.number === 10, 'Prepared payload should keep item number');
+  assert(payload.repository === 'owner/repo', 'Prepared payload should keep repository');
+  assert(payload.sourceRef === 'CG-123-checkout', 'Prepared payload should keep source ref');
+  assert(Array.isArray(payload.labels), 'Prepared payload should include labels');
+  assert(
+    (payload.labels as string[]).includes('ready-for-testing'),
+    'Prepared payload should normalize label names'
+  );
+}
+
+function smokeWorkflowOutputs(): void {
+  const payloadPath = writeJson('workflow-payload.json', {
+    ...validRussianTask(),
+    type: 'pr',
+    action: 'ready_for_review',
+    isDraft: false,
+    labels: []
+  });
+  const analysisPath = writeJson('workflow-analysis.json', {
+    hasErrors: true
+  });
+  const outputPath = path.join(tmpDir, 'github-output.txt');
+
+  runNode([
+    'dist/write-workflow-outputs.js',
+    '--payload',
+    payloadPath,
+    '--analysis',
+    analysisPath,
+    '--github-output',
+    outputPath
+  ]);
+
+  const output = fs.readFileSync(outputPath, 'utf8');
+
+  assert(output.includes('has_errors=true'), 'Workflow outputs should include has_errors');
+  assert(output.includes('is_ready=true'), 'Workflow outputs should include is_ready');
+}
+
 async function withServer(
   handler: RequestListener,
   callback: (baseUrl: string) => Promise<void>
@@ -573,6 +651,8 @@ async function smokeJiraSkip() {
 
 (async () => {
   try {
+    smokePrepareEventPayload();
+    smokeWorkflowOutputs();
     await smokeAnalyze();
     await smokeChecklist();
     await smokeGitHubSync();

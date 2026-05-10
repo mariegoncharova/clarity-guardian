@@ -40,42 +40,8 @@ jobs:
       - name: Prepare event payload
         shell: bash
         run: |
-          node - <<'NODE'
-          const fs = require('fs');
-
-          const event = JSON.parse(fs.readFileSync(process.env.GITHUB_EVENT_PATH, 'utf8'));
-          const eventName = process.env.GITHUB_EVENT_NAME;
-
-          const isIssue = eventName === 'issues';
-          const isPullRequest = eventName === 'pull_request_target';
-
-          const item = isPullRequest ? event.pull_request : event.issue;
-
-          if (!item) {
-            throw new Error(`Unsupported event payload: ${eventName}`);
-          }
-
-          const labels = (item.labels || []).map(label => {
-            if (typeof label === 'string') return label;
-            return label.name;
-          }).filter(Boolean);
-
-          const payload = {
-            type: isPullRequest ? 'pr' : 'issue',
-            number: item.number,
-            title: item.title || '',
-            body: item.body || '',
-            labels,
-            isDraft: Boolean(item.draft),
-            action: event.action,
-            repository: event.repository.full_name,
-            htmlUrl: item.html_url,
-            sourceRef: isPullRequest ? event.pull_request.head.ref : '',
-            baseRef: isPullRequest ? event.pull_request.base.ref : ''
-          };
-
-          fs.writeFileSync('clarity-event.json', JSON.stringify(payload, null, 2), 'utf8');
-          NODE
+          node dist/prepare-event-payload.js \
+            --output clarity-event.json
 
       - name: Analyze description
         id: analyze
@@ -87,9 +53,10 @@ jobs:
             --json-file clarity-analysis-result.json \
             --updated-body-file clarity-updated-body.md
 
-          HAS_ERRORS=$(node -e "const r=require('./clarity-analysis-result.json'); console.log(r.hasErrors ? 'true' : 'false')")
-
-          echo "has_errors=$HAS_ERRORS" >> "$GITHUB_OUTPUT"
+          node dist/write-workflow-outputs.js \
+            --payload clarity-event.json \
+            --analysis clarity-analysis-result.json \
+            --github-output "$GITHUB_OUTPUT"
 
       - name: Sync GitHub analysis result
         shell: bash
@@ -116,27 +83,8 @@ jobs:
             --analysis clarity-analysis-result.json \
             --analysis-comment clarity-analysis-comment.md
 
-      - name: Detect ready-for-testing
-        id: ready
-        shell: bash
-        run: |
-          IS_READY=$(node - <<'NODE'
-          const payload = require('./clarity-event.json');
-
-          const hasReadyLabel = payload.labels.includes('ready-for-testing');
-          const becameReadyForReview =
-            payload.type === 'pr' &&
-            payload.action === 'ready_for_review' &&
-            payload.isDraft === false;
-
-          console.log(hasReadyLabel || becameReadyForReview ? 'true' : 'false');
-          NODE
-          )
-
-          echo "is_ready=$IS_READY" >> "$GITHUB_OUTPUT"
-
       - name: Generate tester checklist
-        if: steps.ready.outputs.is_ready == 'true'
+        if: steps.analyze.outputs.is_ready == 'true'
         shell: bash
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -148,7 +96,7 @@ jobs:
             --json-file clarity-tester-checklist.json
 
       - name: Sync GitHub tester checklist
-        if: steps.ready.outputs.is_ready == 'true'
+        if: steps.analyze.outputs.is_ready == 'true'
         shell: bash
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -158,7 +106,7 @@ jobs:
             --checklist-comment clarity-tester-checklist.md
 
       - name: Sync Jira tester checklist
-        if: steps.ready.outputs.is_ready == 'true'
+        if: steps.analyze.outputs.is_ready == 'true'
         shell: bash
         env:
           JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
