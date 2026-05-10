@@ -8,7 +8,7 @@ import {
 import {
   getStringArg,
   makeCliError,
-  normalizeText,
+  normalizeText, 
   parseArgs,
   readJsonFile,
   readTextFile,
