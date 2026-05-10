@@ -5,7 +5,7 @@ import {
   readJsonFile,
   readTextFile
 } from './utils';
-
+ 
 import type {
   AnalysisResult,
   TaskPayload
