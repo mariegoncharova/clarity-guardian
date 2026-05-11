@@ -139,7 +139,4 @@ Clarity Guardian нужен не для бюрократии, а чтобы ме
 
 Переноси договорённости в задачу. 
 
-Коммит:
 
-```text
-Add portfolio case description
