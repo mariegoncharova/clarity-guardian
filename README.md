@@ -2,15 +2,34 @@
 
 **Clarity Guardian** - бот, который защищает команду от испорченного телефона между менеджером, разработчиком и тестировщиком.
 
-Он проверяет, что в Issue или Pull Request есть обязательные разделы:
+Он проверяет качество постановки задач в GitHub Issues, Pull Requests и Jira: ищет недостающий контекст, неясный ожидаемый результат, непроверяемые критерии приёмки и формулировки, которые могут привести к разной интерпретации задачи.
 
-- `## Контекст`
-- `## Ожидаемый результат`
-- `## Критерии приёмки`
+---
 
-Он умеет работать с русскими и английскими шаблонами, различать `bug`/`task`/`story`, обновлять описание задачи, редактировать свой предыдущий комментарий и синхронизироваться с Jira REST API.
+## Why this project matters
 
-А при переходе задачи в тестирование генерирует чек-лист для QA.
+Clarity Guardian is not only an automation bot. It is a project about technical and scientific communication in software development.
+
+In IT teams, a task description often becomes the main unit of knowledge transfer between roles. If the task is unclear, each participant interprets it differently: a manager expects one result, a developer implements another, and a QA engineer checks a third version of the truth.
+
+The project applies principles of scientific communication to engineering workflows:
+
+- clarity of context;
+- explicit expected results;
+- verifiable acceptance criteria;
+- reproducible testing scenarios;
+- reduction of ambiguity;
+- transformation of implicit knowledge into written, reviewable knowledge.
+
+This makes Clarity Guardian a practical tool for improving communication quality in IT teams.
+
+---
+
+## Project documentation
+
+- [Communication Guide](docs/COMMUNICATION_GUIDE.md) - practical guide for writing clear tasks.
+- [Scientific Communication Rationale](docs/SCIENTIFIC_COMMUNICATION.md) - explanation of the project through the lens of scientific and technical communication.
+- [Portfolio Case](docs/PORTFOLIO_CASE.md) - short case description for reviewers and admissions portfolio.
 
 ---
 
@@ -30,7 +49,10 @@
   - «как в прошлый раз»;
   - «срочно»;
   - «пофиксить»;
-  - «не работает» без шагов воспроизведения.
+  - «не работает» без шагов воспроизведения;
+- соответствует ли описание типу задачи: `bug`, `task`, `story`;
+- можно ли проверить задачу по критериям приёмки;
+- достаточно ли информации для QA.
 
 Если есть ошибки - бот оставляет комментарий и workflow падает.
 
@@ -38,7 +60,52 @@
 
 Бот также добавляет или обновляет managed-блок `Clarity Guardian` прямо в описании Issue/PR. Повторные запуски не создают новые комментарии: бот ищет свой предыдущий комментарий по скрытому маркеру и редактирует его.
 
-### Режим strict/non-strict
+---
+
+## Clarity Score
+
+В проект добавлена оценка ясности задачи - **Clarity Score**.
+
+Она показывает, насколько описание готово к передаче между ролями: менеджером, разработчиком и тестировщиком.
+
+Пример:
+
+```text
+Clarity Score: 72/100
+Risk Level: medium
+```
+
+Оценка учитывает:
+
+- структурную полноту описания;
+- наличие блокирующих ошибок;
+- количество предупреждений;
+- коммуникационные риски;
+- проверяемость критериев приёмки;
+- наличие пользовательского сценария;
+- наличие скрытых договорённостей.
+
+Clarity Score нужен не только для автоматической проверки, но и для объяснения: **почему задача может быть неправильно понята**.
+
+---
+
+## Коммуникационные риски
+
+Clarity Guardian классифицирует проблемы описания как коммуникационные риски:
+
+- неявный контекст;
+- размытый ожидаемый результат;
+- непроверяемые критерии приёмки;
+- скрытые договорённости;
+- отсутствие пользовательского сценария;
+- неясность для QA;
+- описание реализации без цели.
+
+Такой подход связывает инженерную задачу с принципами научной коммуникации: ясностью, воспроизводимостью и проверяемостью.
+
+---
+
+## Режим strict/non-strict
 
 В `strict` режиме ошибки блокируют workflow.
 
@@ -58,7 +125,9 @@
 CLARITY_GUARDIAN_MODE=non-strict
 ```
 
-### Типы задач
+---
+
+## Типы задач
 
 Тип определяется из `workItemType` во входном JSON или из labels/title:
 
@@ -72,7 +141,9 @@ CLARITY_GUARDIAN_MODE=non-strict
 
 Для `task` используются базовые правила.
 
-### Английские шаблоны
+---
+
+## Английские шаблоны
 
 Язык определяется автоматически по заголовкам в описании или задаётся явно:
 
@@ -98,7 +169,9 @@ CLARITY_GUARDIAN_MODE=non-strict
 - `templates/manager-checklist.en.md`
 - `templates/tester-checklist.en.md`
 
-### Project-specific стоп-фразы
+---
+
+## Project-specific стоп-фразы
 
 Дополнительные стоп-фразы настраиваются в `clarity-guardian.config.json`:
 
@@ -140,28 +213,36 @@ CLARITY_GUARDIAN_MODE=non-strict
 
 ### 1. Файлы проекта
 
-Структура должна быть такой:
+Структура проекта:
 
 ```text
 .github/workflows/clarity-guardian.yml
 clarity-guardian.config.json
 src/analyze.ts
+src/clarity-score.ts
+src/config.ts
 src/generate-test-checklist.ts
+src/prepare-event-payload.ts
 src/sync-github.ts
 src/sync-jira.ts
-src/utils.ts
 src/types.ts
+src/utils.ts
+src/write-workflow-outputs.ts
 tsconfig.json
 templates/manager-checklist.md
 templates/tester-checklist.md
 templates/manager-checklist.en.md
 templates/tester-checklist.en.md
 docs/COMMUNICATION_GUIDE.md
+docs/SCIENTIFIC_COMMUNICATION.md
+docs/PORTFOLIO_CASE.md
 package.json
 package-lock.json
 Dockerfile
 README.md
 ```
+
+---
 
 ### 2. Добавить секрет OpenAI, если нужна AI-генерация
 
@@ -178,6 +259,8 @@ OPENAI_API_KEY=...
 ```
 
 Если секрет не задан, бот всё равно работает, но чек-лист для тестировщика будет стандартным шаблоном.
+
+---
 
 ### 3. Добавить Jira secrets, если нужна синхронизация с Jira
 
@@ -206,6 +289,8 @@ JIRA_ISSUE_KEY_PATTERN=CG-\d+
 ```text
 JIRA_UPDATE_DESCRIPTION=false
 ```
+
+---
 
 ### 4. Проверить permissions
 
@@ -238,7 +323,8 @@ Workflow использует `pull_request_target`.
 - checkout делается из default branch;
 - анализ идёт только по `github.event`;
 - GitHub API вызывается из `dist/sync-github.js` только с `GITHUB_TOKEN`;
-- Jira API вызывается из `dist/sync-jira.js` только если заданы Jira secrets.
+- Jira API вызывается из `dist/sync-jira.js` только если заданы Jira secrets;
+- чувствительные данные берутся только из GitHub Secrets.
 
 ---
 
@@ -433,3 +519,26 @@ node dist/generate-test-checklist.js \
 - Режим `strict`/`non-strict`.
 - Отдельные правила для `bug`/`task`/`story`.
 - Прямая синхронизация с Jira REST API v3.
+- Clarity Score для оценки ясности задачи.
+- Классификация коммуникационных рисков.
+- Документация для портфолио и научной коммуникации.
+
+---
+
+## Roadmap
+
+- Интеграция с Yandex Tracker.
+- Дашборд качества задач по проекту.
+- Аналитика динамики Clarity Score.
+- Экспорт отчётов для ретро.
+- Рекомендации для менеджеров по улучшению постановки задач.
+- Сравнение качества задач до и после внедрения инструмента.
+- Исследование влияния ясности задач на скорость разработки и количество возвратов с тестирования.
+
+---
+
+## License
+
+This project is publicly visible for portfolio and review purposes.
+
+All rights reserved. You may not copy, modify, distribute, publish, sublicense, sell, use in production, or create derivative works based on this software without prior written permission from the author.
