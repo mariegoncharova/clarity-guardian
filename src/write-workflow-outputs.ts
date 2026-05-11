@@ -64,4 +64,4 @@ if (require.main === module) {
     console.error(message);
     process.exit(1);
   });
-} 
+}

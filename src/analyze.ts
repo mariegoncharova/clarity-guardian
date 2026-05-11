@@ -24,6 +24,7 @@ import {
   readJsonFile,
   readTextFile,
   replaceManagedBlock,
+  stripManagedBlock,
   writeJsonFile,
   writeTextFile
 } from './utils';
@@ -344,7 +345,7 @@ function normalizeTask(task: TaskPayload, config: ResolvedConfig): NormalizedTas
   };
 }
 
-function buildUpdatedBody(task: NormalizedTask, descriptionMarkdown: string): string {
+function buildUpdatedBody(body: string, descriptionMarkdown: string): string {
   const managedBlock = [
     DESCRIPTION_START_MARKER,
     descriptionMarkdown,
@@ -352,7 +353,7 @@ function buildUpdatedBody(task: NormalizedTask, descriptionMarkdown: string): st
   ].join('\n');
 
   return replaceManagedBlock(
-    task.body,
+    body,
     DESCRIPTION_START_MARKER,
     DESCRIPTION_END_MARKER,
     managedBlock
@@ -366,7 +367,19 @@ export function analyzeTask(
   } = {}
 ): AnalysisResult {
   const config = options.config || loadConfig();
-  const normalizedTask = normalizeTask(task, config);
+  const originalBody = normalizeText(task.body);
+  const bodyWithoutManagedBlock = stripManagedBlock(
+    originalBody,
+    DESCRIPTION_START_MARKER,
+    DESCRIPTION_END_MARKER
+  );
+  const normalizedTask = normalizeTask(
+    {
+      ...task,
+      body: bodyWithoutManagedBlock
+    },
+    config
+  );
 
   const requiredSections = getRequiredSections(
     config,
@@ -389,7 +402,7 @@ export function analyzeTask(
       normalizedTask.workItemType
     ),
     ...analyzeStopPhrases(
-      normalizedTask.body,
+      `${normalizedTask.title}\n${normalizedTask.body}`,
       stopPhrases,
       normalizedTask.language,
       config.mode
@@ -412,8 +425,8 @@ export function analyzeTask(
   );
 
   const updatedBody = config.updateDescription
-    ? buildUpdatedBody(normalizedTask, descriptionMarkdown)
-    : normalizedTask.body;
+    ? buildUpdatedBody(originalBody, descriptionMarkdown)
+    : originalBody;
 
   return {
     hasErrors,
@@ -425,7 +438,7 @@ export function analyzeTask(
     commentMarkdown,
     descriptionMarkdown,
     updatedBody,
-    shouldUpdateDescription: config.updateDescription && updatedBody !== normalizedTask.body
+    shouldUpdateDescription: config.updateDescription && updatedBody !== originalBody
   };
 }
 

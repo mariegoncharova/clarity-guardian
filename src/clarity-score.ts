@@ -56,7 +56,8 @@ export function calculateClarityScore(params: {
   body: string;
   remarks: Remark[];
 }): ClarityScoreResult {
-  const { body, remarks } = params;
+  const { title, body, remarks } = params;
+  const searchableText = `${title}\n${body}`;
 
   let score = 100;
   const communicationRisks: CommunicationRisk[] = [];
@@ -121,7 +122,7 @@ export function calculateClarityScore(params: {
     });
   }
 
-  if (hasAny(body, ['как обсуждали', 'как договорились', 'как в прошлый раз'])) {
+  if (hasAny(searchableText, ['как обсуждали', 'как договорились', 'как в прошлый раз'])) {
     score -= 10;
 
     communicationRisks.push({
@@ -137,7 +138,7 @@ export function calculateClarityScore(params: {
     });
   }
 
-  if (!hasAny(body, ['пользователь', 'клиент', 'роль', 'сценарий', 'user', 'client', 'customer', 'scenario'])) {
+  if (!hasAny(searchableText, ['пользователь', 'клиент', 'роль', 'сценарий', 'user', 'client', 'customer', 'scenario'])) {
     score -= 10;
 
     communicationRisks.push({
@@ -153,7 +154,7 @@ export function calculateClarityScore(params: {
     });
   }
 
-  if (!hasAny(body, ['проверить', 'qa', 'тест', 'test', 'expected', 'ожидается'])) {
+  if (!hasAny(searchableText, ['проверить', 'qa', 'тест', 'test', 'expected', 'ожидается'])) {
     score -= 10;
 
     communicationRisks.push({
@@ -168,8 +169,8 @@ export function calculateClarityScore(params: {
   }
 
   if (
-    hasAny(body, ['реализовать', 'добавить endpoint', 'изменить метод', 'поменять компонент']) &&
-    !hasAny(body, ['зачем', 'проблема', 'цель', 'пользователь', 'ценность'])
+    hasAny(searchableText, ['реализовать', 'добавить endpoint', 'изменить метод', 'поменять компонент']) &&
+    !hasAny(searchableText, ['зачем', 'проблема', 'цель', 'пользователь', 'ценность'])
   ) {
     score -= 10;
 

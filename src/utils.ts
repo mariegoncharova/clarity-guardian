@@ -117,6 +117,22 @@ export function replaceManagedBlock(
   return `${normalizedBody}\n\n${normalizedBlock}`;
 }
 
+export function stripManagedBlock(
+  body: string,
+  startMarker: string,
+  endMarker: string
+): string {
+  const normalizedBody = normalizeText(body);
+  const escapedStart = startMarker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const escapedEnd = endMarker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const managedBlockRegex = new RegExp(
+    `\\n*${escapedStart}[\\s\\S]*?${escapedEnd}\\n*`,
+    'm'
+  );
+
+  return normalizeText(normalizedBody.replace(managedBlockRegex, '\n\n'));
+}
+
 export function getBooleanEnv(name: string, defaultValue: boolean): boolean {
   const value = process.env[name];
 

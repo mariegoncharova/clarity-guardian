@@ -405,6 +405,15 @@ async function smokeAnalyze() {
   assert(codes.includes('undefined_solution'), 'Project stop phrase should detect undefined solution');
   assert(codes.includes('vague_quality'), 'Project stop phrase should detect vague quality');
 
+  const titleOnlyStopPhrase = analyze({
+    ...validRussianTask(),
+    title: 'Потом уточним оплату после 3DS'
+  }, { prefix: 'title-only-stop-phrase' });
+  assert(
+    getRemarks(titleOnlyStopPhrase.result).some((remark) => remark.code === 'deferred_context'),
+    'Stop phrases should be detected in task title'
+  );
+
   const english = analyze({
     ...validEnglishStory(),
     body: `${validEnglishStory().body}\n\nThis is TBD and we can figure it out later.`
@@ -665,4 +674,4 @@ async function smokeJiraSkip() {
 })().catch((error) => {
   console.error(error instanceof Error ? error.message : error);
   process.exit(1);
-}); 
+});
