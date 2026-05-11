@@ -1,35 +1,43 @@
 # Clarity Guardian
 
-**Clarity Guardian** - бот, который защищает команду от испорченного телефона между менеджером, разработчиком и тестировщиком.
+**Clarity Guardian** - бот, который защищает команду от эффекта “испорченного телефона” между менеджером, разработчиком и тестировщиком.
 
 Он проверяет качество постановки задач в GitHub Issues, Pull Requests и Jira: ищет недостающий контекст, неясный ожидаемый результат, непроверяемые критерии приёмки и формулировки, которые могут привести к разной интерпретации задачи.
 
----
-
-## Why this project matters
-
-Clarity Guardian is not only an automation bot. It is a project about technical and scientific communication in software development.
-
-In IT teams, a task description often becomes the main unit of knowledge transfer between roles. If the task is unclear, each participant interprets it differently: a manager expects one result, a developer implements another, and a QA engineer checks a third version of the truth.
-
-The project applies principles of scientific communication to engineering workflows:
-
-- clarity of context;
-- explicit expected results;
-- verifiable acceptance criteria;
-- reproducible testing scenarios;
-- reduction of ambiguity;
-- transformation of implicit knowledge into written, reviewable knowledge.
-
-This makes Clarity Guardian a practical tool for improving communication quality in IT teams.
+Проект создан как инструмент на стыке IT, QA, автоматизации и научной коммуникации. Его цель - сделать передачу смысла в команде более ясной, проверяемой и воспроизводимой.
 
 ---
 
-## Project documentation
+## Почему этот проект важен
 
-- [Communication Guide](docs/COMMUNICATION_GUIDE.md) - practical guide for writing clear tasks.
-- [Scientific Communication Rationale](docs/SCIENTIFIC_COMMUNICATION.md) - explanation of the project through the lens of scientific and technical communication.
-- [Portfolio Case](docs/PORTFOLIO_CASE.md) - short case description for reviewers and admissions portfolio.
+Clarity Guardian - это не просто бот для автоматизации GitHub или Jira. Это проект о качестве технической и научной коммуникации в разработке.
+
+В IT-командах описание задачи часто становится основной единицей передачи знания между ролями. Если задача описана неясно, каждый участник процесса интерпретирует её по-своему:
+
+- менеджер ожидает один результат;
+- разработчик реализует своё понимание;
+- тестировщик проверяет третью версию смысла.
+
+Так возникает эффект “испорченного телефона”: исходная идея теряется между постановкой задачи, реализацией и проверкой.
+
+Проект применяет принципы научной коммуникации к инженерному процессу:
+
+- ясный контекст;
+- явно сформулированный ожидаемый результат;
+- проверяемые критерии приёмки;
+- воспроизводимые сценарии тестирования;
+- снижение неоднозначности;
+- перевод неявных договорённостей в письменное и проверяемое знание.
+
+Clarity Guardian помогает сделать коммуникацию в IT-команде более точной, прозрачной и воспроизводимой.
+
+---
+
+## Документация проекта
+
+- [Communication Guide](docs/COMMUNICATION_GUIDE.md) - практический гайд по написанию понятных задач.
+- [Scientific Communication Rationale](docs/SCIENTIFIC_COMMUNICATION.md) - объяснение проекта через призму научной и технической коммуникации.
+- [Portfolio Case](docs/PORTFOLIO_CASE.md) - краткое описание проекта как портфельного кейса.
 
 ---
 
@@ -143,7 +151,7 @@ CLARITY_GUARDIAN_MODE=non-strict
 
 ---
 
-## Английские шаблоны
+## Русские и английские шаблоны
 
 Язык определяется автоматически по заголовкам в описании или задаётся явно:
 
@@ -152,6 +160,15 @@ CLARITY_GUARDIAN_MODE=non-strict
   "language": "auto"
 }
 ```
+
+Поддерживаются русские разделы:
+
+- `## Контекст`
+- `## Ожидаемый результат`
+- `## Критерии приёмки`
+- `## Шаги воспроизведения`
+- `## Фактический результат`
+- `## Пользовательская история`
 
 Поддерживаются английские разделы:
 
@@ -537,8 +554,8 @@ node dist/generate-test-checklist.js \
 
 ---
 
-## License
+## Лицензия
 
-This project is publicly visible for portfolio and review purposes.
+Проект публично доступен для просмотра в портфолио и ревью.
 
-All rights reserved. You may not copy, modify, distribute, publish, sublicense, sell, use in production, or create derivative works based on this software without prior written permission from the author.
+Все права защищены. Нельзя копировать, изменять, распространять, публиковать, продавать, использовать в production или создавать производные работы на основе этого проекта без письменного разрешения автора.
