@@ -244,6 +244,20 @@ function validEnglishStory(
   };
 }
 
+function smokeDockerConfiguration(): void {
+  const dockerfile = fs.readFileSync(path.join(rootDir, 'Dockerfile'), 'utf8');
+  const dockerignore = fs.readFileSync(path.join(rootDir, '.dockerignore'), 'utf8');
+
+  assert(
+    dockerfile.includes('tsconfig.build.json'),
+    'Dockerfile should copy tsconfig.build.json for npm run build'
+  );
+  assert(
+    dockerignore.includes('node_modules') && dockerignore.includes('dist'),
+    '.dockerignore should exclude local install and build artifacts'
+  );
+}
+
 function smokePrepareEventPayload(): void {
   const eventPath = writeJson('github-event.json', {
     action: 'ready_for_review',
@@ -660,6 +674,7 @@ async function smokeJiraSkip() {
 
 (async () => {
   try {
+    smokeDockerConfiguration();
     smokePrepareEventPayload();
     smokeWorkflowOutputs();
     await smokeAnalyze();
