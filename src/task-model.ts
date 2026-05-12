@@ -1,0 +1,154 @@
+import {
+  detectLanguage,
+  detectWorkItemType,
+  loadConfig
+} from './config';
+
+import { normalizeText } from './utils';
+
+import type {
+  ResolvedConfig,
+  TaskPayload,
+  UnifiedTask,
+  WorkItemType
+} from './types';
+
+function normalizeList(values: unknown): string[] {
+  if (!Array.isArray(values)) {
+    return [];
+  }
+
+  return values
+    .map((value) => normalizeText(value))
+    .filter(Boolean);
+}
+
+function normalizeWorkItemType(value: unknown): WorkItemType | undefined {
+  const normalized = normalizeText(value).toLowerCase();
+
+  if (normalized.includes('bug') || normalized.includes('defect') || normalized.includes('ошибка')) {
+    return 'bug';
+  }
+
+  if (normalized.includes('story') || normalized.includes('история')) {
+    return 'story';
+  }
+
+  if (normalized.includes('task') || normalized.includes('задача')) {
+    return 'task';
+  }
+
+  return undefined;
+}
+
+export function taskPayloadToUnifiedTask(
+  payload: TaskPayload,
+  source: UnifiedTask['source'] = 'github'
+): UnifiedTask {
+  const id = [
+    source,
+    payload.repository,
+    payload.number || payload.title || 'task'
+  ].filter(Boolean).join(':');
+
+  return {
+    id,
+    source,
+    type: payload.type || 'issue',
+    key: typeof payload.number === 'number' ? String(payload.number) : undefined,
+    title: normalizeText(payload.title),
+    body: normalizeText(payload.body),
+    url: payload.htmlUrl,
+    projectKey: payload.repository,
+    status: payload.isDraft ? 'Draft' : undefined,
+    author: undefined,
+    assignee: undefined,
+    createdAt: undefined,
+    updatedAt: undefined,
+    workItemType: payload.workItemType,
+    tags: payload.labels || [],
+    components: [],
+    queue: payload.repository
+  };
+}
+
+export function unifiedTaskToTaskPayload(
+  task: UnifiedTask,
+  config: ResolvedConfig = loadConfig()
+): TaskPayload {
+  const labels = [
+    ...(task.tags || []),
+    ...(task.components || []),
+    task.workItemType || ''
+  ].filter(Boolean);
+  const draft = task.status ? /draft/i.test(task.status) : false;
+
+  return {
+    type: task.type || 'issue',
+    number: Number.isFinite(Number(task.key)) ? Number(task.key) : undefined,
+    title: normalizeText(task.title),
+    body: normalizeText(task.body),
+    labels,
+    isDraft: draft,
+    repository: task.projectKey || task.queue,
+    htmlUrl: task.url,
+    workItemType: task.workItemType || detectWorkItemType({
+      title: task.title,
+      body: task.body,
+      labels
+    }),
+    language: detectLanguage({
+      title: task.title,
+      body: task.body,
+      labels
+    }, config)
+  };
+}
+
+export function normalizeUnifiedTask(raw: Record<string, unknown>): UnifiedTask {
+  const tags = normalizeList(raw.tags);
+  const components = normalizeList(raw.components);
+  const workItemType = normalizeWorkItemType(raw.workItemType || raw.type);
+  const source = normalizeText(raw.source) as UnifiedTask['source'];
+  const id = normalizeText(raw.id || raw.key || raw.title || `task-${Date.now()}`);
+
+  return {
+    id,
+    source: source || 'file',
+    type: raw.taskType === 'pr' || raw.type === 'pr' ? 'pr' : 'issue',
+    key: normalizeText(raw.key) || undefined,
+    title: normalizeText(raw.title || raw.summary),
+    body: normalizeText(raw.body || raw.description),
+    url: normalizeText(raw.url) || undefined,
+    projectKey: normalizeText(raw.projectKey || raw.project) || undefined,
+    queue: normalizeText(raw.queue) || undefined,
+    status: normalizeText(raw.status) || undefined,
+    assignee: normalizeText(raw.assignee) || undefined,
+    author: normalizeText(raw.author) || undefined,
+    createdAt: normalizeText(raw.createdAt) || undefined,
+    updatedAt: normalizeText(raw.updatedAt) || undefined,
+    workItemType,
+    priority: normalizeText(raw.priority) || undefined,
+    tags,
+    components,
+    period: raw.period === 'before' || raw.period === 'after' ? raw.period : undefined,
+    metrics: typeof raw.metrics === 'object' && raw.metrics !== null
+      ? raw.metrics as UnifiedTask['metrics']
+      : undefined
+  };
+}
+
+export function normalizeUnifiedTasks(value: unknown): UnifiedTask[] {
+  const items = Array.isArray(value)
+    ? value
+    : typeof value === 'object' && value !== null && Array.isArray((value as { tasks?: unknown[] }).tasks)
+      ? (value as { tasks: unknown[] }).tasks
+      : [];
+
+  return items
+    .filter((item): item is Record<string, unknown> =>
+      typeof item === 'object' && item !== null
+    )
+    .map(normalizeUnifiedTask)
+    .filter((task) => task.title || task.body);
+}

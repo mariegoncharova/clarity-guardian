@@ -1,6 +1,7 @@
 node_modules/
 dist/
 .smoke-dist/
+reports/
 
 clarity-event.json
 clarity-analysis-comment.md

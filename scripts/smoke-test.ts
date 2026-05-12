@@ -32,10 +32,63 @@ interface ChecklistSmokeResult {
   workItemType?: string;
 }
 
+interface DashboardSmokeResult {
+  totalTasks?: number;
+  averageScore?: number;
+  quality?: {
+    good?: number;
+    medium?: number;
+    poor?: number;
+  };
+  topProblems?: Array<{
+    name?: string;
+    count?: number;
+  }>;
+  lowestScoreTasks?: Array<{
+    score?: number;
+  }>;
+  trendByWeek?: Array<{
+    name?: string;
+    count?: number;
+  }>;
+}
+
+interface BeforeAfterSmokeResult {
+  before?: {
+    averageScore?: number;
+    lowQualityTasks?: number;
+  };
+  after?: {
+    averageScore?: number;
+    lowQualityTasks?: number;
+  };
+  delta?: {
+    averageScore?: number;
+    lowQualityTasks?: number;
+    missingAcceptanceCriteria?: number;
+    missingContext?: number;
+    qaReturns?: number;
+  };
+}
+
+interface UnifiedTaskSmokeResult {
+  id?: string;
+  source?: string;
+  title?: string;
+  body?: string;
+  status?: string;
+  assignee?: string;
+  author?: string;
+  workItemType?: string;
+  tags?: string[];
+  components?: string[];
+}
+
 interface RecordedCall {
   method: string | undefined;
   url: string | undefined;
   body: string;
+  headers?: http.IncomingHttpHeaders;
 }
 
 interface AnalyzeOutput {
@@ -459,6 +512,143 @@ async function smokeChecklist() {
   assert(generated.comment.includes('testing checklist'), 'Checklist comment should use English template');
 }
 
+function smokeYandexTrackerMockInput(): void {
+  const rawPath = writeJson('yandex-raw.json', [
+    {
+      key: 'CG-301',
+      summary: 'Bug: checkout payment error',
+      description: '## Context\nPayment fails for buyers.\n\n## Expected result\nBuyer sees a retryable error.\n\n## Acceptance criteria\n- Error is visible.',
+      status: { display: 'Open' },
+      assignee: { display: 'Anna QA' },
+      createdBy: { display: 'Maria PM' },
+      type: { key: 'bug', display: 'Bug' },
+      priority: { display: 'High' },
+      tags: ['payment']
+    },
+    {
+      key: 'CG-302',
+      summary: 'Task without optional fields'
+    }
+  ]);
+  const outputPath = path.join(tmpDir, 'yandex-tasks.json');
+
+  runNode([
+    'dist/yandex-tracker.js',
+    '--mock-input',
+    rawPath,
+    '--output',
+    outputPath
+  ]);
+
+  const tasks = readJson<UnifiedTaskSmokeResult[]>(outputPath);
+
+  assert(tasks.length === 2, 'Yandex Tracker mock input should produce two tasks');
+  assert(tasks[0].source === 'yandex-tracker', 'Yandex tasks should use tracker source');
+  assert(tasks[0].workItemType === 'bug', 'Yandex adapter should map tracker issue type');
+  assert(tasks[0].assignee === 'Anna QA', 'Yandex adapter should map assignee');
+  assert(Array.isArray(tasks[1].tags), 'Yandex adapter should fallback missing tags to an array');
+}
+
+async function smokeYandexTrackerApi(): Promise<void> {
+  const outputPath = path.join(tmpDir, 'yandex-api-tasks.json');
+  const calls: RecordedCall[] = [];
+
+  await withServer((request, response) => {
+    let body = '';
+
+    request.on('data', (chunk: Buffer) => {
+      body += chunk.toString();
+    });
+    request.on('end', () => {
+      calls.push({
+        method: request.method,
+        url: request.url,
+        body,
+        headers: request.headers
+      });
+      response.setHeader('content-type', 'application/json');
+
+      if (
+        request.method === 'POST' &&
+        request.url?.startsWith('/v3/issues/_search?fields=')
+      ) {
+        response.end(JSON.stringify([
+          {
+            key: 'CG-401',
+            summary: 'Tracker task from API',
+            description: '## Context\nAPI task.\n\n## Expected result\nTask is imported.\n\n## Acceptance criteria\n- Import works.',
+            queue: { key: 'CG' },
+            status: { display: 'Open' }
+          }
+        ]));
+        return;
+      }
+
+      response.statusCode = 404;
+      response.end(JSON.stringify({ error: request.url }));
+    });
+  }, async (baseUrl) => {
+    await runNodeAsync([
+      'dist/yandex-tracker.js',
+      '--output',
+      outputPath
+    ], {
+      env: {
+        YANDEX_TRACKER_TOKEN: 'tracker-token',
+        YANDEX_TRACKER_ORG_ID: 'org-1',
+        YANDEX_TRACKER_QUEUE: 'CG',
+        YANDEX_TRACKER_BASE_URL: baseUrl
+      }
+    });
+  });
+
+  const tasks = readJson<UnifiedTaskSmokeResult[]>(outputPath);
+  const searchCall = calls.find((call) => call.method === 'POST');
+
+  assert(tasks.length === 1, 'Yandex Tracker API adapter should write fetched tasks');
+  assert(searchCall?.headers?.authorization === 'OAuth tracker-token', 'Yandex request should use OAuth token');
+  assert(searchCall?.headers?.['x-org-id'] === 'org-1', 'Yandex request should send organization header');
+  assert(Boolean(searchCall?.body.includes('"queue":"CG"')), 'Yandex request should search by queue');
+}
+
+function smokeV2Reports(): void {
+  const outDir = path.join(tmpDir, 'v2-report');
+
+  runNode([
+    'dist/v2-report.js',
+    '--demo',
+    '--out-dir',
+    outDir,
+    '--analyzed-at',
+    '2026-05-12T00:00:00.000Z'
+  ]);
+
+  const dashboard = readJson<DashboardSmokeResult>(path.join(outDir, 'dashboard.json'));
+  const comparison = readJson<BeforeAfterSmokeResult>(path.join(outDir, 'before-after.json'));
+  const history = fs.readFileSync(path.join(outDir, 'clarity-history.jsonl'), 'utf8').trim().split('\n');
+  const retro = fs.readFileSync(path.join(outDir, 'retro-report.md'), 'utf8');
+  const research = fs.readFileSync(path.join(outDir, 'research-report.md'), 'utf8');
+  const csv = fs.readFileSync(path.join(outDir, 'tasks.csv'), 'utf8');
+  const html = fs.readFileSync(path.join(outDir, 'dashboard.html'), 'utf8');
+  const taskHistory = readJson<Record<string, unknown>>(path.join(outDir, 'task-history.json'));
+
+  assert(dashboard.totalTasks === 8, 'V2 demo dashboard should analyze demo tasks');
+  assert((dashboard.averageScore || 0) > 0, 'V2 dashboard should calculate average score');
+  assert((dashboard.quality?.good || 0) > 0, 'V2 dashboard should include good tasks');
+  assert((dashboard.quality?.medium || 0) > 0, 'V2 dashboard should include medium tasks');
+  assert((dashboard.quality?.poor || 0) > 0, 'V2 dashboard should include poor tasks');
+  assert((dashboard.topProblems || []).length > 0, 'V2 dashboard should include top problems');
+  assert((dashboard.trendByWeek || []).length > 0, 'V2 dashboard should include weekly trend');
+  assert((comparison.delta?.averageScore || 0) > 0, 'Before/after comparison should show demo improvement');
+  assert((comparison.delta?.lowQualityTasks || 0) < 0, 'Before/after comparison should reduce low-quality tasks');
+  assert(history.length === 8, 'History JSONL should include one row per task');
+  assert(Boolean(taskHistory['demo-before-1']), 'Task score history should be grouped by task');
+  assert(retro.includes('Clarity Guardian Retro Report'), 'Retro markdown should be generated');
+  assert(research.includes('может указывать на корреляцию'), 'Research report should use careful wording');
+  assert(csv.startsWith('id,key,source,title'), 'CSV export should include a header row');
+  assert(html.includes('Clarity Guardian Dashboard'), 'Dashboard HTML should be generated');
+}
+
 async function smokeGitHubSync() {
   const payloadPath = writeJson('github-payload.json', {
     type: 'issue',
@@ -679,6 +869,9 @@ async function smokeJiraSkip() {
     smokeWorkflowOutputs();
     await smokeAnalyze();
     await smokeChecklist();
+    smokeYandexTrackerMockInput();
+    await smokeYandexTrackerApi();
+    smokeV2Reports();
     await smokeGitHubSync();
     await smokeJiraSync();
     await smokeJiraSkip();

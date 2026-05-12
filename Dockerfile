@@ -15,6 +15,7 @@ WORKDIR /app
 COPY package.json ./
 COPY clarity-guardian.config.json ./
 COPY --from=build /app/dist ./dist
+COPY data ./data
 COPY templates ./templates
 COPY docs ./docs
 

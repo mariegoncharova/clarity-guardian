@@ -11,8 +11,11 @@ import {
 
 import {
   calculateClarityScore,
+  type ClarityScoreResult,
   formatClarityScoreMarkdown
 } from './clarity-score';
+
+import { generateManagerRecommendations } from './recommendations';
 
 import {
   countNonWhitespaceChars,
@@ -57,6 +60,7 @@ const LOCALIZED_TEXT = {
     modeLabel: 'Режим',
     languageLabel: 'Язык',
     whatToFix: '### Что нужно поправить',
+    managerRecommendations: '### Рекомендации для менеджера',
     noRemarks: 'Замечаний нет.',
     error: 'Ошибка',
     advice: 'Совет',
@@ -77,6 +81,7 @@ const LOCALIZED_TEXT = {
     modeLabel: 'Mode',
     languageLabel: 'Language',
     whatToFix: '### What to fix',
+    managerRecommendations: '### Manager recommendations',
     noRemarks: 'No remarks.',
     error: 'Error',
     advice: 'Advice',
@@ -256,26 +261,26 @@ function formatRemarks(task: NormalizedTask, remarks: Remark[]): string {
   }).join('\n');
 }
 
-function buildClarityScoreBlock(task: NormalizedTask, remarks: Remark[]): string {
-  const clarityScore = calculateClarityScore({
-    title: task.title,
-    body: task.body,
-    remarks
-  });
-
+function buildClarityScoreBlock(clarityScore: ClarityScoreResult): string {
   return formatClarityScoreMarkdown(clarityScore);
+}
+
+function formatRecommendations(recommendations: string[]): string {
+  return recommendations.map((recommendation) => `- ${recommendation}`).join('\n');
 }
 
 function buildManagerChecklistComment(
   task: NormalizedTask,
   remarks: Remark[],
-  mode: ClarityMode
+  mode: ClarityMode,
+  clarityScore: ClarityScoreResult,
+  managerRecommendations: string[]
 ): string {
   const managerChecklistPath = getTemplatePath('manager-checklist', task.language);
   const managerChecklist = readTextFile(managerChecklistPath);
   const text = LOCALIZED_TEXT[task.language];
   const remarksMarkdown = formatRemarks(task, remarks);
-  const clarityScoreMarkdown = buildClarityScoreBlock(task, remarks);
+  const clarityScoreMarkdown = buildClarityScoreBlock(clarityScore);
 
   return [
     '<!-- clarity-guardian:analysis -->',
@@ -296,6 +301,10 @@ function buildManagerChecklistComment(
     '',
     remarksMarkdown || text.noRemarks,
     '',
+    text.managerRecommendations,
+    '',
+    formatRecommendations(managerRecommendations),
+    '',
     '---',
     '',
     managerChecklist,
@@ -309,11 +318,13 @@ function buildManagerChecklistComment(
 function buildDescriptionBlock(
   task: NormalizedTask,
   remarks: Remark[],
-  mode: ClarityMode
+  mode: ClarityMode,
+  clarityScore: ClarityScoreResult,
+  managerRecommendations: string[]
 ): string {
   const text = LOCALIZED_TEXT[task.language];
   const remarksMarkdown = formatRemarks(task, remarks);
-  const clarityScoreMarkdown = buildClarityScoreBlock(task, remarks);
+  const clarityScoreMarkdown = buildClarityScoreBlock(clarityScore);
 
   return [
     text.descriptionTitle,
@@ -327,7 +338,11 @@ function buildDescriptionBlock(
     '',
     clarityScoreMarkdown,
     '',
-    remarksMarkdown || text.noRemarks
+    remarksMarkdown || text.noRemarks,
+    '',
+    text.managerRecommendations,
+    '',
+    formatRecommendations(managerRecommendations)
   ].join('\n');
 }
 
@@ -411,17 +426,31 @@ export function analyzeTask(
 
   const hasErrors = remarks.some((remark) => remark.level === 'error');
   const hasWarnings = remarks.some((remark) => remark.level === 'warning');
+  const clarityScore = calculateClarityScore({
+    title: normalizedTask.title,
+    body: normalizedTask.body,
+    remarks
+  });
+  const managerRecommendations = generateManagerRecommendations(
+    normalizedTask,
+    remarks,
+    clarityScore
+  );
 
   const commentMarkdown = buildManagerChecklistComment(
     normalizedTask,
     remarks,
-    config.mode
+    config.mode,
+    clarityScore,
+    managerRecommendations
   );
 
   const descriptionMarkdown = buildDescriptionBlock(
     normalizedTask,
     remarks,
-    config.mode
+    config.mode,
+    clarityScore,
+    managerRecommendations
   );
 
   const updatedBody = config.updateDescription
@@ -435,6 +464,8 @@ export function analyzeTask(
     language: normalizedTask.language,
     workItemType: normalizedTask.workItemType,
     remarks,
+    clarityScore,
+    managerRecommendations,
     commentMarkdown,
     descriptionMarkdown,
     updatedBody,
