@@ -1,132 +1,281 @@
-# Clarity Guardian V2
+# Clarity Guardian
 
-**Clarity Guardian** - инструмент для анализа качества постановки задач в продуктовой и инженерной команде.
+**Clarity Guardian** - инструмент для анализа качества постановки задач в продуктовых и инженерных командах.
 
-Проект начался как GitHub Issue/PR bot: он проверял, хватает ли в задаче контекста, ожидаемого результата и критериев приёмки. В **Version 2** Clarity Guardian становится лёгким PM analytics tool: анализирует качество задач по проекту, считает Clarity Score, показывает динамику, готовит retro reports и помогает менеджерам улучшать формулировки.
+Проект помогает сделать качество задач видимым, измеримым и обсуждаемым. Он анализирует описания задач из GitHub, Jira, Yandex Tracker, JSON-файлов и demo data, рассчитывает **Clarity Score**, выявляет типовые коммуникационные риски, формирует рекомендации для менеджеров и готовит отчёты для ретроспектив.
 
-Проект специально сделан простым и demo-friendly: без тяжёлого backend, отдельной БД и сложного frontend. V2 работает с JSON-данными, demo data, GitHub payload и Yandex Tracker.
+Clarity Guardian вырос из GitHub Issue/PR bot, который проверял наличие контекста, ожидаемого результата и критериев приёмки. Сейчас проект работает как лёгкий PM analytics tool: он не просто подсвечивает проблемы в отдельных задачах, а показывает качество постановки задач на уровне проекта, команды и периода.
 
----
-
-## Что нового в V2
-
-- Unified task model для GitHub, Jira, Yandex Tracker, файлов и demo data.
-- Yandex Tracker adapter с импортом задач по `queue`, `project`, `keys` или `query`.
-- История Clarity Score в JSONL.
-- Project quality dashboard в JSON, Markdown, CSV и статическом HTML.
-- Генерация retro report.
-- Сравнение периодов `before/after` для portfolio storytelling.
-- Research notes о возможной связи ясности задач со сроками разработки, QA returns, comments и изменениями описания.
-- Manager recommendations, связанные с найденными проблемами.
-- Demo dataset, который работает без реального доступа к GitHub, Jira или Yandex Tracker.
+Проект специально сделан простым и demo-friendly: без тяжёлого backend, отдельной базы данных и сложного frontend. Все ключевые сценарии можно показать локально на JSON-данных, demo dataset или через интеграции с рабочими трекерами.
 
 ---
 
-## Product Idea
+## Зачем нужен Clarity Guardian
 
-Плохо описанные задачи создают communication gap между PM, разработчиком и QA. Задача может быть заведена в трекере, но всё равно не объяснять:
+В продуктовой разработке задача может быть формально заведена в трекере, но при этом оставаться непонятной для команды.
 
-- зачем команда делает эту задачу;
-- какую пользовательскую проблему она решает;
+Например, в задаче может быть неясно:
+
+- зачем команда делает это изменение;
+- какую пользовательскую проблему оно решает;
 - какое поведение считается правильным;
-- как QA должен это проверить;
-- что считается done.
+- как QA должен проверять результат;
+- что именно считается готовым;
+- какие договорённости уже были приняты вне задачи.
 
-Clarity Guardian превращает качество постановки задач в видимые и измеримые сигналы:
+Такие пробелы создают communication gap между менеджером, разработчиком и тестировщиком. В результате появляются уточняющие вопросы, возвраты с тестирования, лишние комментарии, задержки и повторная работа.
+
+Clarity Guardian переводит качество постановки задач из субъективного ощущения в набор понятных сигналов:
 
 - **Clarity Score** по каждой задаче;
-- recurring problem categories;
+- категории найденных проблем;
+- повторяющиеся коммуникационные риски;
 - рекомендации для менеджеров;
-- project-level dashboard;
-- retro-ready reports.
+- dashboard по качеству задач;
+- отчёты для ретроспектив;
+- сравнение качества задач до и после внедрения инструмента.
 
 ---
 
-## Для кого этот инструмент
+## Для кого этот проект
 
-- **Project Managers** - чтобы улучшать task handoff и снижать неоднозначность.
-- **Product Managers** - чтобы связывать задачи с user value.
-- **QA engineers** - чтобы получать testable acceptance criteria.
-- **Engineering teams** - чтобы уменьшать misunderstandings и avoidable rework.
-- **Portfolio reviewers** - чтобы увидеть product thinking, automation и ясную архитектуру в одном проекте.
+### Project Managers
+
+Чтобы улучшать task handoff, снижать неоднозначность требований и видеть, какие проблемы в постановке задач повторяются чаще всего.
+
+### Product Managers
+
+Чтобы связывать задачи с пользовательской ценностью, бизнес-контекстом и ожидаемым результатом.
+
+### QA engineers
+
+Чтобы быстрее понимать, что именно проверять, какие критерии приёмки есть у задачи и где описание недостаточно тестируемое.
+
+### Engineering teams
+
+Чтобы уменьшать количество недопониманий, уточнений, возвратов и лишней переработки.
+
+### Portfolio reviewers
+
+Чтобы увидеть проект, в котором соединены product thinking, PM-подход, инженерная логика, автоматизация и аккуратная аналитика.
 
 ---
 
 ## Основные возможности
 
-### Task Analysis
+### 1. Анализ качества задачи
 
-Clarity Guardian проверяет:
+Clarity Guardian проверяет описание задачи и определяет, достаточно ли в нём информации для передачи в разработку и тестирование.
+
+Проверяются:
 
 - обязательные разделы;
-- пустые или слишком короткие разделы;
-- vague wording и project-specific stop phrases;
-- hidden agreements вроде “как обсуждали”;
-- отдельные правила для `bug`, `task`, `story`;
-- `strict` и `non-strict` режимы;
-- русские и английские шаблоны.
+- пустые или слишком короткие блоки;
+- vague wording;
+- project-specific stop phrases;
+- скрытые договорённости вроде "как обсуждали";
+- наличие ожидаемого результата;
+- наличие критериев приёмки;
+- тестируемость требований;
+- различия между bug, task и story;
+- русские и английские шаблоны;
+- strict и non-strict режимы.
 
-### Clarity Score
+Примеры проблемных формулировок:
 
-Каждая задача получает score от `0` до `100`.
+- "сделать красиво";
+- "как обсуждали";
+- "потом уточним";
+- "доработать логику" без описания ожидаемого поведения;
+- "исправить баг" без шагов воспроизведения;
+- "проверить оплату" без критериев успешности.
+
+---
+
+### 2. Unified Task Model
+
+Проект приводит задачи из разных источников к единой модели.
+
+Поддерживаются:
+
+- GitHub Issues;
+- GitHub Pull Requests;
+- Jira;
+- Yandex Tracker;
+- JSON-файлы;
+- demo dataset.
+
+Это позволяет анализировать задачи одинаково независимо от того, где команда ведёт работу.
+
+Пример unified task:
+
+```json
+{
+  "id": "TASK-1",
+  "source": "file",
+  "title": "Checkout success page",
+  "body": "## Context\n...\n\n## Expected result\n...\n\n## Acceptance criteria\n- ...",
+  "status": "Done",
+  "author": "PM",
+  "assignee": "Developer",
+  "period": "after",
+  "metrics": {
+    "cycleTimeHours": 24,
+    "qaReturns": 0,
+    "commentsCount": 4,
+    "descriptionChanges": 1
+  }
+}
+```
+
+---
+
+### 3. Clarity Score
+
+Каждая задача получает оценку от 0 до 100.
+
+Score помогает быстро понять, насколько задача готова к передаче в разработку и тестирование.
 
 Quality buckets:
 
-- `80-100`: good;
-- `50-79`: medium;
-- `0-49`: poor.
+- **80-100** - good;
+- **50-79** - medium;
+- **0-49** - poor.
 
-Score учитывает структурную полноту описания, найденные remarks, communication risks и testability.
+Clarity Score учитывает:
 
-### Manager Recommendations
+- структурную полноту описания;
+- наличие контекста;
+- наличие ожидаемого результата;
+- наличие критериев приёмки;
+- количество найденных замечаний;
+- коммуникационные риски;
+- тестируемость задачи;
+- потенциальную неоднозначность для команды.
 
-Рекомендации не генерируются случайно. Они связаны с найденными проблемами.
+---
 
-Примеры:
+### 4. Manager Recommendations
+
+Clarity Guardian не выдаёт случайные советы. Рекомендации связаны с конкретными проблемами, найденными в задаче.
+
+Примеры рекомендаций:
 
 - добавить business context;
 - уточнить expected result;
-- добавить acceptance criteria как checklist или Given/When/Then;
-- добавить reproduction steps для bugs;
+- добавить acceptance criteria в формате checklist или Given/When/Then;
+- добавить reproduction steps для bug;
 - заменить vague wording на конкретные требования;
-- split task, если в задаче смешано несколько изменений.
+- разделить задачу, если в ней смешано несколько изменений;
+- явно указать, что считается done;
+- добавить ограничения, зависимости или edge cases.
 
-### Project Dashboard
+Такой подход помогает менеджеру не просто увидеть проблему, а сразу понять, как улучшить постановку задачи.
 
-V2 dashboard показывает:
+---
 
-- total analyzed tasks;
-- average Clarity Score;
+### 5. Project Quality Dashboard
+
+Dashboard показывает качество задач на уровне проекта.
+
+Он включает:
+
+- общее количество проанализированных задач;
+- средний Clarity Score;
 - количество good, medium и poor задач;
 - top problems;
-- status distribution;
-- author и assignee distribution;
-- lowest score tasks;
-- score trend по дням и неделям.
+- распределение по статусам;
+- распределение по авторам;
+- распределение по assignee;
+- задачи с самым низким score;
+- динамику score по дням и неделям.
 
-### Retro Reports
+Dashboard можно экспортировать в нескольких форматах:
+
+- JSON;
+- Markdown;
+- CSV;
+- static HTML.
+
+Это делает проект удобным как для локальной демонстрации, так и для портфолио.
+
+---
+
+### 6. Retro Reports
+
+Clarity Guardian формирует отчёт, который можно использовать на ретроспективе.
 
 Retro report включает:
 
-- period summary;
-- score distribution;
+- summary за выбранный период;
+- распределение задач по качеству;
+- средний Clarity Score;
 - top team problems;
-- `before/after` dynamics;
-- examples of tasks requiring attention;
-- team recommendations;
-- блок “what to improve in task writing”.
+- before/after dynamics;
+- примеры задач, требующих внимания;
+- рекомендации для команды;
+- блок "what to improve in task writing".
 
-### Research Hypothesis
+Такой отчёт помогает обсуждать не только скорость разработки, но и качество коммуникации внутри команды.
 
-Проект включает осторожный analytics module для гипотезы:
+---
 
-> Более ясные задачи могут коррелировать с более быстрой разработкой, меньшим количеством QA returns, clarification comments и description changes.
+### 7. Before/After Comparison
 
-Report не утверждает причинно-следственную связь. Формулировки аккуратные:
+Проект поддерживает сравнение качества задач до и после изменения процесса.
 
-- “may indicate correlation”;
-- “visible in this project sample”;
-- “requires validation on a larger dataset”.
+Например, можно показать:
+
+- как изменился средний Clarity Score;
+- стало ли меньше poor tasks;
+- какие проблемы начали встречаться реже;
+- улучшилась ли полнота acceptance criteria;
+- снизилось ли количество задач с vague wording.
+
+Это особенно важно для portfolio storytelling: проект показывает не просто инструмент, а управленческую гипотезу, процесс улучшения и измеримый эффект.
+
+---
+
+### 8. Research Notes
+
+В проекте есть осторожный analytics module для исследования гипотезы:
+
+> Более ясные задачи могут коррелировать с более быстрой разработкой, меньшим количеством QA returns, меньшим числом clarification comments и меньшим количеством изменений в описании задачи.
+
+Clarity Guardian не утверждает причинно-следственную связь. Формулировки в отчётах намеренно аккуратные:
+
+- "may indicate correlation";
+- "visible in this project sample";
+- "requires validation on a larger dataset".
+
+Это важно для научной коммуникации: проект не подменяет исследование громкими выводами, а показывает наблюдаемую связь и предлагает дальнейшую проверку гипотезы.
+
+---
+
+## Demo Mode
+
+Проект можно запустить без доступа к GitHub, Jira или Yandex Tracker.
+
+Demo data находится здесь:
+
+```text
+data/demo-tasks.json
+```
+
+Внутри есть:
+
+- good, medium и poor tasks;
+- before и after periods;
+- задачи с QA returns и без них;
+- разные development times;
+- разные authors;
+- разные assignees;
+- разные statuses;
+- priorities;
+- tags;
+- components.
+
+Demo dataset позволяет показать все ключевые возможности проекта локально и без подключения к реальным рабочим данным.
 
 ---
 
@@ -141,19 +290,22 @@ src/
   yandex-tracker.ts          # Yandex Tracker adapter/service
   analytics.ts               # dashboard, history, before/after, research data
   reports.ts                 # Markdown, CSV, HTML report formatting
-  v2-report.ts               # V2 report CLI
+  v2-report.ts               # report CLI
   sync-github.ts             # GitHub comments/body sync
   sync-jira.ts               # Jira REST sync
   generate-test-checklist.ts # QA checklist generation
+
 data/
   demo-tasks.json            # portfolio demo dataset
+
 scripts/
   smoke-test.ts              # end-to-end smoke checks
+
 templates/
   *.md                       # manager и tester templates
 ```
 
-Старый GitHub bot остаётся совместимым. V2 добавлена как модульный reporting layer поверх того же анализатора.
+GitHub bot остаётся совместимым с основной логикой анализа. Reporting layer построен поверх того же анализатора и расширяет проект до уровня PM analytics.
 
 ---
 
@@ -166,13 +318,13 @@ npm run build
 npm run smoke
 ```
 
-Запустить V2 demo:
+Запустить demo:
 
 ```bash
 npm run v2:demo
 ```
 
-Generated files:
+После запуска будут сгенерированы файлы:
 
 ```text
 reports/demo/dashboard.json
@@ -187,27 +339,7 @@ reports/demo/task-history.json
 reports/demo/analysis-records.json
 ```
 
-`reports/` игнорируется git, потому что это generated output.
-
----
-
-## Demo Mode
-
-Demo data лежит в:
-
-```text
-data/demo-tasks.json
-```
-
-Внутри есть:
-
-- good, medium и poor tasks;
-- before и after periods;
-- задачи с QA returns и без них;
-- разные development times;
-- разные authors, assignees, statuses, priorities, tags и components.
-
-Это позволяет показывать проект без реального доступа к GitHub, Jira или Yandex Tracker.
+Папка `reports/` игнорируется git, потому что это generated output.
 
 ---
 
@@ -249,7 +381,7 @@ node dist/v2-report.js \
 
 ## GitHub Setup
 
-Workflow лежит здесь:
+Workflow находится здесь:
 
 ```text
 .github/workflows/clarity-guardian.yml
@@ -257,8 +389,8 @@ Workflow лежит здесь:
 
 Он реагирует на:
 
-- opened/edited/labeled issues;
-- opened/edited/labeled/ready_for_review pull requests.
+- opened / edited / labeled issues;
+- opened / edited / labeled / ready_for_review pull requests.
 
 Required permissions:
 
@@ -269,12 +401,12 @@ permissions:
   pull-requests: write
 ```
 
-Bot:
+Bot умеет:
 
-- анализирует задачу;
-- обновляет Issue/PR description через managed Clarity Guardian block;
-- редактирует предыдущий bot comment вместо дублей;
-- генерирует tester checklist, когда задача становится ready for testing.
+- анализировать задачу;
+- обновлять Issue/PR description через managed Clarity Guardian block;
+- редактировать предыдущий bot comment вместо создания дублей;
+- генерировать tester checklist, когда задача переходит в ready for testing.
 
 Optional secret:
 
@@ -286,9 +418,9 @@ OPENAI_API_KEY=...
 
 ---
 
-## Yandex Tracker Setup
+## Yandex Tracker Integration
 
-Yandex Tracker integration реализована здесь:
+Интеграция с Yandex Tracker реализована здесь:
 
 ```text
 src/yandex-tracker.ts
@@ -303,11 +435,11 @@ YANDEX_TRACKER_ORG_ID=...
 CLOUD_ORG_ID=...
 
 YANDEX_TRACKER_QUEUE=CHECKOUT
-YANDEX_TRACKER_PROJECT=Checkout Project
+YANDEX_TRACKER_PROJECT="Checkout Project"
 YANDEX_TRACKER_BASE_URL=https://api.tracker.yandex.net
 ```
 
-Получить Tracker tasks как unified JSON:
+Получить задачи из Tracker как unified JSON:
 
 ```bash
 npm run build
@@ -315,7 +447,7 @@ node dist/yandex-tracker.js \
   --output yandex-tasks.json
 ```
 
-Построить V2 report напрямую из Yandex Tracker:
+Построить report напрямую из Yandex Tracker:
 
 ```bash
 YANDEX_TRACKER_TOKEN=... \
@@ -354,7 +486,7 @@ Missing optional fields обрабатываются через graceful fallbac
 
 ---
 
-## Jira Setup
+## Jira Integration
 
 Jira sync остаётся доступным:
 
@@ -410,12 +542,13 @@ Main config:
 clarity-guardian.config.json
 ```
 
-Supports:
+Поддерживает:
 
-- `language`: `auto`, `ru`, `en`;
-- `mode`: `strict`, `non-strict`;
+- language: `auto`, `ru`, `en`;
+- mode: `strict`, `non-strict`;
 - `updateDescription`;
-- common and type-specific rules;
+- common rules;
+- type-specific rules;
 - project-specific stop phrases.
 
 Example:
@@ -443,12 +576,13 @@ Example:
 
 Clarity Guardian помогает команде:
 
-- reduce ambiguity до начала разработки;
-- сделать task quality measurable;
-- видеть recurring communication problems;
-- готовить более содержательные retrospectives;
-- связать task writing с delivery outcomes;
-- сделать PM work видимой через structured improvements.
+- снижать неоднозначность до начала разработки;
+- делать качество задач измеримым;
+- видеть повторяющиеся коммуникационные проблемы;
+- готовить содержательные ретроспективы;
+- связывать task writing с delivery outcomes;
+- делать PM work видимой через structured improvements;
+- улучшать взаимодействие между PM, разработкой и QA.
 
 ---
 
@@ -457,12 +591,13 @@ Clarity Guardian помогает команде:
 Для PM portfolio проект показывает:
 
 - product problem framing;
-- clear user value;
+- ясное понимание user value;
 - lightweight analytics;
 - integration thinking;
-- приоритизацию demo-ready value вместо лишней сложности;
+- умение приоритизировать demo-ready value вместо лишней сложности;
 - коммуникацию между PM, engineering и QA;
-- careful research framing без overstating causality.
+- аккуратное исследовательское мышление без завышения выводов;
+- способность превращать разрозненную боль команды в понятный инструмент.
 
 ---
 
@@ -501,13 +636,15 @@ git diff --check
 
 ## Documentation
 
-- [Communication Guide](docs/COMMUNICATION_GUIDE.md)
-- [Scientific Communication Rationale](docs/SCIENTIFIC_COMMUNICATION.md)
-- [Portfolio Case](docs/PORTFOLIO_CASE.md)
-- [V2 Demo Guide](docs/V2_DEMO_GUIDE.md)
+Документация проекта:
+
+- Communication Guide;
+- Scientific Communication Rationale;
+- Portfolio Case;
+- Demo Guide.
 
 ---
 
 ## License
 
-Проект публично доступен для просмотра в portfolio review и educational demonstration.
+Проект публично доступен для portfolio review и educational demonstration.
