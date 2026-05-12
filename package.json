@@ -20,7 +20,8 @@
     "v2:report": "npm run build --silent && node dist/v2-report.js",
     "build:smoke": "rm -rf .smoke-dist && tsc -p tsconfig.scripts.json",
     "smoke": "npm run build --silent && npm run build:smoke --silent && node .smoke-dist/smoke-test.js",
-    "check": "tsc --noEmit"
+    "check": "tsc --noEmit",
+    "verify": "npm run check && npm run build && npm run smoke && npm run v2:demo && npm audit --audit-level=moderate"
   },
   "keywords": [
     "github-actions",
