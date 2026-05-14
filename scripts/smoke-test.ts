@@ -842,8 +842,8 @@ function smokeRetroAnalytics(): void {
 
   const edgeInputPath = writeJson('retro-edge-cases.json', [
     {
-      id: 'EDGE-1',
-      title: 'Задача без завершения и исполнителя',
+      id: 'EDGE|1',
+      title: 'Задача без завершения | и исполнителя',
       source: 'file',
       created_at: '2026-05-01T10:00:00Z',
       updated_at: '2026-05-03T10:00:00Z',
@@ -884,8 +884,13 @@ function smokeRetroAnalytics(): void {
   ]);
 
   const edgeReport = readJson<RetroSmokeReport>(edgeJsonPath);
+  const edgeMarkdown = fs.readFileSync(nestedMarkdownPath, 'utf8');
   assert(edgeReport.summary?.totalTasksAnalyzed === 2, 'Retro report should handle incomplete tasks');
   assert(fs.existsSync(nestedMarkdownPath), 'Retro CLI should create nested output directory');
+  assert(
+    edgeMarkdown.includes('EDGE\\|1') && edgeMarkdown.includes('Задача без завершения \\| и исполнителя'),
+    'Retro markdown should escape pipe characters in table cells'
+  );
 
   const emptyInputPath = writeJson('retro-empty.json', []);
   const emptyJsonPath = path.join(tmpDir, 'retro-empty.json');

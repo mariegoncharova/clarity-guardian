@@ -14,6 +14,12 @@ function formatDays(value: number | null): string {
   return value === null ? 'нет данных' : `${value} дн.`;
 }
 
+function tableCell(value: unknown): string {
+  return String(value ?? '')
+    .replace(/\r?\n/g, ' ')
+    .replace(/\|/g, '\\|');
+}
+
 function formatPeriod(report: RetroReport): string {
   const from = report.summary.period.from?.slice(0, 10) || 'не указано';
   const to = report.summary.period.to?.slice(0, 10) || 'не указано';
@@ -60,7 +66,9 @@ export function formatRetroMarkdownReport(report: RetroReport): string {
     '',
     '| Метрика | Значение |',
     '| --- | --- |',
-    ...report.keyMetrics.map((metric) => `| ${metric.name} | ${metric.value} |`),
+    ...report.keyMetrics.map((metric) =>
+      `| ${tableCell(metric.name)} | ${tableCell(metric.value)} |`
+    ),
     '',
     '## Bottlenecks / узкие места',
     '',
@@ -75,7 +83,7 @@ export function formatRetroMarkdownReport(report: RetroReport): string {
     '| Задача | Название | Lead Time | Cycle Time | Clarity Score | Основная проблема |',
     '| --- | --- | --- | --- | --- | --- |',
     ...report.longestTasks.map((task) =>
-      `| ${task.taskId} | ${task.title} | ${task.leadTime.days} дн. | ${task.cycleTime.days} дн. | ${task.clarityScore} | ${getMainIssue(task)} |`
+      `| ${tableCell(task.taskId)} | ${tableCell(task.title)} | ${task.leadTime.days} дн. | ${task.cycleTime.days} дн. | ${task.clarityScore} | ${tableCell(getMainIssue(task))} |`
     ),
     '',
     '## Reopened / возвраты с тестирования',
@@ -89,7 +97,7 @@ export function formatRetroMarkdownReport(report: RetroReport): string {
     '| Причина | Количество | Примеры задач |',
     '| --- | --- | --- |',
     ...report.delayReasons.map((reason) =>
-      `| ${reason.reason} | ${reason.count} | ${reason.exampleTasks.join(', ')} |`
+      `| ${tableCell(reason.reason)} | ${reason.count} | ${tableCell(reason.exampleTasks.join(', '))} |`
     ),
     '',
     '## Clarity Score vs Cycle Time',
