@@ -3,13 +3,24 @@ import path from 'node:path';
 
 export function readJsonFile<T>(filePath: string): T {
   const absolutePath = path.resolve(process.cwd(), filePath);
-  const raw = fs.readFileSync(absolutePath, 'utf8');
 
-  return JSON.parse(raw) as T;
+  try {
+    const raw = fs.readFileSync(absolutePath, 'utf8');
+
+    return JSON.parse(raw) as T;
+  } catch (error: unknown) {
+    if (error instanceof SyntaxError) {
+      throw makeCliError(`Некорректный JSON в файле ${filePath}: ${error.message}`);
+    }
+
+    const message = error instanceof Error ? error.message : String(error);
+    throw makeCliError(`Не удалось прочитать input-файл ${filePath}: ${message}`);
+  }
 }
 
 export function writeJsonFile(filePath: string, data: unknown): void {
   const absolutePath = path.resolve(process.cwd(), filePath);
+  fs.mkdirSync(path.dirname(absolutePath), { recursive: true });
   fs.writeFileSync(absolutePath, JSON.stringify(data, null, 2), 'utf8');
 }
 
@@ -20,6 +31,7 @@ export function readTextFile(filePath: string): string {
 
 export function writeTextFile(filePath: string, content: string): void {
   const absolutePath = path.resolve(process.cwd(), filePath);
+  fs.mkdirSync(path.dirname(absolutePath), { recursive: true });
   fs.writeFileSync(absolutePath, content, 'utf8');
 }
 

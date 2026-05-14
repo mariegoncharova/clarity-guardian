@@ -704,6 +704,7 @@ function smokeRetroAnalytics(): void {
   const markdownPath = path.join(tmpDir, 'retro-report.md');
   const csvPath = path.join(tmpDir, 'retro-report.csv');
   const pythonMarkdownPath = path.join(tmpDir, 'retro-report-python.md');
+  const pythonAnalyzePath = path.join(tmpDir, 'clarity-report-python.md');
 
   runNode([
     'dist/retro-report.js',
@@ -761,6 +762,29 @@ function smokeRetroAnalytics(): void {
         pythonResult.stderr
       ].filter(Boolean).join('\n'));
     }
+
+    const pythonAnalyzeResult = spawnSync('python3', [
+      '-m',
+      'clarity_guardian',
+      'analyze',
+      '--input',
+      'data/demo_tasks.json',
+      '--output',
+      pythonAnalyzePath,
+      '--format',
+      'markdown'
+    ], {
+      cwd: rootDir,
+      encoding: 'utf8'
+    });
+
+    if (pythonAnalyzeResult.status !== 0) {
+      fail([
+        'Python analyze wrapper should generate markdown report',
+        pythonAnalyzeResult.stdout,
+        pythonAnalyzeResult.stderr
+      ].filter(Boolean).join('\n'));
+    }
   }
 
   const report = readJson<RetroSmokeReport>(jsonPath);
@@ -790,6 +814,132 @@ function smokeRetroAnalytics(): void {
   assert(markdown.includes('Retro Report: анализ качества задач'), 'Retro markdown report should be generated');
   assert(markdown.includes('Рекомендации для следующего спринта'), 'Retro markdown should include recommendations');
   assert(csv.startsWith('task_id,title,source,assignee'), 'Retro CSV should include task-level header');
+
+  if (pythonCheck.status === 0) {
+    const pythonAnalyzeMarkdown = fs.readFileSync(pythonAnalyzePath, 'utf8');
+    assert(
+      pythonAnalyzeMarkdown.includes('Clarity Guardian Dashboard'),
+      'Python analyze wrapper should write dashboard markdown'
+    );
+  }
+
+  const clarityDemoOutDir = path.join(tmpDir, 'clarity-demo-tasks-report');
+
+  runNode([
+    'dist/v2-report.js',
+    '--input',
+    'data/demo_tasks.json',
+    '--out-dir',
+    clarityDemoOutDir
+  ]);
+
+  const clarityDemoDashboard = readJson<DashboardSmokeResult>(
+    path.join(clarityDemoOutDir, 'dashboard.json')
+  );
+  assert((clarityDemoDashboard.averageScore || 0) > 0, 'Retro demo data should produce non-zero Clarity Score');
+  assert((clarityDemoDashboard.quality?.good || 0) > 0, 'Retro demo data should include good clarity tasks');
+  assert((clarityDemoDashboard.quality?.poor || 0) > 0, 'Retro demo data should include low clarity tasks');
+
+  const edgeInputPath = writeJson('retro-edge-cases.json', [
+    {
+      id: 'EDGE-1',
+      title: 'Задача без завершения и исполнителя',
+      source: 'file',
+      created_at: '2026-05-01T10:00:00Z',
+      updated_at: '2026-05-03T10:00:00Z',
+      clarity_score: 59,
+      status_history: [
+        { status: 'In Progress', entered_at: '2026-05-01T10:00:00Z', left_at: null }
+      ]
+    },
+    {
+      id: 'EDGE-2',
+      title: 'Задача без истории статусов',
+      source: 'file',
+      created_at: 'bad-date',
+      updated_at: '2026-05-02T10:00:00Z',
+      clarity_score: 82,
+      comments: [],
+      labels: []
+    }
+  ]);
+  const nestedMarkdownPath = path.join(tmpDir, 'nested', 'reports', 'retro-edge.md');
+  const edgeJsonPath = path.join(tmpDir, 'retro-edge.json');
+
+  runNode([
+    'dist/retro-report.js',
+    '--input',
+    edgeInputPath,
+    '--output',
+    nestedMarkdownPath
+  ]);
+  runNode([
+    'dist/retro-report.js',
+    '--input',
+    edgeInputPath,
+    '--output',
+    edgeJsonPath,
+    '--format',
+    'json'
+  ]);
+
+  const edgeReport = readJson<RetroSmokeReport>(edgeJsonPath);
+  assert(edgeReport.summary?.totalTasksAnalyzed === 2, 'Retro report should handle incomplete tasks');
+  assert(fs.existsSync(nestedMarkdownPath), 'Retro CLI should create nested output directory');
+
+  const emptyInputPath = writeJson('retro-empty.json', []);
+  const emptyJsonPath = path.join(tmpDir, 'retro-empty.json');
+
+  runNode([
+    'dist/retro-report.js',
+    '--input',
+    emptyInputPath,
+    '--output',
+    emptyJsonPath,
+    '--format',
+    'json'
+  ]);
+
+  const emptyReport = readJson<RetroSmokeReport>(emptyJsonPath);
+  assert(emptyReport.summary?.totalTasksAnalyzed === 0, 'Retro report should handle empty task list');
+
+  const invalidFormat = spawnSync(process.execPath, [
+    'dist/retro-report.js',
+    '--input',
+    'data/demo_tasks.json',
+    '--output',
+    path.join(tmpDir, 'retro.xml'),
+    '--format',
+    'xml'
+  ], {
+    cwd: rootDir,
+    encoding: 'utf8'
+  });
+
+  assert(invalidFormat.status !== 0, 'Retro CLI should reject unknown report format');
+  assert(
+    invalidFormat.stderr.includes('Неподдерживаемый формат отчёта'),
+    'Retro CLI should explain unknown report format'
+  );
+
+  const invalidJsonPath = path.join(tmpDir, 'broken.json');
+  fs.writeFileSync(invalidJsonPath, '{', 'utf8');
+  const invalidJson = spawnSync(process.execPath, [
+    'dist/retro-report.js',
+    '--input',
+    invalidJsonPath,
+    '--output',
+    path.join(tmpDir, 'broken.md')
+  ], {
+    cwd: rootDir,
+    encoding: 'utf8'
+  });
+
+  assert(invalidJson.status !== 0, 'Retro CLI should fail on invalid JSON');
+  assert(
+    invalidJson.stderr.includes('Некорректный JSON'),
+    'Retro CLI should explain invalid JSON'
+  );
 }
 
 async function smokeGitHubSync() {

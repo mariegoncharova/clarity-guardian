@@ -16,6 +16,10 @@ import {
 type RetroReportFormat = 'markdown' | 'json' | 'csv';
 
 function inferFormat(outputPath: string, explicitFormat?: string): RetroReportFormat {
+  if (explicitFormat && explicitFormat !== 'markdown' && explicitFormat !== 'json' && explicitFormat !== 'csv') {
+    throw makeCliError(`Неподдерживаемый формат отчёта: ${explicitFormat}`);
+  }
+
   if (explicitFormat === 'markdown' || explicitFormat === 'json' || explicitFormat === 'csv') {
     return explicitFormat;
   }
@@ -34,7 +38,7 @@ function inferFormat(outputPath: string, explicitFormat?: string): RetroReportFo
     return 'csv';
   }
 
-  return 'markdown';
+  throw makeCliError('Неподдерживаемый формат отчёта: укажи --format markdown|json|csv или output с расширением .md, .json, .csv');
 }
 
 function formatReport(format: RetroReportFormat, input: unknown): string {
