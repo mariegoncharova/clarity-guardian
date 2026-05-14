@@ -16,6 +16,10 @@ import type {
 } from './types';
 
 function normalizeList(values: unknown): string[] {
+  if (typeof values === 'string') {
+    return [normalizeText(values)].filter(Boolean);
+  }
+
   if (!Array.isArray(values)) {
     return [];
   }
@@ -34,6 +38,14 @@ function normalizeWorkItemType(value: unknown): WorkItemType | undefined {
 
   if (normalized.includes('story') || normalized.includes('история')) {
     return 'story';
+  }
+
+  if (normalized.includes('research') || normalized.includes('исслед')) {
+    return 'research';
+  }
+
+  if (normalized.includes('tech debt') || normalized.includes('tech_debt') || normalized.includes('техдолг')) {
+    return 'tech_debt';
   }
 
   if (normalized.includes('task') || normalized.includes('задача')) {
@@ -151,7 +163,7 @@ export function normalizeUnifiedTask(raw: Record<string, unknown>): UnifiedTask 
   const tags = normalizeList(raw.tags);
   const labels = normalizeList(raw.labels);
   const components = normalizeList(raw.components);
-  const workItemType = normalizeWorkItemType(raw.workItemType || raw.type);
+  const workItemType = normalizeWorkItemType(raw.workItemType || raw.taskType || raw.task_type || raw.type);
   const source = normalizeTaskSource(raw.source);
   const id = normalizeText(raw.id || raw.key || raw.title || `task-${Date.now()}`);
 
@@ -175,8 +187,13 @@ export function normalizeUnifiedTask(raw: Record<string, unknown>): UnifiedTask 
     statusHistory: normalizeStatusHistory(raw.statusHistory || raw.status_history),
     comments: normalizeList(raw.comments),
     labels,
+    context: normalizeText(raw.context) || undefined,
+    expectedResult: normalizeText(raw.expectedResult || raw.expected_result) || undefined,
+    acceptanceCriteria: normalizeList(raw.acceptanceCriteria || raw.acceptance_criteria),
+    dependencies: normalizeList(raw.dependencies),
     workItemType,
     priority: normalizeText(raw.priority) || undefined,
+    sprint: normalizeText(raw.sprint) || undefined,
     tags,
     components,
     period: raw.period === 'before' || raw.period === 'after' ? raw.period : undefined,

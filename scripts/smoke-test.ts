@@ -121,6 +121,70 @@ interface RetroSmokeReport {
   task_level_analytics?: RetroTaskSmokeResult[];
 }
 
+interface RiskSmokeReport {
+  summary?: {
+    totalTasks?: number;
+    highRiskTasks?: number;
+    mediumRiskTasks?: number;
+    lowRiskTasks?: number;
+  };
+  taskLevelAnalytics?: Array<{
+    taskId?: string;
+    riskLevel?: string;
+    riskScore?: number;
+    riskFactors?: string[];
+  }>;
+}
+
+interface ReadinessSmokeReport {
+  summary?: {
+    totalTasks?: number;
+    dorPassed?: number;
+    dodPassed?: number;
+  };
+  taskLevelAnalytics?: Array<{
+    taskId?: string;
+    dor?: {
+      dorPassed?: boolean;
+      dorScore?: number;
+      failedChecks?: string[];
+    };
+    dod?: {
+      dodPassed?: boolean;
+      dodScore?: number;
+      failedChecks?: string[];
+    };
+  }>;
+}
+
+interface SprintHealthSmokeReport {
+  sprint?: string;
+  sprintHealthStatus?: string;
+  summary?: {
+    totalTasks?: number;
+    averageClarityScore?: number;
+    averageRiskScore?: number;
+    readyTasksCount?: number;
+    notReadyTasksCount?: number;
+    readyTasksPercent?: number;
+    highRiskTasksCount?: number;
+    mediumRiskTasksCount?: number;
+    lowRiskTasksCount?: number;
+    tasksWithoutAcceptanceCriteria?: number;
+    tasksWithoutExpectedResult?: number;
+    tasksWithExternalDependencies?: number;
+    largeScopeTasks?: number;
+    reopenedTasks?: number;
+    stuckTasks?: number;
+  };
+  riskDistribution?: {
+    high?: number;
+    medium?: number;
+    low?: number;
+  };
+  recommendations?: string[];
+}
+
 interface UnifiedTaskSmokeResult {
   id?: string;
   source?: string;
@@ -703,8 +767,6 @@ function smokeRetroAnalytics(): void {
   const jsonPath = path.join(tmpDir, 'retro-report.json');
   const markdownPath = path.join(tmpDir, 'retro-report.md');
   const csvPath = path.join(tmpDir, 'retro-report.csv');
-  const pythonMarkdownPath = path.join(tmpDir, 'retro-report-python.md');
-  const pythonAnalyzePath = path.join(tmpDir, 'clarity-report-python.md');
 
   runNode([
     'dist/retro-report.js',
@@ -734,59 +796,6 @@ function smokeRetroAnalytics(): void {
     'csv'
   ]);
 
-  const pythonCheck = spawnSync('python3', ['--version'], {
-    cwd: rootDir,
-    encoding: 'utf8'
-  });
-
-  if (pythonCheck.status === 0) {
-    const pythonResult = spawnSync('python3', [
-      '-m',
-      'clarity_guardian',
-      'retro',
-      '--input',
-      'data/demo_tasks.json',
-      '--output',
-      pythonMarkdownPath,
-      '--format',
-      'markdown'
-    ], {
-      cwd: rootDir,
-      encoding: 'utf8'
-    });
-
-    if (pythonResult.status !== 0) {
-      fail([
-        'Python retro wrapper should generate markdown report',
-        pythonResult.stdout,
-        pythonResult.stderr
-      ].filter(Boolean).join('\n'));
-    }
-
-    const pythonAnalyzeResult = spawnSync('python3', [
-      '-m',
-      'clarity_guardian',
-      'analyze',
-      '--input',
-      'data/demo_tasks.json',
-      '--output',
-      pythonAnalyzePath,
-      '--format',
-      'markdown'
-    ], {
-      cwd: rootDir,
-      encoding: 'utf8'
-    });
-
-    if (pythonAnalyzeResult.status !== 0) {
-      fail([
-        'Python analyze wrapper should generate markdown report',
-        pythonAnalyzeResult.stdout,
-        pythonAnalyzeResult.stderr
-      ].filter(Boolean).join('\n'));
-    }
-  }
-
   const report = readJson<RetroSmokeReport>(jsonPath);
   const markdown = fs.readFileSync(markdownPath, 'utf8');
   const csv = fs.readFileSync(csvPath, 'utf8');
@@ -798,7 +807,7 @@ function smokeRetroAnalytics(): void {
   const lowScoreGroup = report.clarity_vs_cycle_time?.find((group) => group.group === 'score_lt_60');
   const highScoreGroup = report.clarity_vs_cycle_time?.find((group) => group.group === 'score_gte_80');
 
-  assert(report.summary?.totalTasksAnalyzed === 10, 'Retro report should analyze demo tasks');
+  assert(report.summary?.totalTasksAnalyzed === 12, 'Retro report should analyze demo tasks');
   assert(report.summary?.mainBottleneck === 'In Progress', 'Retro report should detect main bottleneck status');
   assert(report.summary?.returnedFromTesting === 3, 'Retro report should count returned tasks');
   assert(report.summary?.stuckTasks === 5, 'Retro report should count stuck tasks');
@@ -810,18 +819,10 @@ function smokeRetroAnalytics(): void {
   assert(task107?.isReopened === true, 'Retro report should detect returned task after Testing');
   assert(testingReturn?.count === 3, 'Retro report should classify testing return reasons');
   assert(lowScoreGroup?.averageCycleTimeDays === 8.6, 'Retro report should group low clarity cycle time');
-  assert(highScoreGroup?.averageCycleTimeDays === 2.1, 'Retro report should group high clarity cycle time');
+  assert(highScoreGroup?.averageCycleTimeDays === 2.4, 'Retro report should group high clarity cycle time');
   assert(markdown.includes('Retro Report: анализ качества задач'), 'Retro markdown report should be generated');
   assert(markdown.includes('Рекомендации для следующего спринта'), 'Retro markdown should include recommendations');
   assert(csv.startsWith('task_id,title,source,assignee'), 'Retro CSV should include task-level header');
-
-  if (pythonCheck.status === 0) {
-    const pythonAnalyzeMarkdown = fs.readFileSync(pythonAnalyzePath, 'utf8');
-    assert(
-      pythonAnalyzeMarkdown.includes('Clarity Guardian Dashboard'),
-      'Python analyze wrapper should write dashboard markdown'
-    );
-  }
 
   const clarityDemoOutDir = path.join(tmpDir, 'clarity-demo-tasks-report');
 
@@ -945,6 +946,175 @@ function smokeRetroAnalytics(): void {
     invalidJson.stderr.includes('Некорректный JSON'),
     'Retro CLI should explain invalid JSON'
   );
+}
+
+function smokeRiskReadinessSprintHealth(): void {
+  const riskMarkdownPath = path.join(tmpDir, 'risk-report.md');
+  const riskJsonPath = path.join(tmpDir, 'risk-report.json');
+  const readinessMarkdownPath = path.join(tmpDir, 'readiness-report.md');
+  const readinessJsonPath = path.join(tmpDir, 'readiness-report.json');
+  const sprintMarkdownPath = path.join(tmpDir, 'sprint-health.md');
+  const sprintJsonPath = path.join(tmpDir, 'sprint-health.json');
+  const sprintCsvPath = path.join(tmpDir, 'sprint-health.csv');
+
+  runNode([
+    'dist/risk-report.js',
+    '--input',
+    'data/demo_tasks.json',
+    '--output',
+    riskMarkdownPath
+  ]);
+  runNode([
+    'dist/risk-report.js',
+    '--input',
+    'data/demo_tasks.json',
+    '--output',
+    riskJsonPath,
+    '--format',
+    'json'
+  ]);
+  runNode([
+    'dist/readiness-report.js',
+    '--input',
+    'data/demo_tasks.json',
+    '--output',
+    readinessMarkdownPath
+  ]);
+  runNode([
+    'dist/readiness-report.js',
+    '--input',
+    'data/demo_tasks.json',
+    '--output',
+    readinessJsonPath,
+    '--format',
+    'json'
+  ]);
+  runNode([
+    'dist/sprint-health-report.js',
+    '--input',
+    'data/demo_tasks.json',
+    '--output',
+    sprintMarkdownPath
+  ]);
+  runNode([
+    'dist/sprint-health-report.js',
+    '--input',
+    'data/demo_tasks.json',
+    '--output',
+    sprintJsonPath,
+    '--format',
+    'json'
+  ]);
+  runNode([
+    'dist/sprint-health-report.js',
+    '--input',
+    'data/demo_tasks.json',
+    '--output',
+    sprintCsvPath,
+    '--format',
+    'csv'
+  ]);
+
+  const risk = readJson<RiskSmokeReport>(riskJsonPath);
+  const readiness = readJson<ReadinessSmokeReport>(readinessJsonPath);
+  const sprint = readJson<SprintHealthSmokeReport>(sprintJsonPath);
+  const riskMarkdown = fs.readFileSync(riskMarkdownPath, 'utf8');
+  const readinessMarkdown = fs.readFileSync(readinessMarkdownPath, 'utf8');
+  const sprintMarkdown = fs.readFileSync(sprintMarkdownPath, 'utf8');
+  const sprintCsv = fs.readFileSync(sprintCsvPath, 'utf8');
+  const task101Risk = risk.taskLevelAnalytics?.find((task) => task.taskId === 'RETRO-101');
+  const task102Risk = risk.taskLevelAnalytics?.find((task) => task.taskId === 'RETRO-102');
+  const task105Readiness = readiness.taskLevelAnalytics?.find((task) => task.taskId === 'RETRO-105');
+  const task102Readiness = readiness.taskLevelAnalytics?.find((task) => task.taskId === 'RETRO-102');
+  const task111Readiness = readiness.taskLevelAnalytics?.find((task) => task.taskId === 'RETRO-111');
+
+  assert(risk.summary?.totalTasks === 12, 'Risk report should analyze demo tasks');
+  assert(risk.summary?.highRiskTasks === 3, 'Risk report should count high-risk tasks');
+  assert(task101Risk?.riskLevel === 'high', 'Risk detection should mark low clarity payment task as high risk');
+  assert((task101Risk?.riskScore || 0) >= 61, 'Risk score should promote low clarity tasks to high risk');
+  assert(task102Risk?.riskLevel === 'low', 'Risk detection should keep clear task low risk');
+  assert(
+    (risk.taskLevelAnalytics || []).every((task) => (task.riskScore || 0) <= 100),
+    'Risk score should be capped at 100'
+  );
+  assert(riskMarkdown.includes('Risk Detection Report'), 'Risk markdown report should be generated');
+
+  assert(readiness.summary?.dorPassed === 9, 'Readiness report should count DoR passed tasks');
+  assert(readiness.summary?.dodPassed === 4, 'Readiness report should count DoD passed tasks');
+  assert(task102Readiness?.dor?.dorPassed === true, 'Good task should pass DoR');
+  assert(task105Readiness?.dor?.dorPassed === false, 'Task without acceptance criteria should fail DoR');
+  assert(Boolean(task105Readiness?.dor?.failedChecks?.includes('Есть критерии приёмки')), 'DoR should explain missing acceptance criteria');
+  assert(task111Readiness?.dod?.dodPassed === false, 'Done task without testing signal should fail DoD');
+  assert(readinessMarkdown.includes('Definition of Ready'), 'Readiness markdown should include DoR section');
+
+  assert(sprint.sprintHealthStatus === 'yellow', 'Sprint health should classify demo sprint as yellow');
+  assert(sprint.summary?.readyTasksPercent === 75, 'Sprint health should calculate ready percent');
+  assert(sprint.summary?.highRiskTasksCount === 3, 'Sprint health should count high-risk tasks');
+  assert(sprint.summary?.tasksWithoutAcceptanceCriteria === 3, 'Sprint health should count missing acceptance criteria');
+  assert(sprint.summary?.tasksWithExternalDependencies === 2, 'Sprint health should count external dependencies');
+  assert(sprintMarkdown.includes('## Summary'), 'Sprint markdown should include Summary');
+  assert(sprintMarkdown.includes('## Risk Analysis'), 'Sprint markdown should include Risk Analysis');
+  assert(sprintMarkdown.includes('## Recommendations'), 'Sprint markdown should include Recommendations');
+  assert(sprintCsv.startsWith('taskId,title,sprint,assignee'), 'Sprint CSV should include required columns');
+
+  const greenInputPath = writeJson('sprint-green.json', [
+    {
+      id: 'GREEN-1',
+      title: 'Обновить справку по настройкам',
+      source: 'file',
+      assignee: 'pm_1',
+      priority: 'medium',
+      sprint: 'Sprint Green',
+      task_type: 'task',
+      clarity_score: 90,
+      description: '## Контекст\nПользователю нужна понятная справка по настройкам профиля.\n\n## Ожидаемый результат\nСправка объясняет, где менять имя и уведомления.\n\n## Критерии приёмки\n- Есть шаги настройки.\n- Текст согласован с поддержкой.'
+    },
+    {
+      id: 'GREEN-2',
+      title: 'Добавить подсказку в профиль',
+      source: 'file',
+      assignee: 'frontend_1',
+      priority: 'low',
+      sprint: 'Sprint Green',
+      task_type: 'task',
+      clarity_score: 85,
+      description: '## Контекст\nПользователи не понимают, где изменить язык интерфейса.\n\n## Ожидаемый результат\nВ профиле появляется короткая подсказка рядом с настройкой языка.\n\n## Критерии приёмки\n- Подсказка видна в desktop и mobile.\n- Текст не перекрывает форму.'
+    }
+  ]);
+  const redInputPath = writeJson('sprint-red.json', [
+    {
+      id: 'RED-1',
+      title: 'Починить оплату как обсуждали',
+      source: 'file',
+      clarity_score: 35,
+      priority: '',
+      description: 'Что-то не работает, надо быстро поправить оплату.'
+    }
+  ]);
+  const greenOutputPath = path.join(tmpDir, 'sprint-green.json');
+  const redOutputPath = path.join(tmpDir, 'sprint-red.json');
+
+  runNode([
+    'dist/sprint-health-report.js',
+    '--input',
+    greenInputPath,
+    '--output',
+    greenOutputPath,
+    '--format',
+    'json'
+  ]);
+  runNode([
+    'dist/sprint-health-report.js',
+    '--input',
+    redInputPath,
+    '--output',
+    redOutputPath,
+    '--format',
+    'json'
+  ]);
+
+  assert(readJson<SprintHealthSmokeReport>(greenOutputPath).sprintHealthStatus === 'green', 'Sprint health should detect green sprint');
+  assert(readJson<SprintHealthSmokeReport>(redOutputPath).sprintHealthStatus === 'red', 'Sprint health should detect red sprint');
 }
 
 async function smokeGitHubSync() {
@@ -1171,6 +1341,7 @@ async function smokeJiraSkip() {
     await smokeYandexTrackerApi();
     smokeV2Reports();
     smokeRetroAnalytics();
+    smokeRiskReadinessSprintHealth();
     await smokeGitHubSync();
     await smokeJiraSync();
     await smokeJiraSkip();

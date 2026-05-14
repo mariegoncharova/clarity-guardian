@@ -1,5 +1,5 @@
 export type TaskType = 'issue' | 'pr';
-export type WorkItemType = 'bug' | 'task' | 'story';
+export type WorkItemType = 'bug' | 'task' | 'story' | 'research' | 'tech_debt';
 export type TemplateLanguage = 'ru' | 'en';
 export type ConfigLanguage = TemplateLanguage | 'auto';
 export type ClarityMode = 'strict' | 'non-strict';
@@ -68,7 +68,12 @@ export interface UnifiedTask {
   comments?: string[];
   labels?: string[];
   workItemType?: WorkItemType;
+  context?: string;
+  expectedResult?: string;
+  acceptanceCriteria?: string[];
+  dependencies?: string[];
   priority?: string;
+  sprint?: string;
   tags?: string[];
   components?: string[];
   period?: TaskPeriod;

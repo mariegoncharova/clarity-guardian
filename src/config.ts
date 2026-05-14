@@ -75,7 +75,9 @@ Record<WorkItemType, SectionRuleConfig[]>
         minNonWhitespaceChars: DEFAULT_MIN_SECTION_NON_WHITESPACE_CHARS
       }
     ],
-    task: []
+    task: [],
+    research: [],
+    tech_debt: []
   },
   en: {
     bug: [
@@ -96,7 +98,9 @@ Record<WorkItemType, SectionRuleConfig[]>
         minNonWhitespaceChars: DEFAULT_MIN_SECTION_NON_WHITESPACE_CHARS
       }
     ],
-    task: []
+    task: [],
+    research: [],
+    tech_debt: []
   }
 };
 
@@ -181,7 +185,9 @@ const DEFAULT_CONFIG: ResolvedConfig = {
     common: {},
     bug: {},
     task: {},
-    story: {}
+    story: {},
+    research: {},
+    tech_debt: {}
   },
   stopPhrases: []
 };
@@ -249,7 +255,9 @@ export function loadConfig(configPath?: string): ResolvedConfig {
     common: config.rules?.common || {},
     bug: config.rules?.bug || {},
     task: config.rules?.task || {},
-    story: config.rules?.story || {}
+    story: config.rules?.story || {},
+    research: config.rules?.research || {},
+    tech_debt: config.rules?.tech_debt || {}
   };
 
   return {
@@ -263,7 +271,9 @@ export function loadConfig(configPath?: string): ResolvedConfig {
       ...(config.rules?.common?.stopPhrases || []),
       ...(config.rules?.bug?.stopPhrases || []),
       ...(config.rules?.task?.stopPhrases || []),
-      ...(config.rules?.story?.stopPhrases || [])
+      ...(config.rules?.story?.stopPhrases || []),
+      ...(config.rules?.research?.stopPhrases || []),
+      ...(config.rules?.tech_debt?.stopPhrases || [])
     ]
   };
 }
@@ -299,7 +309,9 @@ export function detectWorkItemType(task: TaskPayload): WorkItemType {
   if (
     task.workItemType === 'bug' ||
     task.workItemType === 'task' ||
-    task.workItemType === 'story'
+    task.workItemType === 'story' ||
+    task.workItemType === 'research' ||
+    task.workItemType === 'tech_debt'
   ) {
     return task.workItemType;
   }
@@ -314,6 +326,14 @@ export function detectWorkItemType(task: TaskPayload): WorkItemType {
 
   if (/\b(story|user story|стори|история)\b/.test(text)) {
     return 'story';
+  }
+
+  if (/\b(research|исследование|ресерч)\b/.test(text)) {
+    return 'research';
+  }
+
+  if (/\b(tech debt|tech_debt|technical debt|техдолг)\b/.test(text)) {
+    return 'tech_debt';
   }
 
   return 'task';
