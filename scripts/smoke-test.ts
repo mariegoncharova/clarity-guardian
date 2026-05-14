@@ -71,6 +71,56 @@ interface BeforeAfterSmokeResult {
   };
 }
 
+interface RetroTaskSmokeResult {
+  taskId?: string;
+  title?: string;
+  clarityScore?: number;
+  leadTime?: {
+    days?: number;
+  };
+  cycleTime?: {
+    days?: number;
+  };
+  timeInStatus?: Array<{
+    status?: string;
+    days?: number;
+  }>;
+  isReopened?: boolean;
+  isStuck?: boolean;
+  mainDelayReason?: string;
+  bottleneckStatus?: string;
+}
+
+interface RetroSmokeReport {
+  summary?: {
+    totalTasksAnalyzed?: number;
+    averageClarityScore?: number;
+    averageLeadTimeDays?: number;
+    averageCycleTimeDays?: number;
+    returnedFromTesting?: number;
+    stuckTasks?: number;
+    mainBottleneck?: string;
+    mainDelayReason?: string;
+  };
+  bottlenecks?: Array<{
+    status?: string;
+    averageDays?: number;
+    stuckTaskCount?: number;
+  }>;
+  longest_tasks?: RetroTaskSmokeResult[];
+  reopened_tasks?: RetroTaskSmokeResult[];
+  delay_reasons?: Array<{
+    reason?: string;
+    count?: number;
+  }>;
+  clarity_vs_cycle_time?: Array<{
+    group?: string;
+    taskCount?: number;
+    averageCycleTimeDays?: number;
+  }>;
+  task_level_analytics?: RetroTaskSmokeResult[];
+}
+
 interface UnifiedTaskSmokeResult {
   id?: string;
   source?: string;
@@ -649,6 +699,99 @@ function smokeV2Reports(): void {
   assert(html.includes('Clarity Guardian Dashboard'), 'Dashboard HTML should be generated');
 }
 
+function smokeRetroAnalytics(): void {
+  const jsonPath = path.join(tmpDir, 'retro-report.json');
+  const markdownPath = path.join(tmpDir, 'retro-report.md');
+  const csvPath = path.join(tmpDir, 'retro-report.csv');
+  const pythonMarkdownPath = path.join(tmpDir, 'retro-report-python.md');
+
+  runNode([
+    'dist/retro-report.js',
+    '--input',
+    'data/demo_tasks.json',
+    '--output',
+    jsonPath,
+    '--format',
+    'json'
+  ]);
+  runNode([
+    'dist/retro-report.js',
+    '--input',
+    'data/demo_tasks.json',
+    '--output',
+    markdownPath,
+    '--format',
+    'markdown'
+  ]);
+  runNode([
+    'dist/retro-report.js',
+    '--input',
+    'data/demo_tasks.json',
+    '--output',
+    csvPath,
+    '--format',
+    'csv'
+  ]);
+
+  const pythonCheck = spawnSync('python3', ['--version'], {
+    cwd: rootDir,
+    encoding: 'utf8'
+  });
+
+  if (pythonCheck.status === 0) {
+    const pythonResult = spawnSync('python3', [
+      '-m',
+      'clarity_guardian',
+      'retro',
+      '--input',
+      'data/demo_tasks.json',
+      '--output',
+      pythonMarkdownPath,
+      '--format',
+      'markdown'
+    ], {
+      cwd: rootDir,
+      encoding: 'utf8'
+    });
+
+    if (pythonResult.status !== 0) {
+      fail([
+        'Python retro wrapper should generate markdown report',
+        pythonResult.stdout,
+        pythonResult.stderr
+      ].filter(Boolean).join('\n'));
+    }
+  }
+
+  const report = readJson<RetroSmokeReport>(jsonPath);
+  const markdown = fs.readFileSync(markdownPath, 'utf8');
+  const csv = fs.readFileSync(csvPath, 'utf8');
+  const task101 = report.task_level_analytics?.find((task) => task.taskId === 'RETRO-101');
+  const task105 = report.task_level_analytics?.find((task) => task.taskId === 'RETRO-105');
+  const task107 = report.task_level_analytics?.find((task) => task.taskId === 'RETRO-107');
+  const inProgressTime = task101?.timeInStatus?.find((entry) => entry.status === 'In Progress');
+  const testingReturn = report.delay_reasons?.find((reason) => reason.reason === 'testing_return');
+  const lowScoreGroup = report.clarity_vs_cycle_time?.find((group) => group.group === 'score_lt_60');
+  const highScoreGroup = report.clarity_vs_cycle_time?.find((group) => group.group === 'score_gte_80');
+
+  assert(report.summary?.totalTasksAnalyzed === 10, 'Retro report should analyze demo tasks');
+  assert(report.summary?.mainBottleneck === 'In Progress', 'Retro report should detect main bottleneck status');
+  assert(report.summary?.returnedFromTesting === 3, 'Retro report should count returned tasks');
+  assert(report.summary?.stuckTasks === 5, 'Retro report should count stuck tasks');
+  assert(task101?.leadTime?.days === 9.3, 'Retro report should calculate lead time');
+  assert(task101?.cycleTime?.days === 8.3, 'Retro report should calculate cycle time');
+  assert(inProgressTime?.days === 5.1, 'Retro report should calculate time in status');
+  assert(task105?.isStuck === true, 'Retro report should detect stuck task');
+  assert(task105?.bottleneckStatus === 'In Progress', 'Retro report should detect task bottleneck status');
+  assert(task107?.isReopened === true, 'Retro report should detect returned task after Testing');
+  assert(testingReturn?.count === 3, 'Retro report should classify testing return reasons');
+  assert(lowScoreGroup?.averageCycleTimeDays === 8.6, 'Retro report should group low clarity cycle time');
+  assert(highScoreGroup?.averageCycleTimeDays === 2.1, 'Retro report should group high clarity cycle time');
+  assert(markdown.includes('Retro Report: анализ качества задач'), 'Retro markdown report should be generated');
+  assert(markdown.includes('Рекомендации для следующего спринта'), 'Retro markdown should include recommendations');
+  assert(csv.startsWith('task_id,title,source,assignee'), 'Retro CSV should include task-level header');
+}
+
 async function smokeGitHubSync() {
   const payloadPath = writeJson('github-payload.json', {
     type: 'issue',
@@ -872,6 +1015,7 @@ async function smokeJiraSkip() {
     smokeYandexTrackerMockInput();
     await smokeYandexTrackerApi();
     smokeV2Reports();
+    smokeRetroAnalytics();
     await smokeGitHubSync();
     await smokeJiraSync();
     await smokeJiraSkip();

@@ -8,7 +8,9 @@ import { normalizeText } from './utils';
 
 import type {
   ResolvedConfig,
+  StatusHistoryEntry,
   TaskPayload,
+  TaskSource,
   UnifiedTask,
   WorkItemType
 } from './types';
@@ -39,6 +41,45 @@ function normalizeWorkItemType(value: unknown): WorkItemType | undefined {
   }
 
   return undefined;
+}
+
+function normalizeNumber(value: unknown): number | undefined {
+  const numberValue = Number(value);
+
+  return Number.isFinite(numberValue) ? numberValue : undefined;
+}
+
+function normalizeStatusHistory(values: unknown): StatusHistoryEntry[] {
+  if (!Array.isArray(values)) {
+    return [];
+  }
+
+  return values
+    .filter((value): value is Record<string, unknown> =>
+      typeof value === 'object' && value !== null
+    )
+    .map((value) => ({
+      status: normalizeText(value.status),
+      enteredAt: normalizeText(value.enteredAt || value.entered_at),
+      leftAt: normalizeText(value.leftAt || value.left_at) || undefined
+    }))
+    .filter((entry) => entry.status && entry.enteredAt);
+}
+
+function normalizeTaskSource(value: unknown): TaskSource {
+  const normalized = normalizeText(value).toLowerCase().replace(/_/g, '-');
+
+  if (
+    normalized === 'github' ||
+    normalized === 'jira' ||
+    normalized === 'yandex-tracker' ||
+    normalized === 'demo' ||
+    normalized === 'file'
+  ) {
+    return normalized;
+  }
+
+  return 'file';
 }
 
 export function taskPayloadToUnifiedTask(
@@ -77,6 +118,7 @@ export function unifiedTaskToTaskPayload(
   config: ResolvedConfig = loadConfig()
 ): TaskPayload {
   const labels = [
+    ...(task.labels || []),
     ...(task.tags || []),
     ...(task.components || []),
     task.workItemType || ''
@@ -107,14 +149,15 @@ export function unifiedTaskToTaskPayload(
 
 export function normalizeUnifiedTask(raw: Record<string, unknown>): UnifiedTask {
   const tags = normalizeList(raw.tags);
+  const labels = normalizeList(raw.labels);
   const components = normalizeList(raw.components);
   const workItemType = normalizeWorkItemType(raw.workItemType || raw.type);
-  const source = normalizeText(raw.source) as UnifiedTask['source'];
+  const source = normalizeTaskSource(raw.source);
   const id = normalizeText(raw.id || raw.key || raw.title || `task-${Date.now()}`);
 
   return {
     id,
-    source: source || 'file',
+    source,
     type: raw.taskType === 'pr' || raw.type === 'pr' ? 'pr' : 'issue',
     key: normalizeText(raw.key) || undefined,
     title: normalizeText(raw.title || raw.summary),
@@ -125,8 +168,13 @@ export function normalizeUnifiedTask(raw: Record<string, unknown>): UnifiedTask 
     status: normalizeText(raw.status) || undefined,
     assignee: normalizeText(raw.assignee) || undefined,
     author: normalizeText(raw.author) || undefined,
-    createdAt: normalizeText(raw.createdAt) || undefined,
-    updatedAt: normalizeText(raw.updatedAt) || undefined,
+    createdAt: normalizeText(raw.createdAt || raw.created_at) || undefined,
+    updatedAt: normalizeText(raw.updatedAt || raw.updated_at) || undefined,
+    completedAt: normalizeText(raw.completedAt || raw.completed_at) || undefined,
+    clarityScore: normalizeNumber(raw.clarityScore ?? raw.clarity_score),
+    statusHistory: normalizeStatusHistory(raw.statusHistory || raw.status_history),
+    comments: normalizeList(raw.comments),
+    labels,
     workItemType,
     priority: normalizeText(raw.priority) || undefined,
     tags,

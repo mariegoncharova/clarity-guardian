@@ -1,0 +1,202 @@
+[
+  {
+    "id": "RETRO-101",
+    "title": "Добавить оплату картой",
+    "description": "Нужно добавить оплату картой в checkout. Не хватает требований по ошибкам оплаты и не описаны критерии приёмки.",
+    "source": "yandex-tracker",
+    "assignee": "developer_1",
+    "created_at": "2026-05-01T10:00:00Z",
+    "updated_at": "2026-05-10T18:00:00Z",
+    "completed_at": "2026-05-10T18:00:00Z",
+    "clarity_score": 52,
+    "status_history": [
+      { "status": "Backlog", "entered_at": "2026-05-01T10:00:00Z", "left_at": "2026-05-02T12:00:00Z" },
+      { "status": "In Progress", "entered_at": "2026-05-02T12:00:00Z", "left_at": "2026-05-07T15:00:00Z" },
+      { "status": "Testing", "entered_at": "2026-05-07T15:00:00Z", "left_at": "2026-05-09T11:00:00Z" },
+      { "status": "Reopened", "entered_at": "2026-05-09T11:00:00Z", "left_at": "2026-05-10T18:00:00Z" }
+    ],
+    "comments": [
+      "Не хватает требований по ошибкам оплаты.",
+      "Нет критериев для ошибок банка и повторной оплаты.",
+      "Вернули с тестирования из-за неописанного edge case."
+    ],
+    "labels": ["payment", "bugfix"]
+  },
+  {
+    "id": "RETRO-102",
+    "title": "Обновить экран успешного заказа",
+    "description": "Нужно обновить экран успеха после оплаты. Контекст и expected result описаны, критерии приёмки есть.",
+    "source": "github",
+    "assignee": "frontend_1",
+    "created_at": "2026-05-02T09:00:00Z",
+    "updated_at": "2026-05-04T15:00:00Z",
+    "completed_at": "2026-05-04T15:00:00Z",
+    "clarity_score": 91,
+    "status_history": [
+      { "status": "Backlog", "entered_at": "2026-05-02T09:00:00Z", "left_at": "2026-05-02T13:00:00Z" },
+      { "status": "In Progress", "entered_at": "2026-05-02T13:00:00Z", "left_at": "2026-05-03T18:00:00Z" },
+      { "status": "Review", "entered_at": "2026-05-03T18:00:00Z", "left_at": "2026-05-04T12:00:00Z" },
+      { "status": "Done", "entered_at": "2026-05-04T12:00:00Z", "left_at": "2026-05-04T15:00:00Z" }
+    ],
+    "comments": ["Проверено по чек-листу, замечаний нет."],
+    "labels": ["checkout", "frontend"]
+  },
+  {
+    "id": "RETRO-103",
+    "title": "Интеграция с платёжным провайдером",
+    "description": "Подключить новый endpoint провайдера. Есть внешняя зависимость: ждём ответ от провайдера по формату ошибок.",
+    "source": "jira",
+    "assignee": "backend_1",
+    "created_at": "2026-05-01T08:00:00Z",
+    "updated_at": "2026-05-12T17:00:00Z",
+    "completed_at": "2026-05-12T17:00:00Z",
+    "clarity_score": 68,
+    "status_history": [
+      { "status": "Backlog", "entered_at": "2026-05-01T08:00:00Z", "left_at": "2026-05-02T10:00:00Z" },
+      { "status": "In Progress", "entered_at": "2026-05-02T10:00:00Z", "left_at": "2026-05-08T10:00:00Z" },
+      { "status": "Review", "entered_at": "2026-05-08T10:00:00Z", "left_at": "2026-05-12T17:00:00Z" }
+    ],
+    "comments": [
+      "Ждём ответ провайдера.",
+      "Есть blocked зависимость по документации API."
+    ],
+    "labels": ["payment", "external_dependency"]
+  },
+  {
+    "id": "RETRO-104",
+    "title": "Исправить ошибку валидации промокода",
+    "description": "Пользователь видит неверную ошибку при вводе просроченного промокода. Требования и критерии описаны.",
+    "source": "yandex-tracker",
+    "assignee": "backend_2",
+    "created_at": "2026-05-03T11:00:00Z",
+    "updated_at": "2026-05-06T14:00:00Z",
+    "completed_at": "2026-05-06T14:00:00Z",
+    "clarity_score": 84,
+    "status_history": [
+      { "status": "Backlog", "entered_at": "2026-05-03T11:00:00Z", "left_at": "2026-05-03T15:00:00Z" },
+      { "status": "Development", "entered_at": "2026-05-03T15:00:00Z", "left_at": "2026-05-05T10:00:00Z" },
+      { "status": "Testing", "entered_at": "2026-05-05T10:00:00Z", "left_at": "2026-05-06T14:00:00Z" }
+    ],
+    "comments": ["Исправление прошло тестирование без возвратов."],
+    "labels": ["promo", "bug"]
+  },
+  {
+    "id": "RETRO-105",
+    "title": "Переделать фильтры каталога",
+    "description": "Фильтры нужно сделать удобнее. В процессе изменились требования, добавили ещё несколько сценариев и расширили задачу.",
+    "source": "github",
+    "assignee": "frontend_2",
+    "created_at": "2026-05-01T09:00:00Z",
+    "updated_at": "2026-05-13T16:00:00Z",
+    "completed_at": "2026-05-13T16:00:00Z",
+    "clarity_score": 57,
+    "status_history": [
+      { "status": "Backlog", "entered_at": "2026-05-01T09:00:00Z", "left_at": "2026-05-02T09:00:00Z" },
+      { "status": "In Progress", "entered_at": "2026-05-02T09:00:00Z", "left_at": "2026-05-10T18:00:00Z" },
+      { "status": "Review", "entered_at": "2026-05-10T18:00:00Z", "left_at": "2026-05-13T16:00:00Z" }
+    ],
+    "comments": [
+      "Переобсудили поведение фильтров.",
+      "Добавили ещё сценарии, изменился скоуп.",
+      "Слишком широкая задача, надо декомпозировать."
+    ],
+    "labels": ["catalog", "scope_change"]
+  },
+  {
+    "id": "RETRO-106",
+    "title": "Добавить событие аналитики для ошибки оплаты",
+    "description": "Добавить событие аналитики с типом ошибки, способом оплаты и платформой. Acceptance criteria описаны.",
+    "source": "jira",
+    "assignee": "analytics_1",
+    "created_at": "2026-05-06T09:00:00Z",
+    "updated_at": "2026-05-08T13:00:00Z",
+    "completed_at": "2026-05-08T13:00:00Z",
+    "clarity_score": 88,
+    "status_history": [
+      { "status": "Backlog", "entered_at": "2026-05-06T09:00:00Z", "left_at": "2026-05-06T11:00:00Z" },
+      { "status": "In Progress", "entered_at": "2026-05-06T11:00:00Z", "left_at": "2026-05-07T15:00:00Z" },
+      { "status": "Testing", "entered_at": "2026-05-07T15:00:00Z", "left_at": "2026-05-08T13:00:00Z" }
+    ],
+    "comments": ["Событие проверено в staging."],
+    "labels": ["analytics", "payment"]
+  },
+  {
+    "id": "RETRO-107",
+    "title": "Настроить новый email template",
+    "description": "Нужно обновить email template. Не описано, как должно работать для разных языков.",
+    "source": "yandex-tracker",
+    "assignee": "frontend_1",
+    "created_at": "2026-05-04T10:00:00Z",
+    "updated_at": "2026-05-11T12:00:00Z",
+    "completed_at": "2026-05-11T12:00:00Z",
+    "clarity_score": 48,
+    "status_history": [
+      { "status": "Backlog", "entered_at": "2026-05-04T10:00:00Z", "left_at": "2026-05-05T09:00:00Z" },
+      { "status": "Development", "entered_at": "2026-05-05T09:00:00Z", "left_at": "2026-05-08T18:00:00Z" },
+      { "status": "Testing", "entered_at": "2026-05-08T18:00:00Z", "left_at": "2026-05-09T16:00:00Z" },
+      { "status": "In Progress", "entered_at": "2026-05-09T16:00:00Z", "left_at": "2026-05-11T12:00:00Z" }
+    ],
+    "comments": [
+      "Не прошло тестирование для английской локали.",
+      "Нужно доработать fallback для пустого имени пользователя."
+    ],
+    "labels": ["email", "localization"]
+  },
+  {
+    "id": "RETRO-108",
+    "title": "Оптимизировать загрузку главной страницы",
+    "description": "Есть понятная цель: ускорить first contentful paint на главной странице. Критерии и ограничения описаны.",
+    "source": "github",
+    "assignee": "frontend_3",
+    "created_at": "2026-05-07T09:00:00Z",
+    "updated_at": "2026-05-09T16:00:00Z",
+    "completed_at": "2026-05-09T16:00:00Z",
+    "clarity_score": 95,
+    "status_history": [
+      { "status": "Backlog", "entered_at": "2026-05-07T09:00:00Z", "left_at": "2026-05-07T12:00:00Z" },
+      { "status": "In Progress", "entered_at": "2026-05-07T12:00:00Z", "left_at": "2026-05-08T18:00:00Z" },
+      { "status": "Review", "entered_at": "2026-05-08T18:00:00Z", "left_at": "2026-05-09T16:00:00Z" }
+    ],
+    "comments": ["Задача прошла быстро, потому что критерии были понятны."],
+    "labels": ["performance", "frontend"]
+  },
+  {
+    "id": "RETRO-109",
+    "title": "Добавить обработку edge cases в checkout",
+    "description": "Нужно учесть edge case для повторной оплаты после ошибки банка.",
+    "source": "jira",
+    "assignee": "backend_1",
+    "created_at": "2026-05-05T09:00:00Z",
+    "updated_at": "2026-05-11T19:00:00Z",
+    "completed_at": "2026-05-11T19:00:00Z",
+    "clarity_score": 73,
+    "status_history": [
+      { "status": "Backlog", "entered_at": "2026-05-05T09:00:00Z", "left_at": "2026-05-05T13:00:00Z" },
+      { "status": "In Progress", "entered_at": "2026-05-05T13:00:00Z", "left_at": "2026-05-08T16:00:00Z" },
+      { "status": "Testing", "entered_at": "2026-05-08T16:00:00Z", "left_at": "2026-05-11T19:00:00Z" }
+    ],
+    "comments": [
+      "Не учли сценарий повторной оплаты.",
+      "Баг на тесте для пограничного случая."
+    ],
+    "labels": ["checkout", "edge_case"]
+  },
+  {
+    "id": "RETRO-110",
+    "title": "Обновить текст ошибки при недоступности банка",
+    "description": "Показать пользователю понятный текст ошибки и предложить повторить оплату позже.",
+    "source": "yandex-tracker",
+    "assignee": "frontend_2",
+    "created_at": "2026-05-08T10:00:00Z",
+    "updated_at": "2026-05-09T15:00:00Z",
+    "completed_at": "2026-05-09T15:00:00Z",
+    "clarity_score": 86,
+    "status_history": [
+      { "status": "Backlog", "entered_at": "2026-05-08T10:00:00Z", "left_at": "2026-05-08T12:00:00Z" },
+      { "status": "Development", "entered_at": "2026-05-08T12:00:00Z", "left_at": "2026-05-09T10:00:00Z" },
+      { "status": "Testing", "entered_at": "2026-05-09T10:00:00Z", "left_at": "2026-05-09T15:00:00Z" }
+    ],
+    "comments": ["Без явных проблем."],
+    "labels": ["payment", "copy"]
+  }
+]

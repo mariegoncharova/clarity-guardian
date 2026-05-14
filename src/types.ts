@@ -41,6 +41,12 @@ export interface TaskMetrics {
   descriptionChanges?: number;
 }
 
+export interface StatusHistoryEntry {
+  status: string;
+  enteredAt: string;
+  leftAt?: string;
+}
+
 export interface UnifiedTask {
   id: string;
   source: TaskSource;
@@ -56,6 +62,11 @@ export interface UnifiedTask {
   author?: string;
   createdAt?: string;
   updatedAt?: string;
+  completedAt?: string;
+  clarityScore?: number;
+  statusHistory?: StatusHistoryEntry[];
+  comments?: string[];
+  labels?: string[];
   workItemType?: WorkItemType;
   priority?: string;
   tags?: string[];
