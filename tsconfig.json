@@ -18,6 +18,7 @@
   "exclude": [
     "node_modules",
     "dist",
-    ".smoke-dist"
+    ".smoke-dist",
+    ".test-dist"
   ]
 }

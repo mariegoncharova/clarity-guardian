@@ -27,7 +27,11 @@ const PROBLEM_LABELS: Record<string, string> = {
   task_too_large: 'Задача слишком большая',
   unclear_testing: 'Неясно, как тестировать',
   missing_user_scenario: 'Нет пользовательского сценария',
-  hidden_agreement: 'Скрытые договорённости'
+  hidden_agreement: 'Скрытые договорённости',
+  blaming_tone: 'Обвинительный тон',
+  passive_aggressive: 'Пассивно-агрессивный тон',
+  unclear_urgency: 'Срочность без причины',
+  too_informal: 'Слишком неформальный стиль'
 };
 
 function round(value: number): number {
@@ -112,6 +116,12 @@ function getProblemCodes(record: TaskAnalysisRecord): string[] {
 
     if (risk.type === 'implementation_without_goal') {
       addProblem(problems, 'missing_business_goal');
+    }
+  }
+
+  for (const category of record.analysis.toneOfVoice.categories) {
+    if (category !== 'constructive') {
+      addProblem(problems, category);
     }
   }
 

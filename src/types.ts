@@ -1,3 +1,5 @@
+import type { ToneAnalysisResult } from './types/toneOfVoice';
+
 export type TaskType = 'issue' | 'pr';
 export type WorkItemType = 'bug' | 'task' | 'story' | 'research' | 'tech_debt';
 export type TemplateLanguage = 'ru' | 'en';
@@ -110,6 +112,7 @@ export interface AnalysisResult {
       recommendation: string;
     }>;
   };
+  toneOfVoice: ToneAnalysisResult;
   managerRecommendations: string[];
   commentMarkdown: string;
   descriptionMarkdown: string;

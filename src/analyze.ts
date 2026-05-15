@@ -1,5 +1,7 @@
 import path from 'node:path';
 
+import { analyzeToneOfVoice } from './analyzers/toneOfVoiceAnalyzer';
+
 import {
   applyModeToLevel,
   detectLanguage,
@@ -44,6 +46,8 @@ import type {
   TemplateLanguage,
   WorkItemType
 } from './types';
+
+import type { ToneAnalysisResult } from './types/toneOfVoice';
 
 const DESCRIPTION_START_MARKER = '<!-- clarity-guardian:description:start -->';
 const DESCRIPTION_END_MARKER = '<!-- clarity-guardian:description:end -->';
@@ -265,6 +269,36 @@ function buildClarityScoreBlock(clarityScore: ClarityScoreResult): string {
   return formatClarityScoreMarkdown(clarityScore);
 }
 
+function buildToneOfVoiceBlock(toneOfVoice: ToneAnalysisResult): string {
+  const problematicPhrases = toneOfVoice.problematicPhrases.length > 0
+    ? toneOfVoice.problematicPhrases.map((item, index) =>
+      `${index + 1}. "${item.phrase}" - ${item.explanation}`
+    ).join('\n')
+    : 'Проблемных формулировок не найдено.';
+
+  return [
+    '## Tone of Voice Analyzer',
+    '',
+    `**Tone:** ${toneOfVoice.tone}`,
+    '',
+    `**Risk level:** ${toneOfVoice.riskLevel}`,
+    '',
+    `**Categories:** ${toneOfVoice.categories.join(', ')}`,
+    '',
+    '**Problematic phrases:**',
+    '',
+    problematicPhrases,
+    '',
+    '**Recommendation:**',
+    '',
+    toneOfVoice.recommendation,
+    '',
+    '**PM-friendly rewrite:**',
+    '',
+    toneOfVoice.rewrittenText || 'Не требуется.'
+  ].join('\n');
+}
+
 function formatRecommendations(recommendations: string[]): string {
   return recommendations.map((recommendation) => `- ${recommendation}`).join('\n');
 }
@@ -274,6 +308,7 @@ function buildManagerChecklistComment(
   remarks: Remark[],
   mode: ClarityMode,
   clarityScore: ClarityScoreResult,
+  toneOfVoice: ToneAnalysisResult,
   managerRecommendations: string[]
 ): string {
   const managerChecklistPath = getTemplatePath('manager-checklist', task.language);
@@ -281,6 +316,7 @@ function buildManagerChecklistComment(
   const text = LOCALIZED_TEXT[task.language];
   const remarksMarkdown = formatRemarks(task, remarks);
   const clarityScoreMarkdown = buildClarityScoreBlock(clarityScore);
+  const toneOfVoiceMarkdown = buildToneOfVoiceBlock(toneOfVoice);
 
   return [
     '<!-- clarity-guardian:analysis -->',
@@ -294,6 +330,8 @@ function buildManagerChecklistComment(
     `**${text.languageLabel}:** ${task.language}`,
     '',
     clarityScoreMarkdown,
+    '',
+    toneOfVoiceMarkdown,
     '',
     '---',
     '',
@@ -320,11 +358,13 @@ function buildDescriptionBlock(
   remarks: Remark[],
   mode: ClarityMode,
   clarityScore: ClarityScoreResult,
+  toneOfVoice: ToneAnalysisResult,
   managerRecommendations: string[]
 ): string {
   const text = LOCALIZED_TEXT[task.language];
   const remarksMarkdown = formatRemarks(task, remarks);
   const clarityScoreMarkdown = buildClarityScoreBlock(clarityScore);
+  const toneOfVoiceMarkdown = buildToneOfVoiceBlock(toneOfVoice);
 
   return [
     text.descriptionTitle,
@@ -337,6 +377,8 @@ function buildDescriptionBlock(
     `- ${text.languageLabel}: ${task.language}`,
     '',
     clarityScoreMarkdown,
+    '',
+    toneOfVoiceMarkdown,
     '',
     remarksMarkdown || text.noRemarks,
     '',
@@ -431,6 +473,7 @@ export function analyzeTask(
     body: normalizedTask.body,
     remarks
   });
+  const toneOfVoice = analyzeToneOfVoice(`${normalizedTask.title}\n${normalizedTask.body}`);
   const managerRecommendations = generateManagerRecommendations(
     normalizedTask,
     remarks,
@@ -442,6 +485,7 @@ export function analyzeTask(
     remarks,
     config.mode,
     clarityScore,
+    toneOfVoice,
     managerRecommendations
   );
 
@@ -450,6 +494,7 @@ export function analyzeTask(
     remarks,
     config.mode,
     clarityScore,
+    toneOfVoice,
     managerRecommendations
   );
 
@@ -465,6 +510,7 @@ export function analyzeTask(
     workItemType: normalizedTask.workItemType,
     remarks,
     clarityScore,
+    toneOfVoice,
     managerRecommendations,
     commentMarkdown,
     descriptionMarkdown,

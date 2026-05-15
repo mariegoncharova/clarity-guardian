@@ -25,7 +25,8 @@
     "v2:report": "npm run build --silent && node dist/v2-report.js",
     "build:smoke": "rm -rf .smoke-dist && tsc -p tsconfig.scripts.json",
     "smoke": "npm run build --silent && npm run build:smoke --silent && node .smoke-dist/smoke-test.js",
-    "test": "npm run smoke",
+    "test:tone": "rm -rf .test-dist && tsc -p tsconfig.test.json && node --test .test-dist/tests/*.test.js",
+    "test": "npm run smoke && npm run test:tone",
     "check": "tsc --noEmit",
     "verify": "npm run check && npm run build && npm run smoke && npm run v2:demo && npm run retro:demo && npm run risk -- --input data/demo_tasks.json --output reports/risk_report.md && npm run readiness -- --input data/demo_tasks.json --output reports/readiness_report.md && npm run sprint-health -- --input data/demo_tasks.json --output reports/sprint_health.md && npm audit --audit-level=moderate"
   },

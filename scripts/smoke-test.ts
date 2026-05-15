@@ -24,6 +24,11 @@ interface AnalysisSmokeResult {
   workItemType?: string;
   shouldUpdateDescription?: boolean;
   remarks?: Remark[];
+  toneOfVoice?: {
+    tone?: string;
+    riskLevel?: string;
+    categories?: string[];
+  };
 }
 
 interface ChecklistSmokeResult {
@@ -542,6 +547,7 @@ async function smokeAnalyze() {
   assert(valid.result.hasErrors === false, 'Valid Russian task should not have errors');
   assert(valid.result.language === 'ru', 'Valid Russian task should be detected as ru');
   assert(valid.result.workItemType === 'task', 'Valid Russian task should be detected as task');
+  assert(valid.result.toneOfVoice?.tone === 'constructive', 'Valid Russian task should include constructive tone analysis');
   assert(
     valid.updatedBody.includes('<!-- clarity-guardian:description:start -->'),
     'Updated body should include GitHub description marker'
@@ -585,6 +591,11 @@ async function smokeAnalyze() {
   assert(codes.includes('deferred_context'), 'Project stop phrase should detect deferred context');
   assert(codes.includes('undefined_solution'), 'Project stop phrase should detect undefined solution');
   assert(codes.includes('vague_quality'), 'Project stop phrase should detect vague quality');
+  assert(
+    Boolean(stopPhrases.result.toneOfVoice?.categories?.includes('vague_wording')),
+    'Tone of Voice Analyzer should detect vague wording in analysis output'
+  );
+  assert(stopPhrases.comment.includes('Tone of Voice Analyzer'), 'Analysis comment should include tone section');
 
   const titleOnlyStopPhrase = analyze({
     ...validRussianTask(),

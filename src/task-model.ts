@@ -78,6 +78,38 @@ function normalizeStatusHistory(values: unknown): StatusHistoryEntry[] {
     .filter((entry) => entry.status && entry.enteredAt);
 }
 
+function buildUnifiedTaskBody(task: UnifiedTask): string {
+  const body = normalizeText(task.body);
+
+  if (body) {
+    return body;
+  }
+
+  const sections: string[] = [];
+  const context = normalizeText(task.context);
+  const expectedResult = normalizeText(task.expectedResult);
+  const acceptanceCriteria = (task.acceptanceCriteria || [])
+    .map((item) => normalizeText(item))
+    .filter(Boolean);
+
+  if (context) {
+    sections.push(['## Контекст', context].join('\n'));
+  }
+
+  if (expectedResult) {
+    sections.push(['## Ожидаемый результат', expectedResult].join('\n'));
+  }
+
+  if (acceptanceCriteria.length > 0) {
+    sections.push([
+      '## Критерии приёмки',
+      ...acceptanceCriteria.map((item) => `- ${item}`)
+    ].join('\n'));
+  }
+
+  return sections.join('\n\n');
+}
+
 function normalizeTaskSource(value: unknown): TaskSource {
   const normalized = normalizeText(value).toLowerCase().replace(/_/g, '-');
 
@@ -141,7 +173,7 @@ export function unifiedTaskToTaskPayload(
     type: task.type || 'issue',
     number: Number.isFinite(Number(task.key)) ? Number(task.key) : undefined,
     title: normalizeText(task.title),
-    body: normalizeText(task.body),
+    body: buildUnifiedTaskBody(task),
     labels,
     isDraft: draft,
     repository: task.projectKey || task.queue,

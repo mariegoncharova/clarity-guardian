@@ -1,6 +1,7 @@
 node_modules/
 dist/
 .smoke-dist/
+.test-dist/
 reports/
 
 clarity-event.json
