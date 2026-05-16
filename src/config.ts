@@ -302,6 +302,13 @@ export function detectLanguage(task: TaskPayload, config: ResolvedConfig): Templ
     return 'en';
   }
 
+  const cyrillicChars = text.match(/\p{Script=Cyrillic}/gu)?.length || 0;
+  const latinChars = text.match(/[a-z]/g)?.length || 0;
+
+  if (latinChars > 0 && cyrillicChars === 0) {
+    return 'en';
+  }
+
   return 'ru';
 }
 

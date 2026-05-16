@@ -56,9 +56,27 @@ function normalizeWorkItemType(value: unknown): WorkItemType | undefined {
 }
 
 function normalizeNumber(value: unknown): number | undefined {
+  if (value === null || value === undefined) {
+    return undefined;
+  }
+
+  if (typeof value === 'string' && value.trim() === '') {
+    return undefined;
+  }
+
   const numberValue = Number(value);
 
   return Number.isFinite(numberValue) ? numberValue : undefined;
+}
+
+function normalizeClarityScore(value: unknown): number | undefined {
+  const score = normalizeNumber(value);
+
+  if (score === undefined) {
+    return undefined;
+  }
+
+  return Math.min(100, Math.max(0, score));
 }
 
 function normalizeStatusHistory(values: unknown): StatusHistoryEntry[] {
@@ -72,13 +90,13 @@ function normalizeStatusHistory(values: unknown): StatusHistoryEntry[] {
     )
     .map((value) => ({
       status: normalizeText(value.status),
-      enteredAt: normalizeText(value.enteredAt || value.entered_at),
-      leftAt: normalizeText(value.leftAt || value.left_at) || undefined
+      enteredAt: normalizeText(value.enteredAt ?? value.entered_at),
+      leftAt: normalizeText(value.leftAt ?? value.left_at) || undefined
     }))
     .filter((entry) => entry.status && entry.enteredAt);
 }
 
-function buildUnifiedTaskBody(task: UnifiedTask): string {
+function buildUnifiedTaskBody(task: UnifiedTask, language: 'ru' | 'en'): string {
   const body = normalizeText(task.body);
 
   if (body) {
@@ -91,18 +109,29 @@ function buildUnifiedTaskBody(task: UnifiedTask): string {
   const acceptanceCriteria = (task.acceptanceCriteria || [])
     .map((item) => normalizeText(item))
     .filter(Boolean);
+  const headings = language === 'en'
+    ? {
+      context: '## Context',
+      expectedResult: '## Expected result',
+      acceptanceCriteria: '## Acceptance criteria'
+    }
+    : {
+      context: '## Контекст',
+      expectedResult: '## Ожидаемый результат',
+      acceptanceCriteria: '## Критерии приёмки'
+    };
 
   if (context) {
-    sections.push(['## Контекст', context].join('\n'));
+    sections.push([headings.context, context].join('\n'));
   }
 
   if (expectedResult) {
-    sections.push(['## Ожидаемый результат', expectedResult].join('\n'));
+    sections.push([headings.expectedResult, expectedResult].join('\n'));
   }
 
   if (acceptanceCriteria.length > 0) {
     sections.push([
-      '## Критерии приёмки',
+      headings.acceptanceCriteria,
       ...acceptanceCriteria.map((item) => `- ${item}`)
     ].join('\n'));
   }
@@ -130,11 +159,14 @@ export function taskPayloadToUnifiedTask(
   payload: TaskPayload,
   source: UnifiedTask['source'] = 'github'
 ): UnifiedTask {
+  const idTaskPart = payload.number !== undefined
+    ? String(payload.number)
+    : normalizeText(payload.title) || 'task';
   const id = [
     source,
     payload.repository,
-    payload.number || payload.title || 'task'
-  ].filter(Boolean).join(':');
+    idTaskPart
+  ].map((part) => normalizeText(part)).filter(Boolean).join(':');
 
   return {
     id,
@@ -161,31 +193,43 @@ export function unifiedTaskToTaskPayload(
   task: UnifiedTask,
   config: ResolvedConfig = loadConfig()
 ): TaskPayload {
+  const title = normalizeText(task.title);
   const labels = [
     ...(task.labels || []),
     ...(task.tags || []),
     ...(task.components || []),
     task.workItemType || ''
   ].filter(Boolean);
+  const language = detectLanguage({
+    title,
+    body: [
+      task.body,
+      task.context,
+      task.expectedResult,
+      ...(task.acceptanceCriteria || [])
+    ].filter(Boolean).join('\n'),
+    labels
+  }, config);
+  const body = buildUnifiedTaskBody(task, language);
   const draft = task.status ? /draft/i.test(task.status) : false;
 
   return {
     type: task.type || 'issue',
     number: Number.isFinite(Number(task.key)) ? Number(task.key) : undefined,
-    title: normalizeText(task.title),
-    body: buildUnifiedTaskBody(task),
+    title,
+    body,
     labels,
     isDraft: draft,
     repository: task.projectKey || task.queue,
     htmlUrl: task.url,
     workItemType: task.workItemType || detectWorkItemType({
-      title: task.title,
-      body: task.body,
+      title,
+      body,
       labels
     }),
     language: detectLanguage({
-      title: task.title,
-      body: task.body,
+      title,
+      body,
       labels
     }, config)
   };
@@ -195,33 +239,33 @@ export function normalizeUnifiedTask(raw: Record<string, unknown>): UnifiedTask 
   const tags = normalizeList(raw.tags);
   const labels = normalizeList(raw.labels);
   const components = normalizeList(raw.components);
-  const workItemType = normalizeWorkItemType(raw.workItemType || raw.taskType || raw.task_type || raw.type);
+  const workItemType = normalizeWorkItemType(raw.workItemType ?? raw.taskType ?? raw.task_type ?? raw.type);
   const source = normalizeTaskSource(raw.source);
-  const id = normalizeText(raw.id || raw.key || raw.title || `task-${Date.now()}`);
+  const id = normalizeText(raw.id ?? raw.key ?? raw.title ?? `task-${Date.now()}`);
 
   return {
     id,
     source,
     type: raw.taskType === 'pr' || raw.type === 'pr' ? 'pr' : 'issue',
     key: normalizeText(raw.key) || undefined,
-    title: normalizeText(raw.title || raw.summary),
-    body: normalizeText(raw.body || raw.description),
+    title: normalizeText(raw.title ?? raw.summary),
+    body: normalizeText(raw.body ?? raw.description),
     url: normalizeText(raw.url) || undefined,
-    projectKey: normalizeText(raw.projectKey || raw.project) || undefined,
+    projectKey: normalizeText(raw.projectKey ?? raw.project) || undefined,
     queue: normalizeText(raw.queue) || undefined,
     status: normalizeText(raw.status) || undefined,
     assignee: normalizeText(raw.assignee) || undefined,
     author: normalizeText(raw.author) || undefined,
-    createdAt: normalizeText(raw.createdAt || raw.created_at) || undefined,
-    updatedAt: normalizeText(raw.updatedAt || raw.updated_at) || undefined,
-    completedAt: normalizeText(raw.completedAt || raw.completed_at) || undefined,
-    clarityScore: normalizeNumber(raw.clarityScore ?? raw.clarity_score),
-    statusHistory: normalizeStatusHistory(raw.statusHistory || raw.status_history),
+    createdAt: normalizeText(raw.createdAt ?? raw.created_at) || undefined,
+    updatedAt: normalizeText(raw.updatedAt ?? raw.updated_at) || undefined,
+    completedAt: normalizeText(raw.completedAt ?? raw.completed_at) || undefined,
+    clarityScore: normalizeClarityScore(raw.clarityScore ?? raw.clarity_score),
+    statusHistory: normalizeStatusHistory(raw.statusHistory ?? raw.status_history),
     comments: normalizeList(raw.comments),
     labels,
     context: normalizeText(raw.context) || undefined,
-    expectedResult: normalizeText(raw.expectedResult || raw.expected_result) || undefined,
-    acceptanceCriteria: normalizeList(raw.acceptanceCriteria || raw.acceptance_criteria),
+    expectedResult: normalizeText(raw.expectedResult ?? raw.expected_result) || undefined,
+    acceptanceCriteria: normalizeList(raw.acceptanceCriteria ?? raw.acceptance_criteria),
     dependencies: normalizeList(raw.dependencies),
     workItemType,
     priority: normalizeText(raw.priority) || undefined,

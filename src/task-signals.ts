@@ -2,6 +2,23 @@ import {
   extractFirstMarkdownSection,
   normalizeText
 } from './utils';
+import {
+  analyzeRequiredSections,
+  analyzeStopPhrases
+} from './analyze';
+import {
+  calculateClarityScore
+} from './clarity-score';
+import {
+  detectLanguage,
+  detectWorkItemType,
+  getRequiredSections,
+  getStopPhrases,
+  loadConfig
+} from './config';
+import {
+  unifiedTaskToTaskPayload
+} from './task-model';
 
 import type {
   UnifiedTask,
@@ -106,12 +123,50 @@ const CONTEXT_HEADINGS = ['Контекст', 'Context'];
 const EXPECTED_RESULT_HEADINGS = ['Ожидаемый результат', 'Expected result', 'Expected outcome'];
 const ACCEPTANCE_CRITERIA_HEADINGS = ['Критерии приёмки', 'Критерии приемки', 'Acceptance criteria', 'Acceptance Criteria'];
 
+function clampClarityScore(score: number): number {
+  return Math.min(100, Math.max(0, score));
+}
+
+function calculateDerivedClarityScore(task: UnifiedTask): number {
+  const config = loadConfig();
+  const payload = unifiedTaskToTaskPayload(task, config);
+  const title = normalizeText(payload.title);
+  const body = normalizeText(payload.body);
+  const language = detectLanguage(payload, config);
+  const workItemType = detectWorkItemType(payload);
+  const remarks = [
+    ...analyzeRequiredSections(
+      body,
+      getRequiredSections(config, language, workItemType),
+      language,
+      config.mode,
+      workItemType
+    ),
+    ...analyzeStopPhrases(
+      `${title}\n${body}`,
+      getStopPhrases(config, language, workItemType),
+      language,
+      config.mode
+    )
+  ];
+
+  return calculateClarityScore({
+    title,
+    body,
+    remarks
+  }).score;
+}
+
 export function getTaskId(task: UnifiedTask): string {
   return task.key || task.id;
 }
 
 export function getTaskClarityScore(task: UnifiedTask): number {
-  return typeof task.clarityScore === 'number' ? task.clarityScore : 0;
+  if (typeof task.clarityScore === 'number' && Number.isFinite(task.clarityScore)) {
+    return clampClarityScore(task.clarityScore);
+  }
+
+  return calculateDerivedClarityScore(task);
 }
 
 export function getTaskText(task: UnifiedTask): string {
