@@ -41,11 +41,28 @@ export function parseArgs(argv: string[]): Record<string, string | boolean> {
   for (let i = 2; i < argv.length; i += 1) {
     const current = argv[i];
 
+    if (current === '--') {
+      break;
+    }
+
     if (!current.startsWith('--')) {
       continue;
     }
 
-    const key = current.slice(2);
+    const arg = current.slice(2);
+    const equalsIndex = arg.indexOf('=');
+
+    if (equalsIndex >= 0) {
+      const key = arg.slice(0, equalsIndex);
+
+      if (key) {
+        args[key] = arg.slice(equalsIndex + 1);
+      }
+
+      continue;
+    }
+
+    const key = arg;
     const next = argv[i + 1];
 
     if (!next || next.startsWith('--')) {
@@ -60,7 +77,7 @@ export function parseArgs(argv: string[]): Record<string, string | boolean> {
 }
 
 export function normalizeText(value: unknown): string {
-  return String(value || '')
+  return String(value ?? '')
     .replace(/\r\n/g, '\n')
     .replace(/\t/g, ' ')
     .trim();

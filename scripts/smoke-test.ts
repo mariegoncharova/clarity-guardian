@@ -962,6 +962,7 @@ function smokeRetroAnalytics(): void {
 function smokeRiskReadinessSprintHealth(): void {
   const riskMarkdownPath = path.join(tmpDir, 'risk-report.md');
   const riskJsonPath = path.join(tmpDir, 'risk-report.json');
+  const riskEqualsJsonPath = path.join(tmpDir, 'risk-report-equals.json');
   const readinessMarkdownPath = path.join(tmpDir, 'readiness-report.md');
   const readinessJsonPath = path.join(tmpDir, 'readiness-report.json');
   const sprintMarkdownPath = path.join(tmpDir, 'sprint-health.md');
@@ -983,6 +984,12 @@ function smokeRiskReadinessSprintHealth(): void {
     riskJsonPath,
     '--format',
     'json'
+  ]);
+  runNode([
+    'dist/risk-report.js',
+    '--input=data/demo_tasks.json',
+    `--output=${riskEqualsJsonPath}`,
+    '--format=json'
   ]);
   runNode([
     'dist/readiness-report.js',
@@ -1027,6 +1034,7 @@ function smokeRiskReadinessSprintHealth(): void {
   ]);
 
   const risk = readJson<RiskSmokeReport>(riskJsonPath);
+  const riskFromEqualsArgs = readJson<RiskSmokeReport>(riskEqualsJsonPath);
   const readiness = readJson<ReadinessSmokeReport>(readinessJsonPath);
   const sprint = readJson<SprintHealthSmokeReport>(sprintJsonPath);
   const riskMarkdown = fs.readFileSync(riskMarkdownPath, 'utf8');
@@ -1040,6 +1048,7 @@ function smokeRiskReadinessSprintHealth(): void {
   const task111Readiness = readiness.taskLevelAnalytics?.find((task) => task.taskId === 'RETRO-111');
 
   assert(risk.summary?.totalTasks === 12, 'Risk report should analyze demo tasks');
+  assert(riskFromEqualsArgs.summary?.totalTasks === 12, 'Risk CLI should accept --key=value arguments');
   assert(risk.summary?.highRiskTasks === 3, 'Risk report should count high-risk tasks');
   assert(task101Risk?.riskLevel === 'high', 'Risk detection should mark low clarity payment task as high risk');
   assert((task101Risk?.riskScore || 0) >= 61, 'Risk score should promote low clarity tasks to high risk');

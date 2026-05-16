@@ -42,7 +42,7 @@ export function tableCell(value: unknown): string {
 export function csvEscape(value: unknown): string {
   const text = String(value ?? '');
 
-  if (/[",\n]/.test(text)) {
+  if (/[",\r\n]/.test(text)) {
     return `"${text.replace(/"/g, '""')}"`;
   }
 
