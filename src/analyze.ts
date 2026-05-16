@@ -16,6 +16,10 @@ import {
   type ClarityScoreResult,
   formatClarityScoreMarkdown
 } from './clarity-score';
+import {
+  formatClarityFixSuggestionsMarkdown,
+  generateClarityFixSuggestions
+} from './clarity-fix-suggestions';
 
 import { generateManagerRecommendations } from './recommendations';
 
@@ -309,6 +313,7 @@ function buildManagerChecklistComment(
   mode: ClarityMode,
   clarityScore: ClarityScoreResult,
   toneOfVoice: ToneAnalysisResult,
+  clarityFixSuggestionsMarkdown: string,
   managerRecommendations: string[]
 ): string {
   const managerChecklistPath = getTemplatePath('manager-checklist', task.language);
@@ -332,6 +337,8 @@ function buildManagerChecklistComment(
     clarityScoreMarkdown,
     '',
     toneOfVoiceMarkdown,
+    '',
+    clarityFixSuggestionsMarkdown,
     '',
     '---',
     '',
@@ -359,6 +366,7 @@ function buildDescriptionBlock(
   mode: ClarityMode,
   clarityScore: ClarityScoreResult,
   toneOfVoice: ToneAnalysisResult,
+  clarityFixSuggestionsMarkdown: string,
   managerRecommendations: string[]
 ): string {
   const text = LOCALIZED_TEXT[task.language];
@@ -379,6 +387,8 @@ function buildDescriptionBlock(
     clarityScoreMarkdown,
     '',
     toneOfVoiceMarkdown,
+    '',
+    clarityFixSuggestionsMarkdown,
     '',
     remarksMarkdown || text.noRemarks,
     '',
@@ -479,6 +489,13 @@ export function analyzeTask(
     remarks,
     clarityScore
   );
+  const clarityFixSuggestions = generateClarityFixSuggestions({
+    task: normalizedTask,
+    remarks,
+    clarityScore,
+    toneOfVoice
+  });
+  const clarityFixSuggestionsMarkdown = formatClarityFixSuggestionsMarkdown(clarityFixSuggestions);
 
   const commentMarkdown = buildManagerChecklistComment(
     normalizedTask,
@@ -486,6 +503,7 @@ export function analyzeTask(
     config.mode,
     clarityScore,
     toneOfVoice,
+    clarityFixSuggestionsMarkdown,
     managerRecommendations
   );
 
@@ -495,6 +513,7 @@ export function analyzeTask(
     config.mode,
     clarityScore,
     toneOfVoice,
+    clarityFixSuggestionsMarkdown,
     managerRecommendations
   );
 
@@ -511,6 +530,7 @@ export function analyzeTask(
     remarks,
     clarityScore,
     toneOfVoice,
+    clarityFixSuggestions,
     managerRecommendations,
     commentMarkdown,
     descriptionMarkdown,

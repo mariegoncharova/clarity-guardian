@@ -113,11 +113,19 @@ export interface AnalysisResult {
     }>;
   };
   toneOfVoice: ToneAnalysisResult;
+  clarityFixSuggestions: ClarityFixSuggestions;
   managerRecommendations: string[];
   commentMarkdown: string;
   descriptionMarkdown: string;
   updatedBody: string;
   shouldUpdateDescription: boolean;
+}
+
+export interface ClarityFixSuggestions {
+  questions: string[];
+  draftMarkdown: string;
+  pmFriendlyRewrite: string;
+  nextActions: string[];
 }
 
 export interface ChecklistResult {

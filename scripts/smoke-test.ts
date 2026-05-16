@@ -29,6 +29,12 @@ interface AnalysisSmokeResult {
     riskLevel?: string;
     categories?: string[];
   };
+  clarityFixSuggestions?: {
+    questions?: string[];
+    draftMarkdown?: string;
+    pmFriendlyRewrite?: string;
+    nextActions?: string[];
+  };
 }
 
 interface ChecklistSmokeResult {
@@ -549,6 +555,14 @@ async function smokeAnalyze() {
   assert(valid.result.workItemType === 'task', 'Valid Russian task should be detected as task');
   assert(valid.result.toneOfVoice?.tone === 'constructive', 'Valid Russian task should include constructive tone analysis');
   assert(
+    valid.result.clarityFixSuggestions?.questions?.length === 0,
+    'Valid Russian task should not require clarity fix questions'
+  );
+  assert(
+    Boolean(valid.comment.includes('Clarity Fix Suggestions')),
+    'Analysis comment should include clarity fix suggestions section'
+  );
+  assert(
     valid.updatedBody.includes('<!-- clarity-guardian:description:start -->'),
     'Updated body should include GitHub description marker'
   );
@@ -596,6 +610,14 @@ async function smokeAnalyze() {
     'Tone of Voice Analyzer should detect vague wording in analysis output'
   );
   assert(stopPhrases.comment.includes('Tone of Voice Analyzer'), 'Analysis comment should include tone section');
+  assert(
+    Boolean(stopPhrases.result.clarityFixSuggestions?.questions?.length),
+    'Unclear task should include clarity fix questions'
+  );
+  assert(
+    Boolean(stopPhrases.result.clarityFixSuggestions?.draftMarkdown?.includes('## Контекст')),
+    'Clarity fix suggestions should include draft markdown sections'
+  );
 
   const titleOnlyStopPhrase = analyze({
     ...validRussianTask(),
