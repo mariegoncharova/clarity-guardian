@@ -493,6 +493,32 @@ npm run sprint-health -- --input data/demo_tasks.json --output reports/sprint_he
 
 ---
 
+## Quality Gate
+
+Quality Gate нужен для CI/CD и planning checks: он анализирует набор задач и завершает процесс с non-zero exit code, если качество постановки ниже заданных порогов.
+
+По умолчанию проверяются:
+
+- средний Clarity Score не ниже `70`;
+- Definition of Ready проходит не меньше `80%` задач;
+- high-risk задач не больше `20%`;
+- входной набор задач не пустой.
+
+Пороги можно менять аргументами:
+
+```bash
+npm run quality:gate -- --input data/demo_tasks.json \
+  --min-average-clarity 70 \
+  --min-ready-percent 70 \
+  --max-high-risk-percent 30 \
+  --output reports/quality_gate.json \
+  --format json
+```
+
+Если gate падает, CLI возвращает код `1`, а JSON/Markdown отчёт показывает, какие проверки не прошли.
+
+---
+
 ## Demo-режим
 
 Проект можно запустить без доступа к GitHub, Jira или Yandex Tracker.
@@ -538,6 +564,7 @@ src/
   reports.ts                 # Markdown, CSV, HTML report formatting
   v2-report.ts               # report CLI
   retro-analyzer.ts          # расчёт lead time, cycle time и bottlenecks
+  quality-gate.ts            # CI gate по Clarity Score, DoR и high-risk задачам
   retro-report.ts            # CLI для Retro Task Analytics
   retro-report-*.ts          # Markdown, JSON и CSV exports для ретро
   retro-delay-reasons.ts     # причины задержек и возвратов

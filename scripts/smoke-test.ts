@@ -196,6 +196,18 @@ interface SprintHealthSmokeReport {
   recommendations?: string[];
 }
 
+interface QualityGateSmokeReport {
+  passed?: boolean;
+  failedChecks?: Array<{
+    code?: string;
+  }>;
+  summary?: {
+    totalTasks?: number;
+    highRiskTasksPercent?: number;
+    readyTasksPercent?: number;
+  };
+}
+
 interface UnifiedTaskSmokeResult {
   id?: string;
   source?: string;
@@ -1133,8 +1145,10 @@ function smokeRiskReadinessSprintHealth(): void {
       description: 'Что-то не работает, надо быстро поправить оплату.'
     }
   ]);
-  const greenOutputPath = path.join(tmpDir, 'sprint-green.json');
-  const redOutputPath = path.join(tmpDir, 'sprint-red.json');
+  const greenOutputPath = path.join(tmpDir, 'sprint-green-report.json');
+  const redOutputPath = path.join(tmpDir, 'sprint-red-report.json');
+  const qualityGateGreenPath = path.join(tmpDir, 'quality-gate-green.json');
+  const qualityGateRedPath = path.join(tmpDir, 'quality-gate-red.json');
 
   runNode([
     'dist/sprint-health-report.js',
@@ -1157,6 +1171,40 @@ function smokeRiskReadinessSprintHealth(): void {
 
   assert(readJson<SprintHealthSmokeReport>(greenOutputPath).sprintHealthStatus === 'green', 'Sprint health should detect green sprint');
   assert(readJson<SprintHealthSmokeReport>(redOutputPath).sprintHealthStatus === 'red', 'Sprint health should detect red sprint');
+
+  runNode([
+    'dist/quality-gate.js',
+    '--input',
+    greenInputPath,
+    '--output',
+    qualityGateGreenPath,
+    '--format',
+    'json'
+  ]);
+
+  const failedGate = spawnSync(process.execPath, [
+    'dist/quality-gate.js',
+    '--input',
+    redInputPath,
+    '--output',
+    qualityGateRedPath,
+    '--format',
+    'json'
+  ], {
+    cwd: rootDir,
+    encoding: 'utf8'
+  });
+  const greenGate = readJson<QualityGateSmokeReport>(qualityGateGreenPath);
+  const redGate = readJson<QualityGateSmokeReport>(qualityGateRedPath);
+
+  assert(greenGate.passed === true, 'Quality Gate should pass ready low-risk sprint');
+  assert(greenGate.summary?.totalTasks === 2, 'Quality Gate should analyze green task set');
+  assert(failedGate.status !== 0, 'Quality Gate CLI should fail red sprint with non-zero exit code');
+  assert(redGate.passed === false, 'Quality Gate JSON should mark red sprint as failed');
+  assert(
+    Boolean(redGate.failedChecks?.some((check) => check.code === 'ready_tasks_percent')),
+    'Quality Gate should explain failed readiness threshold'
+  );
 }
 
 async function smokeGitHubSync() {
