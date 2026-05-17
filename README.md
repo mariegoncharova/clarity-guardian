@@ -519,6 +519,30 @@ npm run quality:gate -- --input data/demo_tasks.json \
 
 ---
 
+## Action Plan Report
+
+Action Plan Report превращает результаты анализа в рабочий список для grooming: какие задачи стоит уточнить первыми, почему они попали в план, какие вопросы задать и какие действия выполнить.
+
+Отчёт использует Clarity Score, risk level, найденные проблемы и Clarity Fix Suggestions. Для каждой задачи показывает:
+
+- priority score;
+- причины попадания в action plan;
+- вопросы к автору задачи;
+- next actions;
+- PM-friendly rewrite.
+
+Пример запуска:
+
+```bash
+npm run action:plan -- --input data/demo_tasks.json --output reports/action_plan.md
+npm run action:plan -- --input data/demo_tasks.json --output reports/action_plan.json --format json --limit 5
+npm run action:plan -- --input data/demo_tasks.json --output reports/action_plan.csv --format csv
+```
+
+Это удобно использовать перед planning или refinement: команда видит не только метрики, но и конкретный список задач, которые надо довести до готовности.
+
+---
+
 ## Demo-режим
 
 Проект можно запустить без доступа к GitHub, Jira или Yandex Tracker.
@@ -565,6 +589,7 @@ src/
   v2-report.ts               # report CLI
   retro-analyzer.ts          # расчёт lead time, cycle time и bottlenecks
   quality-gate.ts            # CI gate по Clarity Score, DoR и high-risk задачам
+  action-plan.ts             # приоритизированный список задач для уточнения
   retro-report.ts            # CLI для Retro Task Analytics
   retro-report-*.ts          # Markdown, JSON и CSV exports для ретро
   retro-delay-reasons.ts     # причины задержек и возвратов

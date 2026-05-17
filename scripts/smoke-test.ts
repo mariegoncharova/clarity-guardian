@@ -208,6 +208,17 @@ interface QualityGateSmokeReport {
   };
 }
 
+interface ActionPlanSmokeReport {
+  totalTasks?: number;
+  includedTasks?: number;
+  items?: Array<{
+    taskId?: string;
+    priorityScore?: number;
+    questions?: string[];
+    nextActions?: string[];
+  }>;
+}
+
 interface UnifiedTaskSmokeResult {
   id?: string;
   source?: string;
@@ -1149,6 +1160,9 @@ function smokeRiskReadinessSprintHealth(): void {
   const redOutputPath = path.join(tmpDir, 'sprint-red-report.json');
   const qualityGateGreenPath = path.join(tmpDir, 'quality-gate-green.json');
   const qualityGateRedPath = path.join(tmpDir, 'quality-gate-red.json');
+  const actionPlanJsonPath = path.join(tmpDir, 'action-plan.json');
+  const actionPlanMarkdownPath = path.join(tmpDir, 'action-plan.md');
+  const actionPlanCsvPath = path.join(tmpDir, 'action-plan.csv');
 
   runNode([
     'dist/sprint-health-report.js',
@@ -1205,6 +1219,49 @@ function smokeRiskReadinessSprintHealth(): void {
     Boolean(redGate.failedChecks?.some((check) => check.code === 'ready_tasks_percent')),
     'Quality Gate should explain failed readiness threshold'
   );
+
+  runNode([
+    'dist/action-plan.js',
+    '--input',
+    'data/demo_tasks.json',
+    '--output',
+    actionPlanJsonPath,
+    '--format',
+    'json',
+    '--limit',
+    '5'
+  ]);
+  runNode([
+    'dist/action-plan.js',
+    '--input',
+    'data/demo_tasks.json',
+    '--output',
+    actionPlanMarkdownPath,
+    '--format',
+    'markdown'
+  ]);
+  runNode([
+    'dist/action-plan.js',
+    '--input',
+    'data/demo_tasks.json',
+    '--output',
+    actionPlanCsvPath,
+    '--format',
+    'csv'
+  ]);
+
+  const actionPlan = readJson<ActionPlanSmokeReport>(actionPlanJsonPath);
+  const actionPlanMarkdown = fs.readFileSync(actionPlanMarkdownPath, 'utf8');
+  const actionPlanCsv = fs.readFileSync(actionPlanCsvPath, 'utf8');
+
+  assert(actionPlan.totalTasks === 12, 'Action Plan should analyze demo tasks');
+  assert((actionPlan.includedTasks || 0) > 0, 'Action Plan should include tasks that need fixing');
+  assert(
+    Boolean(actionPlan.items?.some((item) => item.taskId === 'RETRO-105')),
+    'Action Plan should prioritize unclear demo tasks'
+  );
+  assert(actionPlanMarkdown.includes('Clarity Action Plan'), 'Action Plan markdown should be generated');
+  assert(actionPlanCsv.startsWith('taskId,title,source'), 'Action Plan CSV should include required header');
 }
 
 async function smokeGitHubSync() {
