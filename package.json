@@ -23,6 +23,7 @@
     "sprint-health": "npm run build --silent && node dist/sprint-health-report.js",
     "quality:gate": "npm run build --silent && node dist/quality-gate.js",
     "action:plan": "npm run build --silent && node dist/action-plan.js",
+    "evidence:brief": "npm run build --silent && node dist/evidence-brief.js",
     "v2:demo": "npm run build --silent && node dist/v2-report.js --demo --out-dir reports/demo",
     "v2:report": "npm run build --silent && node dist/v2-report.js",
     "build:smoke": "rm -rf .smoke-dist && tsc -p tsconfig.scripts.json",

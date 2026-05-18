@@ -543,6 +543,31 @@ npm run action:plan -- --input data/demo_tasks.json --output reports/action_plan
 
 ---
 
+## Evidence Brief
+
+Evidence Brief добавляет слой на стыке IT, научной коммуникации и project management. Отчёт превращает задачи в короткие проверяемые brief-записи для planning/refinement: какая гипотеза стоит за задачей, на какие данные команда опирается, где не хватает источника, метрики или воспроизводимого метода проверки.
+
+Отчёт помогает PM, разработчикам, QA и аналитикам увидеть:
+
+- working hypothesis для задачи;
+- evidence signals: контекст, источник наблюдения, критерии проверки, метрики;
+- evidence gaps: отсутствие источника, проверяемого результата, acceptance criteria или метрики успеха;
+- вопросы перед handoff;
+- next actions для PM / Tech Lead / QA / Analytics;
+- communication frame для обсуждения на refinement.
+
+Пример запуска:
+
+```bash
+npm run evidence:brief -- --input data/demo_tasks.json --output reports/evidence_brief.md
+npm run evidence:brief -- --input data/demo_tasks.json --output reports/evidence_brief.json --format json --limit 5
+npm run evidence:brief -- --input data/demo_tasks.json --output reports/evidence_brief.csv --format csv
+```
+
+Эта фича особенно полезна для задач с исследовательским, аналитическим или продуктовым компонентом: она не только говорит "задача мутная", а показывает, какой кусок доказательной коммуникации нужно добавить, чтобы команда могла принять решение и воспроизвести проверку.
+
+---
+
 ## Demo-режим
 
 Проект можно запустить без доступа к GitHub, Jira или Yandex Tracker.
@@ -590,6 +615,7 @@ src/
   retro-analyzer.ts          # расчёт lead time, cycle time и bottlenecks
   quality-gate.ts            # CI gate по Clarity Score, DoR и high-risk задачам
   action-plan.ts             # приоритизированный список задач для уточнения
+  evidence-brief.ts          # evidence brief для planning и научной коммуникации
   retro-report.ts            # CLI для Retro Task Analytics
   retro-report-*.ts          # Markdown, JSON и CSV exports для ретро
   retro-delay-reasons.ts     # причины задержек и возвратов
