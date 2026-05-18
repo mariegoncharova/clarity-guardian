@@ -219,6 +219,36 @@ interface ActionPlanSmokeReport {
   }>;
 }
 
+interface EvidenceBriefSmokeReport {
+  totalTasks?: number;
+  includedTasks?: number;
+  summary?: {
+    needsEvidenceReview?: number;
+    tasksWithEvidenceGaps?: number;
+    totalEvidenceGaps?: number;
+    topGapTypes?: Array<{
+      code?: string;
+      count?: number;
+    }>;
+    roleDistribution?: Array<{
+      name?: string;
+      count?: number;
+    }>;
+  };
+  items?: Array<{
+    taskId?: string;
+    priorityScore?: number;
+    decision?: string;
+    evidenceGaps?: Array<{
+      code?: string;
+      severity?: string;
+      ownerRole?: string;
+    }>;
+    questions?: string[];
+    nextActions?: string[];
+  }>;
+}
+
 interface UnifiedTaskSmokeResult {
   id?: string;
   source?: string;
@@ -1264,6 +1294,70 @@ function smokeRiskReadinessSprintHealth(): void {
   assert(actionPlanCsv.startsWith('taskId,title,source'), 'Action Plan CSV should include required header');
 }
 
+function smokeEvidenceBrief(): void {
+  const evidenceJsonPath = path.join(tmpDir, 'evidence-brief.json');
+  const evidenceMarkdownPath = path.join(tmpDir, 'evidence-brief.md');
+  const evidenceCsvPath = path.join(tmpDir, 'evidence-brief.csv');
+
+  runNode([
+    'dist/evidence-brief.js',
+    '--input',
+    'data/demo_tasks.json',
+    '--output',
+    evidenceJsonPath,
+    '--format',
+    'json',
+    '--limit',
+    '5'
+  ]);
+  runNode([
+    'dist/evidence-brief.js',
+    '--input',
+    'data/demo_tasks.json',
+    '--output',
+    evidenceMarkdownPath,
+    '--format',
+    'markdown',
+    '--limit',
+    '5'
+  ]);
+  runNode([
+    'dist/evidence-brief.js',
+    '--input',
+    'data/demo_tasks.json',
+    '--output',
+    evidenceCsvPath,
+    '--format',
+    'csv',
+    '--limit',
+    '5'
+  ]);
+
+  const evidence = readJson<EvidenceBriefSmokeReport>(evidenceJsonPath);
+  const markdown = fs.readFileSync(evidenceMarkdownPath, 'utf8');
+  const csv = fs.readFileSync(evidenceCsvPath, 'utf8');
+
+  assert(evidence.totalTasks === 12, 'Evidence Brief should analyze demo tasks');
+  assert((evidence.includedTasks || 0) > 0, 'Evidence Brief should include tasks with evidence gaps');
+  assert((evidence.summary?.needsEvidenceReview || 0) > 0, 'Evidence Brief should flag tasks for evidence review');
+  assert((evidence.summary?.totalEvidenceGaps || 0) > 0, 'Evidence Brief should count evidence gaps');
+  assert(
+    Boolean(evidence.summary?.topGapTypes?.some((gap) => gap.code === 'missing_acceptance_criteria')),
+    'Evidence Brief should classify missing verification gaps'
+  );
+  assert(
+    Boolean(evidence.summary?.roleDistribution?.some((role) => role.name === 'QA')),
+    'Evidence Brief should assign gap owners'
+  );
+  assert(
+    Boolean(evidence.items?.some((item) => item.taskId === 'RETRO-105' && item.decision === 'needs_evidence_review')),
+    'Evidence Brief should prioritize unclear demo tasks'
+  );
+  assert(markdown.includes('Evidence Brief'), 'Evidence Brief markdown should be generated');
+  assert(markdown.includes('Working hypothesis'), 'Evidence Brief markdown should include working hypothesis');
+  assert(csv.startsWith('taskId,title,source'), 'Evidence Brief CSV should include required header');
+}
+
 async function smokeGitHubSync() {
   const payloadPath = writeJson('github-payload.json', {
     type: 'issue',
@@ -1489,6 +1583,7 @@ async function smokeJiraSkip() {
     smokeV2Reports();
     smokeRetroAnalytics();
     smokeRiskReadinessSprintHealth();
+    smokeEvidenceBrief();
     await smokeGitHubSync();
     await smokeJiraSync();
     await smokeJiraSkip();
