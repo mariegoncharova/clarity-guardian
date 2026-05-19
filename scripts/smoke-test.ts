@@ -249,6 +249,34 @@ interface EvidenceBriefSmokeReport {
   }>;
 }
 
+interface DecisionLedgerSmokeReport {
+  totalTasks?: number;
+  includedTasks?: number;
+  summary?: {
+    averageTraceabilityScore?: number;
+    decisionReady?: number;
+    needsProblemFraming?: number;
+    needsValidationPlan?: number;
+    riskReviewRequired?: number;
+    topMissingLinks?: Array<{
+      name?: string;
+      count?: number;
+    }>;
+    governanceWarnings?: number;
+  };
+  items?: Array<{
+    taskId?: string;
+    decisionStatus?: string;
+    traceabilityScore?: number;
+    missingLinks?: string[];
+    governanceWarnings?: string[];
+    traceLinks?: Array<{
+      key?: string;
+      present?: boolean;
+    }>;
+  }>;
+}
+
 interface UnifiedTaskSmokeResult {
   id?: string;
   source?: string;
@@ -828,6 +856,8 @@ function smokeV2Reports(): void {
   const history = fs.readFileSync(path.join(outDir, 'clarity-history.jsonl'), 'utf8').trim().split('\n');
   const retro = fs.readFileSync(path.join(outDir, 'retro-report.md'), 'utf8');
   const research = fs.readFileSync(path.join(outDir, 'research-report.md'), 'utf8');
+  const decisionLedger = readJson<DecisionLedgerSmokeReport>(path.join(outDir, 'decision-ledger.json'));
+  const decisionLedgerMarkdown = fs.readFileSync(path.join(outDir, 'decision-ledger.md'), 'utf8');
   const csv = fs.readFileSync(path.join(outDir, 'tasks.csv'), 'utf8');
   const html = fs.readFileSync(path.join(outDir, 'dashboard.html'), 'utf8');
   const taskHistory = readJson<Record<string, unknown>>(path.join(outDir, 'task-history.json'));
@@ -845,6 +875,8 @@ function smokeV2Reports(): void {
   assert(Boolean(taskHistory['demo-before-1']), 'Task score history should be grouped by task');
   assert(retro.includes('Clarity Guardian Retro Report'), 'Retro markdown should be generated');
   assert(research.includes('может указывать на корреляцию'), 'Research report should use careful wording');
+  assert(decisionLedger.totalTasks === 8, 'V2 demo should include Decision Ledger JSON');
+  assert(decisionLedgerMarkdown.includes('Decision Traceability Matrix'), 'V2 demo should include Decision Ledger markdown');
   assert(csv.startsWith('id,key,source,title'), 'CSV export should include a header row');
   assert(html.includes('Clarity Guardian Dashboard'), 'Dashboard HTML should be generated');
 }
@@ -1358,6 +1390,73 @@ function smokeEvidenceBrief(): void {
   assert(csv.startsWith('taskId,title,source'), 'Evidence Brief CSV should include required header');
 }
 
+function smokeDecisionLedger(): void {
+  const ledgerJsonPath = path.join(tmpDir, 'decision-ledger.json');
+  const ledgerMarkdownPath = path.join(tmpDir, 'decision-ledger.md');
+  const ledgerCsvPath = path.join(tmpDir, 'decision-ledger.csv');
+
+  runNode([
+    'dist/decision-ledger.js',
+    '--input',
+    'data/demo_tasks.json',
+    '--output',
+    ledgerJsonPath,
+    '--format',
+    'json',
+    '--limit',
+    '6'
+  ]);
+  runNode([
+    'dist/decision-ledger.js',
+    '--input',
+    'data/demo_tasks.json',
+    '--output',
+    ledgerMarkdownPath,
+    '--format',
+    'markdown',
+    '--limit',
+    '6'
+  ]);
+  runNode([
+    'dist/decision-ledger.js',
+    '--input',
+    'data/demo_tasks.json',
+    '--output',
+    ledgerCsvPath,
+    '--format',
+    'csv',
+    '--limit',
+    '6'
+  ]);
+
+  const ledger = readJson<DecisionLedgerSmokeReport>(ledgerJsonPath);
+  const markdown = fs.readFileSync(ledgerMarkdownPath, 'utf8');
+  const csv = fs.readFileSync(ledgerCsvPath, 'utf8');
+
+  assert(ledger.totalTasks === 12, 'Decision Ledger should analyze demo tasks');
+  assert((ledger.includedTasks || 0) > 0, 'Decision Ledger should include tasks that need decision work');
+  assert((ledger.summary?.averageTraceabilityScore || 0) > 0, 'Decision Ledger should calculate traceability score');
+  assert(
+    (ledger.summary?.needsProblemFraming || 0) > 0 || (ledger.summary?.needsValidationPlan || 0) > 0,
+    'Decision Ledger should classify decision gaps'
+  );
+  assert(
+    Boolean(ledger.summary?.topMissingLinks?.some((link) => link.name === 'Problem framing' || link.name === 'Verification method')),
+    'Decision Ledger should summarize missing traceability links'
+  );
+  assert(
+    Boolean(ledger.items?.some((item) => item.taskId === 'RETRO-105' && item.decisionStatus === 'needs_problem_framing')),
+    'Decision Ledger should prioritize tasks without problem framing'
+  );
+  assert(
+    Boolean(ledger.items?.some((item) => (item.traceLinks || []).some((link) => link.key === 'risk_control'))),
+    'Decision Ledger should include risk control trace links'
+  );
+  assert(markdown.includes('Decision Ledger'), 'Decision Ledger markdown should be generated');
+  assert(markdown.includes('Decision Traceability Matrix'), 'Decision Ledger markdown should include matrix');
+  assert(csv.startsWith('taskId,title,source'), 'Decision Ledger CSV should include required header');
+}
+
 async function smokeGitHubSync() {
   const payloadPath = writeJson('github-payload.json', {
     type: 'issue',
@@ -1584,6 +1683,7 @@ async function smokeJiraSkip() {
     smokeRetroAnalytics();
     smokeRiskReadinessSprintHealth();
     smokeEvidenceBrief();
+    smokeDecisionLedger();
     await smokeGitHubSync();
     await smokeJiraSync();
     await smokeJiraSkip();

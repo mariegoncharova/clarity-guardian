@@ -568,6 +568,40 @@ npm run evidence:brief -- --input data/demo_tasks.json --output reports/evidence
 
 ---
 
+## Decision Ledger
+
+Decision Ledger показывает зрелость управленческой мысли в проекте: он проверяет, прослеживается ли решение от исходной проблемы до проверки, владельца и контроля риска.
+
+Это не просто ещё один список проблем. Отчёт собирает по каждой задаче decision trace:
+
+- problem framing: какая проблема зафиксирована;
+- decision intent: какое целевое изменение принято;
+- evidence basis: на какие данные или наблюдения опирается решение;
+- verification method: как QA, reviewer или analytics проверят результат;
+- owner and priority: кто accountable и насколько задача готова к commitment;
+- dependency control: есть ли внешние зависимости и владельцы;
+- risk control: нужен ли отдельный risk review.
+
+Для каждой задачи считается **Traceability Score** от 0 до 100 и статус:
+
+- `decision_ready`;
+- `needs_problem_framing`;
+- `needs_validation_plan`;
+- `needs_owner_alignment`;
+- `risk_review_required`.
+
+Пример запуска:
+
+```bash
+npm run decision:ledger -- --input data/demo_tasks.json --output reports/decision_ledger.md
+npm run decision:ledger -- --input data/demo_tasks.json --output reports/decision_ledger.json --format json --limit 5
+npm run decision:ledger -- --input data/demo_tasks.json --output reports/decision_ledger.csv --format csv
+```
+
+Эта фича хорошо показывает, что Clarity Guardian думает как PM-инструмент: он связывает требования, evidence, DoR/DoD, риск и ответственность в одну проверяемую цепочку принятия решений.
+
+---
+
 ## Demo-режим
 
 Проект можно запустить без доступа к GitHub, Jira или Yandex Tracker.
@@ -616,6 +650,7 @@ src/
   quality-gate.ts            # CI gate по Clarity Score, DoR и high-risk задачам
   action-plan.ts             # приоритизированный список задач для уточнения
   evidence-brief.ts          # evidence brief для planning и научной коммуникации
+  decision-ledger.ts         # матрица прослеживаемости решений и risk governance
   retro-report.ts            # CLI для Retro Task Analytics
   retro-report-*.ts          # Markdown, JSON и CSV exports для ретро
   retro-delay-reasons.ts     # причины задержек и возвратов
