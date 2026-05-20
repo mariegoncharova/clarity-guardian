@@ -1,6 +1,12 @@
 import { normalizeText } from '../utils';
 
 import type {
+  BadFormulationCategory,
+  BadFormulationRuleConfig,
+  TemplateLanguage,
+  WorkItemType
+} from '../types';
+import type {
   ToneAnalysisResult,
   ToneCategory,
   ToneProblematicPhrase,
@@ -15,6 +21,12 @@ interface PhraseRule {
 
 interface RegexRule extends PhraseRule {
   pattern: RegExp;
+}
+
+interface ToneAnalysisOptions {
+  badFormulations?: BadFormulationRuleConfig[];
+  language?: TemplateLanguage;
+  workItemType?: WorkItemType;
 }
 
 export const VAGUE_WORDING_PHRASES = [
@@ -269,6 +281,78 @@ function collectDictionaryMatches(
   }
 }
 
+function badFormulationCategoryToToneCategory(category: BadFormulationCategory): ToneCategory {
+  if (category === 'pressure') {
+    return 'unclear_urgency';
+  }
+
+  if (category === 'missing_context' || category === 'hidden_requirement') {
+    return 'missing_context';
+  }
+
+  if (category === 'weak_acceptance') {
+    return 'missing_expected_result';
+  }
+
+  return 'vague_wording';
+}
+
+function defaultBadFormulationExplanation(rule: BadFormulationRuleConfig): string {
+  const explanations: Record<BadFormulationCategory, string> = {
+    vague: 'Фраза слишком общая и требует более проверяемого результата.',
+    pressure: 'Фраза задаёт давление или срочность без понятного обоснования.',
+    unclear_reference: 'Фраза ссылается на внешний контекст, который не зафиксирован в задаче.',
+    missing_context: 'Формулировка просит действие, но не объясняет причину и пользовательский сценарий.',
+    weak_acceptance: 'Фраза не задаёт проверяемых критериев приёмки.',
+    hidden_requirement: 'Фраза скрывает требование, которое нужно записать явно.'
+  };
+
+  return explanations[rule.category];
+}
+
+function ruleMatchesContext(rule: BadFormulationRuleConfig, options: ToneAnalysisOptions): boolean {
+  const languageMatches =
+    !rule.languages ||
+    rule.languages.length === 0 ||
+    !options.language ||
+    rule.languages.includes(options.language);
+  const typeMatches =
+    !rule.workItemTypes ||
+    rule.workItemTypes.length === 0 ||
+    !options.workItemType ||
+    rule.workItemTypes.includes(options.workItemType);
+
+  return languageMatches && typeMatches;
+}
+
+function collectConfiguredBadFormulations(
+  text: string,
+  options: ToneAnalysisOptions,
+  categories: Set<ToneCategory>,
+  problematicPhrases: ToneProblematicPhrase[]
+): void {
+  for (const rule of options.badFormulations || []) {
+    if (!ruleMatchesContext(rule, options)) {
+      continue;
+    }
+
+    const match = findPhrase(text, rule.phrase);
+
+    if (!match) {
+      continue;
+    }
+
+    const category = badFormulationCategoryToToneCategory(rule.category);
+    addCategory(categories, category);
+    addProblematicPhrase(
+      problematicPhrases,
+      rule.phrase,
+      category,
+      rule.message || defaultBadFormulationExplanation(rule)
+    );
+  }
+}
+
 function collectUrgencyMatches(
   text: string,
   categories: Set<ToneCategory>,
@@ -487,12 +571,13 @@ function buildRewrite(text: string, categories: ToneCategory[]): string {
   return 'Нужно уточнить задачу: описать текущий сценарий, причину изменения, ожидаемый результат и критерии приёмки.';
 }
 
-export function analyzeToneOfVoice(text: string): ToneAnalysisResult {
+export function analyzeToneOfVoice(text: string, options: ToneAnalysisOptions = {}): ToneAnalysisResult {
   const normalizedText = normalizeForSearch(text);
   const categories = new Set<ToneCategory>();
   const problematicPhrases: ToneProblematicPhrase[] = [];
 
   collectDictionaryMatches(normalizedText, categories, problematicPhrases);
+  collectConfiguredBadFormulations(normalizedText, options, categories, problematicPhrases);
   collectUrgencyMatches(normalizedText, categories, problematicPhrases);
   collectMissingExpectedResult(normalizedText, categories, problematicPhrases);
   collectMissingContext(normalizedText, categories, problematicPhrases);

@@ -3,7 +3,7 @@ import path from 'node:path';
 
 import { analyzeTask } from './analyze';
 import { unifiedTaskToTaskPayload } from './task-model';
-import { writeJsonFile } from './utils';
+import { normalizeText, writeJsonFile } from './utils';
 
 import type {
   ClarityDashboard,
@@ -58,6 +58,33 @@ function nullableAverage(values: Array<number | undefined>): number | null {
 
 function addProblem(problems: Set<string>, problem: string): void {
   problems.add(problem);
+}
+
+function normalizeRuleValue(value: string): string {
+  return normalizeText(value).toLowerCase();
+}
+
+export function filterTasksForAnalysis(tasks: UnifiedTask[], config?: ResolvedConfig): UnifiedTask[] {
+  const ignoredLabels = new Set((config?.analytics.ignoredLabels || []).map(normalizeRuleValue));
+  const ignoredStatuses = new Set((config?.analytics.ignoredStatuses || []).map(normalizeRuleValue));
+
+  if (ignoredLabels.size === 0 && ignoredStatuses.size === 0) {
+    return tasks;
+  }
+
+  return tasks.filter((task) => {
+    const status = normalizeRuleValue(task.status || '');
+    const labels = [
+      ...(task.labels || []),
+      ...(task.tags || [])
+    ].map(normalizeRuleValue);
+
+    if (status && ignoredStatuses.has(status)) {
+      return false;
+    }
+
+    return !labels.some((label) => ignoredLabels.has(label));
+  });
 }
 
 function getProblemCodes(record: TaskAnalysisRecord): string[] {
@@ -232,7 +259,7 @@ export function analyzeUnifiedTasks(
 ): TaskAnalysisRecord[] {
   const analyzedAt = options.analyzedAt || new Date().toISOString();
 
-  return tasks.map((task) => {
+  return filterTasksForAnalysis(tasks, options.config).map((task) => {
     const analysis = analyzeTask(
       unifiedTaskToTaskPayload(task, options.config),
       options.config ? { config: options.config } : {}

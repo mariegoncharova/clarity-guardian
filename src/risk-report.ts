@@ -1,4 +1,7 @@
 import {
+  loadConfig
+} from './config';
+import {
   inferReportFormat,
   csvEscape,
   tableCell,
@@ -94,6 +97,7 @@ async function main(): Promise<void> {
   const args = parseArgs(process.argv);
   const inputPath = getStringArg(args, 'input');
   const outputPath = getStringArg(args, 'output');
+  const config = loadConfig(getStringArg(args, 'config'));
 
   if (!inputPath) {
     throw makeCliError('Не передан аргумент --input');
@@ -105,7 +109,7 @@ async function main(): Promise<void> {
 
   const format = inferReportFormat(outputPath, getStringArg(args, 'format'));
   const tasks = normalizeUnifiedTasks(readJsonFile<unknown>(inputPath));
-  const report = analyzeRisks(tasks);
+  const report = analyzeRisks(tasks, { thresholds: config.riskThresholds });
 
   writeReport(outputPath, formatRiskReport(report, format));
   process.stdout.write(`Отчёт Risk Detection сохранён: ${outputPath}\n`);

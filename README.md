@@ -12,6 +12,21 @@ Clarity Guardian вырос из GitHub Issue/PR bot, который прове�
 
 ---
 
+## Product Positioning
+
+**Clarity Guardian is a lightweight PM analytics tool that helps teams improve task clarity, detect weak requirements, analyze delivery risks, and prepare retro-ready reports based on task quality and lifecycle data.**
+
+It is useful for:
+
+- PMs who want to improve task handoff and sprint readiness;
+- QA engineers who need testable requirements and fewer unclear tickets;
+- engineering leads who want to see delivery risks, bottlenecks and reopened tasks earlier;
+- portfolio reviewers who need to understand product thinking, architecture and measurable value quickly.
+
+The project is intentionally compact: no heavy backend, no database, no complex frontend. It demonstrates how a real product could start as a bot and grow into a PM / Engineering Analytics workflow.
+
+---
+
 ## Зачем нужен Clarity Guardian
 
 В продуктовой разработке задача может быть формально заведена в трекере, но при этом оставаться непонятной для команды.
@@ -602,6 +617,37 @@ npm run decision:ledger -- --input data/demo_tasks.json --output reports/decisio
 
 ---
 
+## Task Health Profile
+
+Task Health Profile собирает по каждой задаче компактный профиль, который удобно использовать на refinement, planning или ретро.
+
+Профиль показывает:
+
+- Clarity Score;
+- risk level и risk score;
+- missing sections;
+- weak formulations и tone issues;
+- delivery risks;
+- QA risks;
+- DoR / DoD scores;
+- lead time и cycle time;
+- manager recommendations;
+- next best action.
+
+На уровне проекта отчёт считает Project Quality Summary: средний Clarity Score, процент good tasks, долю задач без acceptance criteria, долю vague formulations, high-risk tasks, reopened tasks, stuck tasks, частые проблемы и рекомендации для процесса.
+
+Пример запуска:
+
+```bash
+npm run task:health -- --input data/demo_tasks.json --output reports/task_health_profile.md
+npm run task:health -- --input data/demo_tasks.json --output reports/task_health_profile.json --format json --limit 20
+npm run task:health -- --input data/demo_tasks.json --output reports/task_health_profile.csv --format csv --attention-only
+```
+
+Эта фича делает проект удобнее для внешнего демо: можно открыть один отчёт и увидеть, почему конкретная задача рискованная, что в ней не хватает и какой следующий управленческий шаг нужен.
+
+---
+
 ## Quick Bug Fix Queue
 
 Quick Bug Fix Queue помогает быстро не терять мелкие баги в общем потоке задач. Он находит bug-кандидатов, отличает быстрые безопасные фиксы от задач, которые сначала требуют уточнения или risk review, и формирует короткую карточку фикса.
@@ -678,6 +724,7 @@ src/
   action-plan.ts             # приоритизированный список задач для уточнения
   evidence-brief.ts          # evidence brief для planning и научной коммуникации
   decision-ledger.ts         # матрица прослеживаемости решений и risk governance
+  task-health-profile.ts     # единый профиль здоровья задачи и project quality summary
   quick-bug-fix.ts           # очередь быстрых и безопасных фиксов мелких багов
   retro-report.ts            # CLI для Retro Task Analytics
   retro-report-*.ts          # Markdown, JSON и CSV exports для ретро
@@ -721,7 +768,7 @@ npm test
 Запустить demo:
 
 ```bash
-npm run v2:demo
+npm run demo
 ```
 
 После запуска будут сгенерированы файлы:
@@ -732,6 +779,9 @@ reports/demo/dashboard.md
 reports/demo/dashboard.html
 reports/demo/retro-report.md
 reports/demo/research-report.md
+reports/demo/decision-ledger.md
+reports/demo/quick-bug-fix.md
+reports/demo/task-health-profile.md
 reports/demo/tasks.csv
 reports/demo/before-after.json
 reports/demo/clarity-history.jsonl
@@ -740,6 +790,23 @@ reports/demo/analysis-records.json
 ```
 
 Папка `reports/` игнорируется git, потому что это сгенерированный вывод.
+
+---
+
+## Example Reports
+
+Чтобы внешний ревьюер мог быстро понять формат результата без запуска проекта, в репозитории есть committed examples:
+
+```text
+examples/sample-project-dashboard.md
+examples/sample-retro-report.md
+examples/sample-before-after.json
+examples/sample-task-health-profile.md
+examples/sample-clarity-report.json
+examples/sample-task-health.csv
+```
+
+Полные актуальные отчёты генерируются командой `npm run demo` в `reports/demo/`.
 
 ---
 
@@ -958,9 +1025,14 @@ clarity-guardian.config.json
 - language: `auto`, `ru`, `en`;
 - mode: `strict`, `non-strict`;
 - `updateDescription`;
-- common rules;
-- type-specific rules;
-- project-specific stop phrases.
+- обязательные секции;
+- common и type-specific rules;
+- project-specific stop phrases;
+- bad formulations dictionary;
+- scoring weights и thresholds;
+- risk thresholds;
+- ignored labels / statuses для аналитики;
+- default report format.
 
 Пример:
 
@@ -977,7 +1049,31 @@ clarity-guardian.config.json
       "message": "Фраза оставляет незакрытый вопрос. Укажи, что именно нужно уточнить и у кого.",
       "languages": ["ru"]
     }
-  ]
+  ],
+  "badFormulations": [
+    {
+      "phrase": "по аналогии",
+      "category": "unclear_reference",
+      "message": "Фраза скрывает критерии сравнения.",
+      "languages": ["ru"]
+    }
+  ],
+  "scoring": {
+    "weights": {
+      "missingAcceptanceCriteria": 20
+    },
+    "thresholds": {
+      "good": 80,
+      "medium": 50
+    }
+  },
+  "analytics": {
+    "ignoredLabels": ["duplicate"],
+    "ignoredStatuses": ["Cancelled"]
+  },
+  "reports": {
+    "defaultFormat": "markdown"
+  }
 }
 ```
 
@@ -1025,6 +1121,7 @@ Smoke tests покрывают:
 - Markdown, JSON, CSV и HTML exports;
 - Retro Task Analytics edge cases;
 - Risk Detection, DoR/DoD и Sprint Health Report;
+- Evidence Brief, Decision Ledger, Quick Bug Fix Queue и Task Health Profile;
 - Yandex Tracker adapter и missing-field fallback;
 - GitHub comment update behavior;
 - Jira sync behavior;
@@ -1040,6 +1137,11 @@ npm run smoke
 
 ```bash
 npm ci
+npm run typecheck
+npm run lint
+npm run build
+npm test
+npm run demo
 npm run verify
 git diff --check
 ```
@@ -1053,7 +1155,42 @@ git diff --check
 - Communication Guide;
 - Scientific Communication Rationale;
 - Portfolio Case;
-- Demo Guide.
+- Demo Guide;
+- Architecture;
+- Roadmap;
+- Product And Engineering Audit;
+- examples with sample reports.
+
+Ключевые файлы:
+
+```text
+ARCHITECTURE.md
+ROADMAP.md
+docs/PRODUCT_AUDIT.md
+docs/V2_DEMO_GUIDE.md
+examples/
+```
+
+---
+
+## Roadmap
+
+Roadmap находится в `ROADMAP.md` и разделён на этапы:
+
+- V1 - GitHub Issue / PR clarity bot;
+- V2 - PM analytics and reports;
+- V3 - integrations and dashboards;
+- V4 - SaaS / team workspace potential.
+
+---
+
+## Limitations
+
+- Аналитика строится на эвристиках и качестве входных данных, поэтому её стоит использовать как decision support, а не как абсолютную оценку человека или команды.
+- Lifecycle metrics зависят от полноты `statusHistory` во внешнем трекере.
+- Static HTML dashboard намеренно простой: он подходит для demo, но не заменяет полноценный SaaS dashboard.
+- AI-интеграция не является обязательной частью проекта: все ключевые сценарии работают без API keys.
+- Для коммерческого использования нужно дополнительно валидировать scoring weights и risk thresholds на реальных данных команды.
 
 ---
 

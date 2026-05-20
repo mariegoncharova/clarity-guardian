@@ -7,8 +7,16 @@ export type ConfigLanguage = TemplateLanguage | 'auto';
 export type ClarityMode = 'strict' | 'non-strict';
 export type TaskSource = 'github' | 'jira' | 'yandex-tracker' | 'demo' | 'file';
 export type TaskPeriod = 'before' | 'after';
+export type ReportFormatName = 'markdown' | 'json' | 'csv' | 'html';
 
 export type RemarkLevel = 'error' | 'warning';
+export type BadFormulationCategory =
+  | 'vague'
+  | 'pressure'
+  | 'unclear_reference'
+  | 'missing_context'
+  | 'weak_acceptance'
+  | 'hidden_requirement';
 
 export interface TaskPayload {
   type?: TaskType;
@@ -145,6 +153,15 @@ export interface StopPhraseRuleConfig {
   workItemTypes?: WorkItemType[];
 }
 
+export interface BadFormulationRuleConfig {
+  phrase: string;
+  category: BadFormulationCategory;
+  message?: string;
+  recommendation?: string;
+  languages?: TemplateLanguage[];
+  workItemTypes?: WorkItemType[];
+}
+
 export interface SectionRuleConfig {
   section: string;
   aliases?: string[];
@@ -161,6 +178,78 @@ export interface RuleSetConfig {
   stopPhrases?: StopPhraseRuleConfig[];
 }
 
+export interface ClarityScoreWeights {
+  errorRemark?: number;
+  warningRemark?: number;
+  missingContext?: number;
+  missingExpectedResult?: number;
+  missingAcceptanceCriteria?: number;
+  hiddenAgreement?: number;
+  missingUserScenario?: number;
+  qaUncertainty?: number;
+  implementationWithoutGoal?: number;
+}
+
+export interface ResolvedClarityScoreWeights {
+  errorRemark: number;
+  warningRemark: number;
+  missingContext: number;
+  missingExpectedResult: number;
+  missingAcceptanceCriteria: number;
+  hiddenAgreement: number;
+  missingUserScenario: number;
+  qaUncertainty: number;
+  implementationWithoutGoal: number;
+}
+
+export interface ClarityScoreThresholds {
+  good?: number;
+  medium?: number;
+}
+
+export interface ResolvedClarityScoreThresholds {
+  good: number;
+  medium: number;
+}
+
+export interface ScoringConfig {
+  weights?: ClarityScoreWeights;
+  thresholds?: ClarityScoreThresholds;
+}
+
+export interface ResolvedScoringConfig {
+  weights: ResolvedClarityScoreWeights;
+  thresholds: ResolvedClarityScoreThresholds;
+}
+
+export interface RiskThresholdConfig {
+  lowMax?: number;
+  mediumMax?: number;
+}
+
+export interface ResolvedRiskThresholdConfig {
+  lowMax: number;
+  mediumMax: number;
+}
+
+export interface AnalyticsConfig {
+  ignoredLabels?: string[];
+  ignoredStatuses?: string[];
+}
+
+export interface ResolvedAnalyticsConfig {
+  ignoredLabels: string[];
+  ignoredStatuses: string[];
+}
+
+export interface ReportsConfig {
+  defaultFormat?: ReportFormatName;
+}
+
+export interface ResolvedReportsConfig {
+  defaultFormat: ReportFormatName;
+}
+
 export interface ClarityGuardianConfig {
   language?: ConfigLanguage;
   mode?: ClarityMode;
@@ -168,6 +257,11 @@ export interface ClarityGuardianConfig {
   updateDescription?: boolean;
   rules?: Partial<Record<'common' | WorkItemType, RuleSetConfig>>;
   stopPhrases?: StopPhraseRuleConfig[];
+  badFormulations?: BadFormulationRuleConfig[];
+  scoring?: ScoringConfig;
+  riskThresholds?: RiskThresholdConfig;
+  analytics?: AnalyticsConfig;
+  reports?: ReportsConfig;
 }
 
 export interface ResolvedConfig {
@@ -176,6 +270,11 @@ export interface ResolvedConfig {
   updateDescription: boolean;
   rules: Record<'common' | WorkItemType, RuleSetConfig>;
   stopPhrases: StopPhraseRuleConfig[];
+  badFormulations: BadFormulationRuleConfig[];
+  scoring: ResolvedScoringConfig;
+  riskThresholds: ResolvedRiskThresholdConfig;
+  analytics: ResolvedAnalyticsConfig;
+  reports: ResolvedReportsConfig;
 }
 
 export interface OpenAITextContentItem {

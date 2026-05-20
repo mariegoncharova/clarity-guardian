@@ -46,3 +46,21 @@ test('detects passive-aggressive wording', () => {
   assert.ok(result.categories.includes('passive_aggressive'));
   assert.ok(result.riskLevel === 'medium' || result.riskLevel === 'high');
 });
+
+test('supports configurable bad formulations dictionary', () => {
+  const result = analyzeToneOfVoice('Сделать checkout по аналогии с прошлым проектом.', {
+    language: 'ru',
+    workItemType: 'task',
+    badFormulations: [
+      {
+        phrase: 'по аналогии',
+        category: 'unclear_reference',
+        message: 'Нужна ссылка или явное описание референса.',
+        languages: ['ru']
+      }
+    ]
+  });
+
+  assert.ok(result.categories.includes('vague_wording'));
+  assert.ok(result.problematicPhrases.some((phrase) => phrase.phrase === 'по аналогии'));
+});

@@ -1,0 +1,18 @@
+{
+  "taskId": "RETRO-104",
+  "title": "Исправить ошибку валидации промокода",
+  "clarityScore": 84,
+  "riskLevel": "low",
+  "signals": {
+    "hasContext": true,
+    "hasExpectedResult": true,
+    "hasAcceptanceCriteria": true,
+    "tone": "constructive",
+    "returnedFromTesting": false
+  },
+  "managerRecommendations": [
+    "Keep the clear expected result and acceptance criteria.",
+    "Use this task as an example for small bug-fix writing.",
+    "Preserve the regression checklist for active, expired and invalid promo codes."
+  ]
+}

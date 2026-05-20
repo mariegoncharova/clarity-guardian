@@ -10,6 +10,9 @@ import {
   writeHistoryJsonl
 } from './analytics';
 import {
+  loadConfig
+} from './config';
+import {
   buildDecisionLedgerReport,
   formatDecisionLedgerMarkdown
 } from './decision-ledger';
@@ -25,6 +28,10 @@ import {
   formatTasksCsv
 } from './reports';
 import { normalizeUnifiedTasks } from './task-model';
+import {
+  buildTaskHealthReport,
+  formatTaskHealthMarkdown
+} from './task-health-profile';
 import { createYandexTrackerProviderFromEnv } from './yandex-tracker';
 import {
   getStringArg,
@@ -83,16 +90,21 @@ async function main(): Promise<void> {
   const args = parseArgs(process.argv);
   const outDir = getStringArg(args, 'out-dir') || DEFAULT_OUT_DIR;
   const analyzedAt = getStringArg(args, 'analyzed-at') || new Date().toISOString();
+  const config = loadConfig(getStringArg(args, 'config'));
   const tasks = await loadTasks(args);
 
   ensureDir(outDir);
 
-  const records = analyzeUnifiedTasks(tasks, { analyzedAt });
+  const records = analyzeUnifiedTasks(tasks, { analyzedAt, config });
   const dashboard = buildDashboard(records);
   const comparison = compareBeforeAfter(records);
   const research = buildResearchData(records);
   const decisionLedger = buildDecisionLedgerReport(records);
   const quickBugFix = buildQuickBugFixReport(records, { includeNeedsReview: true });
+  const taskHealth = buildTaskHealthReport(records, {
+    includeHealthy: true,
+    riskThresholds: config.riskThresholds
+  });
 
   writeJsonFile(resolveOutputPath(outDir, 'dashboard.json'), dashboard);
   writeJsonFile(resolveOutputPath(outDir, 'before-after.json'), comparison);
@@ -100,6 +112,7 @@ async function main(): Promise<void> {
   writeJsonFile(resolveOutputPath(outDir, 'analysis-records.json'), records);
   writeJsonFile(resolveOutputPath(outDir, 'decision-ledger.json'), decisionLedger);
   writeJsonFile(resolveOutputPath(outDir, 'quick-bug-fix.json'), quickBugFix);
+  writeJsonFile(resolveOutputPath(outDir, 'task-health-profile.json'), taskHealth);
   writeHistoryJsonl(resolveOutputPath(outDir, 'clarity-history.jsonl'), records);
   writeTextFile(resolveOutputPath(outDir, 'dashboard.md'), formatDashboardMarkdown(dashboard));
   writeTextFile(resolveOutputPath(outDir, 'dashboard.html'), formatDashboardHtml(dashboard));
@@ -107,6 +120,7 @@ async function main(): Promise<void> {
   writeTextFile(resolveOutputPath(outDir, 'research-report.md'), formatResearchReportMarkdown(research));
   writeTextFile(resolveOutputPath(outDir, 'decision-ledger.md'), formatDecisionLedgerMarkdown(decisionLedger));
   writeTextFile(resolveOutputPath(outDir, 'quick-bug-fix.md'), formatQuickBugFixMarkdown(quickBugFix));
+  writeTextFile(resolveOutputPath(outDir, 'task-health-profile.md'), formatTaskHealthMarkdown(taskHealth));
   writeTextFile(resolveOutputPath(outDir, 'tasks.csv'), formatTasksCsv(records));
 
   process.stdout.write(`Clarity Guardian V2 report generated in ${outDir}\n`);

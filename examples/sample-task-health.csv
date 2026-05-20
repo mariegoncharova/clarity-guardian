@@ -1,0 +1,4 @@
+taskId,title,healthStatus,clarityScore,riskLevel,nextBestAction
+RETRO-105,Переделать фильтры каталога,delivery_risk,0,high,"Split scope and define expected result before development."
+RETRO-109,Добавить обработку edge cases в checkout,qa_risk,3,medium,"Add acceptance criteria and reproduction/testing evidence."
+RETRO-104,Исправить ошибку валидации промокода,healthy,100,low,"Keep as an example for small bug-fix tasks."

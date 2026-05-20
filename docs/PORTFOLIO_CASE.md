@@ -86,3 +86,21 @@ Clarity Guardian развивается не как набор разрозне�
 ```bash
 npm run decision:ledger -- --input data/demo_tasks.json --output reports/decision_ledger.md
 ```
+
+Второй сильный пример - **Task Health Profile**. Он показывает, что проект умеет мыслить не только "есть/нет секции", а собирает профиль задачи для принятия решения:
+
+- Clarity Score;
+- delivery risk;
+- QA risk;
+- DoR / DoD;
+- lifecycle-сигналы;
+- weak formulations;
+- next best action.
+
+Пример:
+
+```bash
+npm run task:health -- --input data/demo_tasks.json --output reports/task_health_profile.md
+```
+
+Так проект можно презентовать как lightweight PM analytics tool: он помогает улучшать качество требований, готовить ретро, снижать возвраты с тестирования и показывать управленческую зрелость через данные.

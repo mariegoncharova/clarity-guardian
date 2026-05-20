@@ -481,9 +481,14 @@ export function analyzeTask(
   const clarityScore = calculateClarityScore({
     title: normalizedTask.title,
     body: normalizedTask.body,
-    remarks
+    remarks,
+    scoring: config.scoring
   });
-  const toneOfVoice = analyzeToneOfVoice(`${normalizedTask.title}\n${normalizedTask.body}`);
+  const toneOfVoice = analyzeToneOfVoice(`${normalizedTask.title}\n${normalizedTask.body}`, {
+    badFormulations: config.badFormulations,
+    language: normalizedTask.language,
+    workItemType: normalizedTask.workItemType
+  });
   const managerRecommendations = generateManagerRecommendations(
     normalizedTask,
     remarks,

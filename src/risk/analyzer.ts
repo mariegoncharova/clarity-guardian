@@ -15,6 +15,7 @@ import {
 } from '../task-signals';
 
 import type {
+  ResolvedRiskThresholdConfig,
   UnifiedTask
 } from '../types';
 
@@ -27,12 +28,17 @@ function capScore(score: number): number {
   return Math.min(100, Math.max(0, score));
 }
 
-function toRiskLevel(score: number): RiskLevel {
-  if (score <= 30) {
+const DEFAULT_RISK_THRESHOLDS: ResolvedRiskThresholdConfig = {
+  lowMax: 30,
+  mediumMax: 60
+};
+
+function toRiskLevel(score: number, thresholds: ResolvedRiskThresholdConfig): RiskLevel {
+  if (score <= thresholds.lowMax) {
     return 'low';
   }
 
-  if (score <= 60) {
+  if (score <= thresholds.mediumMax) {
     return 'medium';
   }
 
@@ -70,7 +76,13 @@ function buildRecommendation(factors: string[]): string {
 }
 
 /** Рассчитывает риск задачи по ясности, содержанию, домену, зависимостям и истории возвратов. */
-export function analyzeTaskRisk(task: UnifiedTask): RiskAnalysis {
+export function analyzeTaskRisk(
+  task: UnifiedTask,
+  options: {
+    thresholds?: ResolvedRiskThresholdConfig;
+  } = {}
+): RiskAnalysis {
+  const thresholds = options.thresholds || DEFAULT_RISK_THRESHOLDS;
   const clarityScore = getTaskClarityScore(task);
   const text = getTaskText(task);
   const factors: string[] = [];
@@ -142,13 +154,18 @@ export function analyzeTaskRisk(task: UnifiedTask): RiskAnalysis {
   return {
     taskId: getTaskId(task),
     title: task.title,
-    riskLevel: toRiskLevel(cappedScore),
+    riskLevel: toRiskLevel(cappedScore, thresholds),
     riskScore: cappedScore,
     riskFactors: factors,
     recommendation: buildRecommendation(factors)
   };
 }
 
-export function analyzeRisks(tasks: UnifiedTask[]): RiskAnalysis[] {
-  return tasks.map(analyzeTaskRisk);
+export function analyzeRisks(
+  tasks: UnifiedTask[],
+  options: {
+    thresholds?: ResolvedRiskThresholdConfig;
+  } = {}
+): RiskAnalysis[] {
+  return tasks.map((task) => analyzeTaskRisk(task, options));
 }

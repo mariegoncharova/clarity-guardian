@@ -8,6 +8,8 @@ import type {
   ClarityMode,
   ConfigLanguage,
   ResolvedConfig,
+  ResolvedClarityScoreThresholds,
+  ResolvedClarityScoreWeights,
   RuleSetConfig,
   SectionRuleConfig,
   StopPhraseRuleConfig,
@@ -189,7 +191,36 @@ const DEFAULT_CONFIG: ResolvedConfig = {
     research: {},
     tech_debt: {}
   },
-  stopPhrases: []
+  stopPhrases: [],
+  badFormulations: [],
+  scoring: {
+    weights: {
+      errorRemark: 20,
+      warningRemark: 7,
+      missingContext: 20,
+      missingExpectedResult: 20,
+      missingAcceptanceCriteria: 20,
+      hiddenAgreement: 10,
+      missingUserScenario: 10,
+      qaUncertainty: 10,
+      implementationWithoutGoal: 10
+    },
+    thresholds: {
+      good: 80,
+      medium: 50
+    }
+  },
+  riskThresholds: {
+    lowMax: 30,
+    mediumMax: 60
+  },
+  analytics: {
+    ignoredLabels: [],
+    ignoredStatuses: []
+  },
+  reports: {
+    defaultFormat: 'markdown'
+  }
 };
 
 function readConfig(configPath?: string): ClarityGuardianConfig {
@@ -249,6 +280,44 @@ function resolveUpdateDescription(config: ClarityGuardianConfig): boolean {
   return DEFAULT_CONFIG.updateDescription;
 }
 
+function resolveScoreWeights(config: ClarityGuardianConfig): ResolvedClarityScoreWeights {
+  const weights = config.scoring?.weights || {};
+
+  return {
+    errorRemark: weights.errorRemark ?? DEFAULT_CONFIG.scoring.weights.errorRemark,
+    warningRemark: weights.warningRemark ?? DEFAULT_CONFIG.scoring.weights.warningRemark,
+    missingContext: weights.missingContext ?? DEFAULT_CONFIG.scoring.weights.missingContext,
+    missingExpectedResult: weights.missingExpectedResult ?? DEFAULT_CONFIG.scoring.weights.missingExpectedResult,
+    missingAcceptanceCriteria: weights.missingAcceptanceCriteria ?? DEFAULT_CONFIG.scoring.weights.missingAcceptanceCriteria,
+    hiddenAgreement: weights.hiddenAgreement ?? DEFAULT_CONFIG.scoring.weights.hiddenAgreement,
+    missingUserScenario: weights.missingUserScenario ?? DEFAULT_CONFIG.scoring.weights.missingUserScenario,
+    qaUncertainty: weights.qaUncertainty ?? DEFAULT_CONFIG.scoring.weights.qaUncertainty,
+    implementationWithoutGoal: weights.implementationWithoutGoal ?? DEFAULT_CONFIG.scoring.weights.implementationWithoutGoal
+  };
+}
+
+function resolveScoreThresholds(config: ClarityGuardianConfig): ResolvedClarityScoreThresholds {
+  const configured = config.scoring?.thresholds || {};
+  const thresholds = {
+    good: configured.good ?? DEFAULT_CONFIG.scoring.thresholds.good,
+    medium: configured.medium ?? DEFAULT_CONFIG.scoring.thresholds.medium
+  };
+
+  return thresholds.good >= thresholds.medium
+    ? thresholds
+    : DEFAULT_CONFIG.scoring.thresholds;
+}
+
+function resolveReportFormat(config: ClarityGuardianConfig): ResolvedConfig['reports']['defaultFormat'] {
+  const format = config.reports?.defaultFormat;
+
+  if (format === 'markdown' || format === 'json' || format === 'csv' || format === 'html') {
+    return format;
+  }
+
+  return DEFAULT_CONFIG.reports.defaultFormat;
+}
+
 export function loadConfig(configPath?: string): ResolvedConfig {
   const config = readConfig(configPath);
   const rules = {
@@ -274,7 +343,23 @@ export function loadConfig(configPath?: string): ResolvedConfig {
       ...(config.rules?.story?.stopPhrases || []),
       ...(config.rules?.research?.stopPhrases || []),
       ...(config.rules?.tech_debt?.stopPhrases || [])
-    ]
+    ],
+    badFormulations: config.badFormulations || [],
+    scoring: {
+      weights: resolveScoreWeights(config),
+      thresholds: resolveScoreThresholds(config)
+    },
+    riskThresholds: {
+      ...DEFAULT_CONFIG.riskThresholds,
+      ...(config.riskThresholds || {})
+    },
+    analytics: {
+      ignoredLabels: config.analytics?.ignoredLabels || [],
+      ignoredStatuses: config.analytics?.ignoredStatuses || []
+    },
+    reports: {
+      defaultFormat: resolveReportFormat(config)
+    }
   };
 }
 

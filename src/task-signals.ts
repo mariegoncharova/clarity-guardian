@@ -153,7 +153,8 @@ function calculateDerivedClarityScore(task: UnifiedTask): number {
   return calculateClarityScore({
     title,
     body,
-    remarks
+    remarks,
+    scoring: config.scoring
   }).score;
 }
 

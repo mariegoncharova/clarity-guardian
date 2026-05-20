@@ -1,4 +1,7 @@
-import type { Remark } from './types';
+import type {
+  Remark,
+  ResolvedScoringConfig
+} from './types';
 
 export type ClarityRiskLevel = 'low' | 'medium' | 'high';
 
@@ -39,12 +42,30 @@ function clampScore(score: number): number {
   return Math.max(0, Math.min(100, score));
 }
 
-function getRiskLevel(score: number): ClarityRiskLevel {
-  if (score >= 80) {
+const DEFAULT_SCORING: ResolvedScoringConfig = {
+  weights: {
+    errorRemark: 20,
+    warningRemark: 7,
+    missingContext: 20,
+    missingExpectedResult: 20,
+    missingAcceptanceCriteria: 20,
+    hiddenAgreement: 10,
+    missingUserScenario: 10,
+    qaUncertainty: 10,
+    implementationWithoutGoal: 10
+  },
+  thresholds: {
+    good: 80,
+    medium: 50
+  }
+};
+
+function getRiskLevel(score: number, scoring: ResolvedScoringConfig): ClarityRiskLevel {
+  if (score >= scoring.thresholds.good) {
     return 'low';
   }
 
-  if (score >= 50) {
+  if (score >= scoring.thresholds.medium) {
     return 'medium';
   }
 
@@ -55,8 +76,11 @@ export function calculateClarityScore(params: {
   title: string;
   body: string;
   remarks: Remark[];
+  scoring?: ResolvedScoringConfig;
 }): ClarityScoreResult {
   const { title, body, remarks } = params;
+  const scoring = params.scoring || DEFAULT_SCORING;
+  const weights = scoring.weights;
   const searchableText = `${title}\n${body}`;
 
   let score = 100;
@@ -65,8 +89,8 @@ export function calculateClarityScore(params: {
   const errorsCount = remarks.filter((remark) => remark.level === 'error').length;
   const warningsCount = remarks.filter((remark) => remark.level === 'warning').length;
 
-  score -= errorsCount * 20;
-  score -= warningsCount * 7;
+  score -= errorsCount * weights.errorRemark;
+  score -= warningsCount * weights.warningRemark;
 
   const hasContextSection = body.includes('## Контекст') || body.includes('## Context');
   const hasExpectedResultSection =
@@ -75,7 +99,7 @@ export function calculateClarityScore(params: {
     body.includes('## Критерии приёмки') || body.includes('## Acceptance criteria');
 
   if (!hasContextSection) {
-    score -= 20;
+    score -= weights.missingContext;
 
     communicationRisks.push({
       type: 'implicit_context',
@@ -91,7 +115,7 @@ export function calculateClarityScore(params: {
   }
 
   if (!hasExpectedResultSection) {
-    score -= 20;
+    score -= weights.missingExpectedResult;
 
     communicationRisks.push({
       type: 'ambiguous_result',
@@ -107,7 +131,7 @@ export function calculateClarityScore(params: {
   }
 
   if (!hasAcceptanceCriteriaSection) {
-    score -= 20;
+    score -= weights.missingAcceptanceCriteria;
 
     communicationRisks.push({
       type: 'unverifiable_acceptance',
@@ -123,7 +147,7 @@ export function calculateClarityScore(params: {
   }
 
   if (hasAny(searchableText, ['как обсуждали', 'как договорились', 'как в прошлый раз'])) {
-    score -= 10;
+    score -= weights.hiddenAgreement;
 
     communicationRisks.push({
       type: 'hidden_agreement',
@@ -139,7 +163,7 @@ export function calculateClarityScore(params: {
   }
 
   if (!hasAny(searchableText, ['пользователь', 'клиент', 'роль', 'сценарий', 'user', 'client', 'customer', 'scenario'])) {
-    score -= 10;
+    score -= weights.missingUserScenario;
 
     communicationRisks.push({
       type: 'missing_user_scenario',
@@ -155,7 +179,7 @@ export function calculateClarityScore(params: {
   }
 
   if (!hasAny(searchableText, ['проверить', 'qa', 'тест', 'test', 'expected', 'ожидается'])) {
-    score -= 10;
+    score -= weights.qaUncertainty;
 
     communicationRisks.push({
       type: 'qa_uncertainty',
@@ -172,7 +196,7 @@ export function calculateClarityScore(params: {
     hasAny(searchableText, ['реализовать', 'добавить endpoint', 'изменить метод', 'поменять компонент']) &&
     !hasAny(searchableText, ['зачем', 'проблема', 'цель', 'пользователь', 'ценность'])
   ) {
-    score -= 10;
+    score -= weights.implementationWithoutGoal;
 
     communicationRisks.push({
       type: 'implementation_without_goal',
@@ -191,7 +215,7 @@ export function calculateClarityScore(params: {
 
   return {
     score: finalScore,
-    riskLevel: getRiskLevel(finalScore),
+    riskLevel: getRiskLevel(finalScore, scoring),
     communicationRisks
   };
 }

@@ -1,0 +1,26 @@
+{
+  "before": {
+    "totalTasks": 6,
+    "averageScore": 52.3,
+    "lowQualityTasks": 3,
+    "missingAcceptanceCriteria": 3,
+    "missingContext": 2,
+    "qaReturns": 4
+  },
+  "after": {
+    "totalTasks": 6,
+    "averageScore": 78.4,
+    "lowQualityTasks": 1,
+    "missingAcceptanceCriteria": 1,
+    "missingContext": 0,
+    "qaReturns": 1
+  },
+  "delta": {
+    "averageScore": 26.1,
+    "averageScorePercent": 49.9,
+    "lowQualityTasks": -2,
+    "missingAcceptanceCriteria": -2,
+    "missingContext": -2,
+    "qaReturns": -3
+  }
+}

@@ -179,6 +179,79 @@
       "languages": ["en"]
     }
   ],
+  "badFormulations": [
+    {
+      "phrase": "как раньше",
+      "category": "unclear_reference",
+      "message": "Фраза «как раньше» требует ссылки или явного описания старого поведения.",
+      "recommendation": "Добавь ссылку на пример или перечисли ожидаемые состояния.",
+      "languages": ["ru"]
+    },
+    {
+      "phrase": "по аналогии",
+      "category": "unclear_reference",
+      "message": "Фраза «по аналогии» скрывает критерии сравнения.",
+      "recommendation": "Опиши, с чем именно сравниваем и какие отличия допустимы.",
+      "languages": ["ru"]
+    },
+    {
+      "phrase": "починить",
+      "category": "weak_acceptance",
+      "message": "Фраза «починить» без ожидаемого результата не задаёт критерии проверки.",
+      "recommendation": "Добавь фактический результат, ожидаемый результат и acceptance criteria.",
+      "languages": ["ru"],
+      "workItemTypes": ["bug"]
+    },
+    {
+      "phrase": "улучшить",
+      "category": "vague",
+      "message": "Фраза «улучшить» должна быть привязана к сценарию и метрике успеха.",
+      "recommendation": "Опиши, какой сценарий улучшается и как команда поймёт, что стало лучше.",
+      "languages": ["ru"]
+    },
+    {
+      "phrase": "as before",
+      "category": "unclear_reference",
+      "message": "\"As before\" needs a link or an explicit description of the previous behavior.",
+      "recommendation": "Add a reference example and list the expected states.",
+      "languages": ["en"]
+    },
+    {
+      "phrase": "improve",
+      "category": "vague",
+      "message": "\"Improve\" needs a scenario and success signal.",
+      "recommendation": "Describe which workflow changes and how the team will verify improvement.",
+      "languages": ["en"]
+    }
+  ],
+  "scoring": {
+    "weights": {
+      "errorRemark": 20,
+      "warningRemark": 7,
+      "missingContext": 20,
+      "missingExpectedResult": 20,
+      "missingAcceptanceCriteria": 20,
+      "hiddenAgreement": 10,
+      "missingUserScenario": 10,
+      "qaUncertainty": 10,
+      "implementationWithoutGoal": 10
+    },
+    "thresholds": {
+      "good": 80,
+      "medium": 50
+    }
+  },
+  "riskThresholds": {
+    "lowMax": 30,
+    "mediumMax": 60
+  },
+  "analytics": {
+    "ignoredLabels": ["duplicate", "wontfix"],
+    "ignoredStatuses": ["Cancelled"]
+  },
+  "reports": {
+    "defaultFormat": "markdown"
+  },
   "rules": {
     "bug": {
       "requiredSections": [

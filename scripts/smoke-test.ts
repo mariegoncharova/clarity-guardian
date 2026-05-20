@@ -296,6 +296,29 @@ interface QuickBugFixSmokeReport {
   }>;
 }
 
+interface TaskHealthSmokeReport {
+  summary?: {
+    totalTasks?: number;
+    averageClarityScore?: number;
+    goodTaskPercent?: number;
+    missingAcceptanceCriteriaPercent?: number;
+    vagueFormulationsPercent?: number;
+    highRiskPercent?: number;
+    recommendations?: string[];
+  };
+  profiles?: Array<{
+    taskId?: string;
+    healthStatus?: string;
+    clarityScore?: number;
+    riskLevel?: string;
+    missingSections?: string[];
+    weakFormulations?: string[];
+    deliveryRisks?: string[];
+    qaRisks?: string[];
+    nextBestAction?: string;
+  }>;
+}
+
 interface UnifiedTaskSmokeResult {
   id?: string;
   source?: string;
@@ -879,6 +902,8 @@ function smokeV2Reports(): void {
   const decisionLedgerMarkdown = fs.readFileSync(path.join(outDir, 'decision-ledger.md'), 'utf8');
   const quickBugFix = readJson<QuickBugFixSmokeReport>(path.join(outDir, 'quick-bug-fix.json'));
   const quickBugFixMarkdown = fs.readFileSync(path.join(outDir, 'quick-bug-fix.md'), 'utf8');
+  const taskHealth = readJson<TaskHealthSmokeReport>(path.join(outDir, 'task-health-profile.json'));
+  const taskHealthMarkdown = fs.readFileSync(path.join(outDir, 'task-health-profile.md'), 'utf8');
   const csv = fs.readFileSync(path.join(outDir, 'tasks.csv'), 'utf8');
   const html = fs.readFileSync(path.join(outDir, 'dashboard.html'), 'utf8');
   const taskHistory = readJson<Record<string, unknown>>(path.join(outDir, 'task-history.json'));
@@ -900,6 +925,8 @@ function smokeV2Reports(): void {
   assert(decisionLedgerMarkdown.includes('Decision Traceability Matrix'), 'V2 demo should include Decision Ledger markdown');
   assert(quickBugFix.totalTasks === 8, 'V2 demo should include Quick Bug Fix JSON');
   assert(quickBugFixMarkdown.includes('Quick Bug Fix Queue'), 'V2 demo should include Quick Bug Fix markdown');
+  assert(taskHealth.summary?.totalTasks === 8, 'V2 demo should include Task Health Profile JSON');
+  assert(taskHealthMarkdown.includes('Task Health Profile'), 'V2 demo should include Task Health Profile markdown');
   assert(csv.startsWith('id,key,source,title'), 'CSV export should include a header row');
   assert(html.includes('Clarity Guardian Dashboard'), 'Dashboard HTML should be generated');
 }
@@ -1542,6 +1569,66 @@ function smokeQuickBugFix(): void {
   assert(csv.startsWith('taskId,title,source'), 'Quick Bug Fix CSV should include required header');
 }
 
+function smokeTaskHealthProfile(): void {
+  const taskHealthJsonPath = path.join(tmpDir, 'task-health-profile.json');
+  const taskHealthMarkdownPath = path.join(tmpDir, 'task-health-profile.md');
+  const taskHealthCsvPath = path.join(tmpDir, 'task-health-profile.csv');
+
+  runNode([
+    'dist/task-health-profile.js',
+    '--input',
+    'data/demo_tasks.json',
+    '--output',
+    taskHealthJsonPath,
+    '--format',
+    'json',
+    '--limit',
+    '12'
+  ]);
+  runNode([
+    'dist/task-health-profile.js',
+    '--input',
+    'data/demo_tasks.json',
+    '--output',
+    taskHealthMarkdownPath,
+    '--format',
+    'markdown',
+    '--limit',
+    '12'
+  ]);
+  runNode([
+    'dist/task-health-profile.js',
+    '--input',
+    'data/demo_tasks.json',
+    '--output',
+    taskHealthCsvPath,
+    '--format',
+    'csv',
+    '--limit',
+    '12',
+    '--attention-only'
+  ]);
+
+  const taskHealth = readJson<TaskHealthSmokeReport>(taskHealthJsonPath);
+  const markdown = fs.readFileSync(taskHealthMarkdownPath, 'utf8');
+  const csv = fs.readFileSync(taskHealthCsvPath, 'utf8');
+
+  assert(taskHealth.summary?.totalTasks === 12, 'Task Health should analyze demo tasks');
+  assert((taskHealth.summary?.averageClarityScore || 0) > 0, 'Task Health should calculate clarity summary');
+  assert((taskHealth.profiles || []).length > 0, 'Task Health should include task profiles');
+  assert(
+    Boolean(taskHealth.profiles?.some((profile) => profile.taskId === 'RETRO-105')),
+    'Task Health should include weak demo tasks'
+  );
+  assert(
+    Boolean(taskHealth.profiles?.some((profile) => profile.nextBestAction)),
+    'Task Health should include next best actions'
+  );
+  assert(markdown.includes('Project Quality Summary'), 'Task Health markdown should include project summary');
+  assert(markdown.includes('Task Profiles'), 'Task Health markdown should include task profiles');
+  assert(csv.startsWith('taskId,title,source'), 'Task Health CSV should include required header');
+}
+
 async function smokeGitHubSync() {
   const payloadPath = writeJson('github-payload.json', {
     type: 'issue',
@@ -1770,6 +1857,7 @@ async function smokeJiraSkip() {
     smokeEvidenceBrief();
     smokeDecisionLedger();
     smokeQuickBugFix();
+    smokeTaskHealthProfile();
     await smokeGitHubSync();
     await smokeJiraSync();
     await smokeJiraSkip();
