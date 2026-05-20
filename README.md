@@ -602,6 +602,33 @@ npm run decision:ledger -- --input data/demo_tasks.json --output reports/decisio
 
 ---
 
+## Quick Bug Fix Queue
+
+Quick Bug Fix Queue помогает быстро не терять мелкие баги в общем потоке задач. Он находит bug-кандидатов, отличает быстрые безопасные фиксы от задач, которые сначала требуют уточнения или risk review, и формирует короткую карточку фикса.
+
+Для каждой bug-задачи отчёт показывает:
+
+- bug signals: почему задача считается багом;
+- Fix Readiness Score;
+- статус `quick_fix_ready`, `needs_clarification` или `needs_risk_review`;
+- рекомендуемый timebox для мелкого фикса;
+- blockers;
+- patch plan;
+- verification checklist;
+- safety checks.
+
+Пример запуска:
+
+```bash
+npm run bug:quick-fix -- --input data/demo_tasks.json --output reports/quick_bug_fix.md
+npm run bug:quick-fix -- --input data/demo_tasks.json --output reports/quick_bug_fix.json --format json --include-needs-review
+npm run bug:quick-fix -- --input data/demo_tasks.json --output reports/quick_bug_fix.csv --format csv
+```
+
+Фича специально не обещает "авточинить" рискованные баги вслепую. Она ускоряет безопасные мелкие фиксы и останавливает те, где сначала нужны reproduction steps, критерии проверки, владелец зависимости или risk review.
+
+---
+
 ## Demo-режим
 
 Проект можно запустить без доступа к GitHub, Jira или Yandex Tracker.
@@ -651,6 +678,7 @@ src/
   action-plan.ts             # приоритизированный список задач для уточнения
   evidence-brief.ts          # evidence brief для planning и научной коммуникации
   decision-ledger.ts         # матрица прослеживаемости решений и risk governance
+  quick-bug-fix.ts           # очередь быстрых и безопасных фиксов мелких багов
   retro-report.ts            # CLI для Retro Task Analytics
   retro-report-*.ts          # Markdown, JSON и CSV exports для ретро
   retro-delay-reasons.ts     # причины задержек и возвратов

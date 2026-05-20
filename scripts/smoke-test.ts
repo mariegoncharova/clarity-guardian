@@ -277,6 +277,25 @@ interface DecisionLedgerSmokeReport {
   }>;
 }
 
+interface QuickBugFixSmokeReport {
+  totalTasks?: number;
+  bugsTracked?: number;
+  quickFixReady?: number;
+  needsClarification?: number;
+  needsRiskReview?: number;
+  averageFixReadinessScore?: number;
+  items?: Array<{
+    taskId?: string;
+    quickFixStatus?: string;
+    fixReadinessScore?: number;
+    timeboxMinutes?: number;
+    bugSignals?: string[];
+    blockers?: string[];
+    patchPlan?: string[];
+    verificationChecklist?: string[];
+  }>;
+}
+
 interface UnifiedTaskSmokeResult {
   id?: string;
   source?: string;
@@ -858,6 +877,8 @@ function smokeV2Reports(): void {
   const research = fs.readFileSync(path.join(outDir, 'research-report.md'), 'utf8');
   const decisionLedger = readJson<DecisionLedgerSmokeReport>(path.join(outDir, 'decision-ledger.json'));
   const decisionLedgerMarkdown = fs.readFileSync(path.join(outDir, 'decision-ledger.md'), 'utf8');
+  const quickBugFix = readJson<QuickBugFixSmokeReport>(path.join(outDir, 'quick-bug-fix.json'));
+  const quickBugFixMarkdown = fs.readFileSync(path.join(outDir, 'quick-bug-fix.md'), 'utf8');
   const csv = fs.readFileSync(path.join(outDir, 'tasks.csv'), 'utf8');
   const html = fs.readFileSync(path.join(outDir, 'dashboard.html'), 'utf8');
   const taskHistory = readJson<Record<string, unknown>>(path.join(outDir, 'task-history.json'));
@@ -877,6 +898,8 @@ function smokeV2Reports(): void {
   assert(research.includes('может указывать на корреляцию'), 'Research report should use careful wording');
   assert(decisionLedger.totalTasks === 8, 'V2 demo should include Decision Ledger JSON');
   assert(decisionLedgerMarkdown.includes('Decision Traceability Matrix'), 'V2 demo should include Decision Ledger markdown');
+  assert(quickBugFix.totalTasks === 8, 'V2 demo should include Quick Bug Fix JSON');
+  assert(quickBugFixMarkdown.includes('Quick Bug Fix Queue'), 'V2 demo should include Quick Bug Fix markdown');
   assert(csv.startsWith('id,key,source,title'), 'CSV export should include a header row');
   assert(html.includes('Clarity Guardian Dashboard'), 'Dashboard HTML should be generated');
 }
@@ -1457,6 +1480,68 @@ function smokeDecisionLedger(): void {
   assert(csv.startsWith('taskId,title,source'), 'Decision Ledger CSV should include required header');
 }
 
+function smokeQuickBugFix(): void {
+  const quickFixJsonPath = path.join(tmpDir, 'quick-bug-fix.json');
+  const quickFixMarkdownPath = path.join(tmpDir, 'quick-bug-fix.md');
+  const quickFixCsvPath = path.join(tmpDir, 'quick-bug-fix.csv');
+
+  runNode([
+    'dist/quick-bug-fix.js',
+    '--input',
+    'data/demo_tasks.json',
+    '--output',
+    quickFixJsonPath,
+    '--format',
+    'json',
+    '--limit',
+    '8',
+    '--include-needs-review'
+  ]);
+  runNode([
+    'dist/quick-bug-fix.js',
+    '--input',
+    'data/demo_tasks.json',
+    '--output',
+    quickFixMarkdownPath,
+    '--format',
+    'markdown',
+    '--limit',
+    '8',
+    '--include-needs-review'
+  ]);
+  runNode([
+    'dist/quick-bug-fix.js',
+    '--input',
+    'data/demo_tasks.json',
+    '--output',
+    quickFixCsvPath,
+    '--format',
+    'csv',
+    '--limit',
+    '8',
+    '--include-needs-review'
+  ]);
+
+  const quickFix = readJson<QuickBugFixSmokeReport>(quickFixJsonPath);
+  const markdown = fs.readFileSync(quickFixMarkdownPath, 'utf8');
+  const csv = fs.readFileSync(quickFixCsvPath, 'utf8');
+
+  assert(quickFix.totalTasks === 12, 'Quick Bug Fix should analyze demo tasks');
+  assert((quickFix.bugsTracked || 0) > 0, 'Quick Bug Fix should track bug candidates');
+  assert((quickFix.averageFixReadinessScore || 0) > 0, 'Quick Bug Fix should calculate readiness score');
+  assert(
+    Boolean(quickFix.items?.some((item) => item.taskId === 'RETRO-104')),
+    'Quick Bug Fix should include explicit bug tasks'
+  );
+  assert(
+    Boolean(quickFix.items?.some((item) => (item.patchPlan || []).length > 0)),
+    'Quick Bug Fix should include patch plans'
+  );
+  assert(markdown.includes('Quick Bug Fix Queue'), 'Quick Bug Fix markdown should be generated');
+  assert(markdown.includes('Verification checklist'), 'Quick Bug Fix markdown should include verification checklist');
+  assert(csv.startsWith('taskId,title,source'), 'Quick Bug Fix CSV should include required header');
+}
+
 async function smokeGitHubSync() {
   const payloadPath = writeJson('github-payload.json', {
     type: 'issue',
@@ -1684,6 +1769,7 @@ async function smokeJiraSkip() {
     smokeRiskReadinessSprintHealth();
     smokeEvidenceBrief();
     smokeDecisionLedger();
+    smokeQuickBugFix();
     await smokeGitHubSync();
     await smokeJiraSync();
     await smokeJiraSkip();

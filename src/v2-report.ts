@@ -14,6 +14,10 @@ import {
   formatDecisionLedgerMarkdown
 } from './decision-ledger';
 import {
+  buildQuickBugFixReport,
+  formatQuickBugFixMarkdown
+} from './quick-bug-fix';
+import {
   formatDashboardHtml,
   formatDashboardMarkdown,
   formatResearchReportMarkdown,
@@ -88,18 +92,21 @@ async function main(): Promise<void> {
   const comparison = compareBeforeAfter(records);
   const research = buildResearchData(records);
   const decisionLedger = buildDecisionLedgerReport(records);
+  const quickBugFix = buildQuickBugFixReport(records, { includeNeedsReview: true });
 
   writeJsonFile(resolveOutputPath(outDir, 'dashboard.json'), dashboard);
   writeJsonFile(resolveOutputPath(outDir, 'before-after.json'), comparison);
   writeJsonFile(resolveOutputPath(outDir, 'task-history.json'), buildTaskScoreHistory(records));
   writeJsonFile(resolveOutputPath(outDir, 'analysis-records.json'), records);
   writeJsonFile(resolveOutputPath(outDir, 'decision-ledger.json'), decisionLedger);
+  writeJsonFile(resolveOutputPath(outDir, 'quick-bug-fix.json'), quickBugFix);
   writeHistoryJsonl(resolveOutputPath(outDir, 'clarity-history.jsonl'), records);
   writeTextFile(resolveOutputPath(outDir, 'dashboard.md'), formatDashboardMarkdown(dashboard));
   writeTextFile(resolveOutputPath(outDir, 'dashboard.html'), formatDashboardHtml(dashboard));
   writeTextFile(resolveOutputPath(outDir, 'retro-report.md'), formatRetroReportMarkdown(dashboard, comparison));
   writeTextFile(resolveOutputPath(outDir, 'research-report.md'), formatResearchReportMarkdown(research));
   writeTextFile(resolveOutputPath(outDir, 'decision-ledger.md'), formatDecisionLedgerMarkdown(decisionLedger));
+  writeTextFile(resolveOutputPath(outDir, 'quick-bug-fix.md'), formatQuickBugFixMarkdown(quickBugFix));
   writeTextFile(resolveOutputPath(outDir, 'tasks.csv'), formatTasksCsv(records));
 
   process.stdout.write(`Clarity Guardian V2 report generated in ${outDir}\n`);
