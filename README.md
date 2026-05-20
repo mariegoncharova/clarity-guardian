@@ -27,6 +27,33 @@ The project is intentionally compact: no heavy backend, no database, no complex 
 
 ---
 
+## Reviewer Quick Start
+
+```bash
+npm ci
+npm run build
+npm test
+npm run demo
+```
+
+После `npm run demo` открой:
+
+```text
+reports/demo/dashboard.html
+reports/demo/task-health-profile.md
+reports/demo/retro-report.md
+reports/demo/decision-ledger.md
+reports/demo/quick-bug-fix.md
+```
+
+Для полной production-проверки:
+
+```bash
+npm run verify
+```
+
+---
+
 ## Зачем нужен Clarity Guardian
 
 В продуктовой разработке задача может быть формально заведена в трекере, но при этом оставаться непонятной для команды.
@@ -744,6 +771,7 @@ src/
 data/
   demo-tasks.json            # демо-данные для portfolio demo
   demo_tasks.json            # демо-данные для Retro Task Analytics
+  README.md                  # пояснение, какой dataset использовать для какого demo
 
 scripts/
   smoke-test.ts              # end-to-end smoke checks

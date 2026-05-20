@@ -311,7 +311,7 @@ function resolveScoreThresholds(config: ClarityGuardianConfig): ResolvedClarityS
 function resolveReportFormat(config: ClarityGuardianConfig): ResolvedConfig['reports']['defaultFormat'] {
   const format = config.reports?.defaultFormat;
 
-  if (format === 'markdown' || format === 'json' || format === 'csv' || format === 'html') {
+  if (format === 'markdown' || format === 'json' || format === 'csv') {
     return format;
   }
 

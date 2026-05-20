@@ -46,7 +46,7 @@ reports/demo/
 ## Сценарий показа
 
 1. Начать с проблемы: неясные задачи создают rework между PM, разработкой и QA.
-2. Показать `data/demo-tasks.json`: проект работает без реального доступа к трекерам.
+2. Показать `data/README.md`: `data/demo-tasks.json` используется для portfolio before/after demo, а `data/demo_tasks.json` - для более насыщенной lifecycle analytics.
 3. Запустить `npm run v2:demo`.
 4. Открыть `reports/demo/dashboard.html` и показать project-level view.
 5. Открыть `reports/demo/retro-report.md` и объяснить, как PM может использовать отчёт на ретро.

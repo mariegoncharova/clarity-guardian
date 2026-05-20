@@ -7,7 +7,7 @@ export type ConfigLanguage = TemplateLanguage | 'auto';
 export type ClarityMode = 'strict' | 'non-strict';
 export type TaskSource = 'github' | 'jira' | 'yandex-tracker' | 'demo' | 'file';
 export type TaskPeriod = 'before' | 'after';
-export type ReportFormatName = 'markdown' | 'json' | 'csv' | 'html';
+export type ReportFormatName = 'markdown' | 'json' | 'csv';
 
 export type RemarkLevel = 'error' | 'warning';
 export type BadFormulationCategory =
