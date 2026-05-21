@@ -9,7 +9,7 @@ GitHub / Jira / Yandex / JSON / demo data
   -> adapters и normalizers
   -> UnifiedTask[]
   -> анализ ясности задачи
-  -> аналитика риска, готовности, жизненного цикла, решений и здоровья задачи
+  -> аналитика риска, готовности, жизненного цикла, решений, релизной проверки и здоровья задачи
   -> отчёты Markdown / JSON / CSV / static HTML
 ```
 
@@ -41,6 +41,7 @@ GitHub / Jira / Yandex / JSON / demo data
 - `src/decision-ledger.ts` проверяет traceability решения от проблемы до evidence, owner, verification и risk control.
 - `src/task-health-profile.ts` создаёт профили здоровья задач и сводку качества проекта.
 - `src/quick-bug-fix.ts` отделяет быстрые безопасные bug fixes от неясных или рискованных дефектов.
+- `src/release-guard.ts` собирает предрелизные no-go/review/go сигналы, QA-пробелы, reopened-задачи и rollback notes.
 
 ### Отчёты
 

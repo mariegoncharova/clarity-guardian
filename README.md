@@ -43,6 +43,7 @@ reports/demo/dashboard.html
 reports/demo/task-health-profile.md
 reports/demo/refinement-agenda.md
 reports/demo/stakeholder-update.md
+reports/demo/release-guard.md
 reports/demo/retro-report.md
 reports/demo/decision-ledger.md
 reports/demo/quick-bug-fix.md
@@ -686,6 +687,31 @@ npm run stakeholder:update -- --input data/demo_tasks.json --output reports/stak
 
 ---
 
+## Release Guard
+
+Release Guard добавляет предрелизную проверку, которая помогает развивать проект и параллельно следить, чтобы изменения не ломали критичные сценарии. Отчёт собирает задачи с релизным риском, даёт решение `go`, `review_required` или `no_go` и показывает, что нужно проверить до выпуска.
+
+Отчёт помогает PM, QA и Tech Lead быстро увидеть:
+
+- blocked/no-go задачи и внешние зависимости;
+- reopened/returned задачи, которые требуют regression check;
+- QA-пробелы: нет acceptance criteria, expected result или evidence тестирования;
+- рискованные домены: payment, auth, production, integration и похожие зоны;
+- владельца риска и чек-лист проверки по каждой задаче;
+- заметки по rollback/fallback для критичных сценариев.
+
+Пример запуска:
+
+```bash
+npm run release:guard -- --input data/demo_tasks.json --output reports/release_guard.md
+npm run release:guard -- --input data/demo_tasks.json --output reports/release_guard.json --format json --limit 8
+npm run release:guard -- --input data/demo_tasks.json --output reports/release_guard.csv --format csv
+```
+
+Фича не заменяет релизный процесс, а делает его видимым: команда получает компактный список задач, которые нельзя выпускать без дополнительной проверки.
+
+---
+
 ## Evidence Brief
 
 Evidence Brief добавляет слой на стыке IT, научной коммуникации и project management. Отчёт превращает задачи в короткие проверяемые brief-записи для planning/refinement: какая гипотеза стоит за задачей, на какие данные команда опирается, где не хватает источника, метрики или воспроизводимого метода проверки.
@@ -852,6 +878,7 @@ src/
   action-plan.ts             # приоритизированный список задач для уточнения
   refinement-agenda.ts       # повестка refinement с timebox, ролями и решениями
   stakeholder-update.ts      # короткий статус для стейкхолдеров с рисками и запросами
+  release-guard.ts           # предрелизная guard-проверка, QA gaps и rollback notes
   evidence-brief.ts          # evidence brief для planning и научной коммуникации
   decision-ledger.ts         # матрица прослеживаемости решений и risk governance
   task-health-profile.ts     # единый профиль здоровья задачи и сводка качества проекта
@@ -915,6 +942,7 @@ reports/demo/quick-bug-fix.md
 reports/demo/task-health-profile.md
 reports/demo/refinement-agenda.md
 reports/demo/stakeholder-update.md
+reports/demo/release-guard.md
 reports/demo/tasks.csv
 reports/demo/before-after.json
 reports/demo/clarity-history.jsonl
@@ -1254,7 +1282,7 @@ Smoke tests покрывают:
 - экспорты Markdown, JSON, CSV и HTML;
 - edge cases ретро-аналитики;
 - определение рисков, DoR/DoD и отчёт о здоровье спринта;
-- повестку refinement, статус для стейкхолдеров, Evidence Brief, журнал решений, очередь быстрых bug-fix задач и профиль здоровья задачи;
+- повестку refinement, статус для стейкхолдеров, Release Guard, Evidence Brief, журнал решений, очередь быстрых bug-fix задач и профиль здоровья задачи;
 - adapter для Yandex Tracker и fallback для missing fields;
 - поведение обновления комментариев GitHub;
 - поведение Jira sync;
@@ -1324,4 +1352,3 @@ examples/
 - Статический HTML dashboard намеренно простой: он подходит для demo, но не заменяет полноценный SaaS dashboard.
 - AI-интеграция не является обязательной частью проекта: все ключевые сценарии работают без API keys.
 - Для коммерческого использования нужно дополнительно валидировать scoring weights и risk thresholds на реальных данных команды.
-

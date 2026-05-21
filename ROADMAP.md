@@ -25,7 +25,7 @@ Clarity Guardian намеренно остаётся лёгким инструм
 - Аналитика жизненного цикла для ретро: lead time, cycle time, зависшие задачи, reopened-задачи и bottlenecks.
 - Сравнение before/after для рассказа об улучшении процесса.
 - Risk Detection, Definition of Ready, Definition of Done и Sprint Health.
-- Повестка refinement, статус для стейкхолдеров, Evidence Brief, Decision Ledger, очередь быстрых bug-fix задач и Task Health Profile.
+- Повестка refinement, статус для стейкхолдеров, Release Guard, Evidence Brief, Decision Ledger, очередь быстрых bug-fix задач и Task Health Profile.
 - Экспорт в Markdown, JSON, CSV и статический HTML.
 - Demo-режим, который работает на чистом clone.
 
@@ -38,6 +38,7 @@ Clarity Guardian намеренно остаётся лёгким инструм
 - Адаптеры GitLab / Linear / YouTrack через тот же паттерн `TaskProvider`.
 - Исторические snapshots отчётов для анализа трендов.
 - Лёгкий статический дашборд с фильтрами по sprint, team, assignee, status и risk.
+- Release Guard snapshots для сравнения качества релизов и повторяющихся regression risks.
 - Preset-настройки для PM, QA, engineering lead и product analyst.
 - Командные цели по качеству задач и предупреждения о повторяющихся bottlenecks.
 

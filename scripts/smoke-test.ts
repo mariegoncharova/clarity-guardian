@@ -360,6 +360,38 @@ interface StakeholderUpdateSmokeReport {
   }>;
 }
 
+interface ReleaseGuardSmokeReport {
+  releaseDecision?: string;
+  releaseReadinessScore?: number;
+  totalTasks?: number;
+  includedTasks?: number;
+  summary?: {
+    blocked?: number;
+    needsVerification?: number;
+    qaGapTasks?: number;
+    reopenedTasks?: number;
+    riskyDomainTasks?: number;
+  };
+  topRiskTypes?: Array<{
+    code?: string;
+    count?: number;
+  }>;
+  releaseChecklist?: string[];
+  items?: Array<{
+    taskId?: string;
+    guardStatus?: string;
+    decision?: string;
+    ownerRole?: string;
+    releaseRisks?: Array<{
+      code?: string;
+      severity?: string;
+      ownerRole?: string;
+    }>;
+    verificationChecklist?: string[];
+    rollbackNotes?: string[];
+  }>;
+}
+
 interface UnifiedTaskSmokeResult {
   id?: string;
   source?: string;
@@ -949,6 +981,8 @@ function smokeV2Reports(): void {
   const refinementAgendaMarkdown = fs.readFileSync(path.join(outDir, 'refinement-agenda.md'), 'utf8');
   const stakeholderUpdate = readJson<StakeholderUpdateSmokeReport>(path.join(outDir, 'stakeholder-update.json'));
   const stakeholderUpdateMarkdown = fs.readFileSync(path.join(outDir, 'stakeholder-update.md'), 'utf8');
+  const releaseGuard = readJson<ReleaseGuardSmokeReport>(path.join(outDir, 'release-guard.json'));
+  const releaseGuardMarkdown = fs.readFileSync(path.join(outDir, 'release-guard.md'), 'utf8');
   const csv = fs.readFileSync(path.join(outDir, 'tasks.csv'), 'utf8');
   const html = fs.readFileSync(path.join(outDir, 'dashboard.html'), 'utf8');
   const taskHistory = readJson<Record<string, unknown>>(path.join(outDir, 'task-history.json'));
@@ -979,6 +1013,11 @@ function smokeV2Reports(): void {
   assert(Boolean(stakeholderUpdate.health), 'Stakeholder Update should include health status');
   assert((stakeholderUpdate.asks || []).length > 0, 'Stakeholder Update should include asks');
   assert(stakeholderUpdateMarkdown.includes('Stakeholder Update'), 'V2 demo should include Stakeholder Update markdown');
+  assert(releaseGuard.totalTasks === 8, 'V2 demo should include Release Guard JSON');
+  assert(Boolean(releaseGuard.releaseDecision), 'Release Guard should include release decision');
+  assert((releaseGuard.releaseChecklist || []).length > 0, 'Release Guard should include release checklist');
+  assert(releaseGuardMarkdown.includes('Release Guard'), 'V2 demo should include Release Guard markdown');
+  assert(releaseGuardMarkdown.includes('Решение по релизу'), 'Release Guard markdown should be localized');
   assert(csv.startsWith('id,key,source,title'), 'CSV export should include a header row');
   assert(html.includes('Clarity Guardian Dashboard'), 'Dashboard HTML should be generated');
 }
@@ -1681,6 +1720,69 @@ function smokeTaskHealthProfile(): void {
   assert(csv.startsWith('taskId,title,source'), 'Task Health CSV should include required header');
 }
 
+function smokeReleaseGuard(): void {
+  const releaseGuardJsonPath = path.join(tmpDir, 'release-guard.json');
+  const releaseGuardMarkdownPath = path.join(tmpDir, 'release-guard.md');
+  const releaseGuardCsvPath = path.join(tmpDir, 'release-guard.csv');
+
+  runNode([
+    'dist/release-guard.js',
+    '--input',
+    'data/demo_tasks.json',
+    '--output',
+    releaseGuardJsonPath,
+    '--format',
+    'json',
+    '--limit',
+    '8'
+  ]);
+  runNode([
+    'dist/release-guard.js',
+    '--input',
+    'data/demo_tasks.json',
+    '--output',
+    releaseGuardMarkdownPath,
+    '--format',
+    'markdown',
+    '--limit',
+    '8'
+  ]);
+  runNode([
+    'dist/release-guard.js',
+    '--input',
+    'data/demo_tasks.json',
+    '--output',
+    releaseGuardCsvPath,
+    '--format',
+    'csv',
+    '--limit',
+    '8'
+  ]);
+
+  const releaseGuard = readJson<ReleaseGuardSmokeReport>(releaseGuardJsonPath);
+  const markdown = fs.readFileSync(releaseGuardMarkdownPath, 'utf8');
+  const csv = fs.readFileSync(releaseGuardCsvPath, 'utf8');
+
+  assert(releaseGuard.totalTasks === 12, 'Release Guard should analyze demo tasks');
+  assert(Boolean(releaseGuard.releaseDecision), 'Release Guard should include release decision');
+  assert((releaseGuard.releaseReadinessScore || 0) >= 0, 'Release Guard should calculate readiness score');
+  assert((releaseGuard.includedTasks || 0) > 0, 'Release Guard should include risky release items');
+  assert((releaseGuard.summary?.qaGapTasks || 0) > 0, 'Release Guard should detect QA gaps');
+  assert((releaseGuard.summary?.riskyDomainTasks || 0) > 0, 'Release Guard should detect risky domains');
+  assert(
+    Boolean(releaseGuard.items?.some((item) => (item.releaseRisks || []).length > 0)),
+    'Release Guard should attach release risks to items'
+  );
+  assert(
+    Boolean(releaseGuard.items?.some((item) => (item.verificationChecklist || []).length > 0)),
+    'Release Guard should include verification checklist'
+  );
+  assert(markdown.includes('Release Guard'), 'Release Guard markdown should be generated');
+  assert(markdown.includes('Решение по релизу'), 'Release Guard markdown should include release decision');
+  assert(markdown.includes('Чек-лист перед релизом'), 'Release Guard markdown should include release checklist');
+  assert(csv.startsWith('taskId,title,source'), 'Release Guard CSV should include required header');
+}
+
 async function smokeGitHubSync() {
   const payloadPath = writeJson('github-payload.json', {
     type: 'issue',
@@ -1910,6 +2012,7 @@ async function smokeJiraSkip() {
     smokeDecisionLedger();
     smokeQuickBugFix();
     smokeTaskHealthProfile();
+    smokeReleaseGuard();
     await smokeGitHubSync();
     await smokeJiraSync();
     await smokeJiraSkip();

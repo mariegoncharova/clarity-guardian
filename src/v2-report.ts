@@ -32,6 +32,10 @@ import {
   formatRefinementAgendaMarkdown
 } from './refinement-agenda';
 import {
+  buildReleaseGuardReport,
+  formatReleaseGuardMarkdown
+} from './release-guard';
+import {
   buildStakeholderUpdateReport,
   formatStakeholderUpdateMarkdown
 } from './stakeholder-update';
@@ -117,6 +121,9 @@ async function main(): Promise<void> {
     includeReady: true,
     includeDone: true
   });
+  const releaseGuard = buildReleaseGuardReport(records, {
+    includeReady: true
+  });
   const stakeholderUpdate = buildStakeholderUpdateReport(records);
 
   writeJsonFile(resolveOutputPath(outDir, 'dashboard.json'), dashboard);
@@ -127,6 +134,7 @@ async function main(): Promise<void> {
   writeJsonFile(resolveOutputPath(outDir, 'quick-bug-fix.json'), quickBugFix);
   writeJsonFile(resolveOutputPath(outDir, 'task-health-profile.json'), taskHealth);
   writeJsonFile(resolveOutputPath(outDir, 'refinement-agenda.json'), refinementAgenda);
+  writeJsonFile(resolveOutputPath(outDir, 'release-guard.json'), releaseGuard);
   writeJsonFile(resolveOutputPath(outDir, 'stakeholder-update.json'), stakeholderUpdate);
   writeHistoryJsonl(resolveOutputPath(outDir, 'clarity-history.jsonl'), records);
   writeTextFile(resolveOutputPath(outDir, 'dashboard.md'), formatDashboardMarkdown(dashboard));
@@ -137,6 +145,7 @@ async function main(): Promise<void> {
   writeTextFile(resolveOutputPath(outDir, 'quick-bug-fix.md'), formatQuickBugFixMarkdown(quickBugFix));
   writeTextFile(resolveOutputPath(outDir, 'task-health-profile.md'), formatTaskHealthMarkdown(taskHealth));
   writeTextFile(resolveOutputPath(outDir, 'refinement-agenda.md'), formatRefinementAgendaMarkdown(refinementAgenda));
+  writeTextFile(resolveOutputPath(outDir, 'release-guard.md'), formatReleaseGuardMarkdown(releaseGuard));
   writeTextFile(resolveOutputPath(outDir, 'stakeholder-update.md'), formatStakeholderUpdateMarkdown(stakeholderUpdate));
   writeTextFile(resolveOutputPath(outDir, 'tasks.csv'), formatTasksCsv(records));
 
