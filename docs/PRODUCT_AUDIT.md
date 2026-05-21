@@ -1,57 +1,57 @@
-# Product And Engineering Audit
+# Продуктовый и инженерный аудит
 
-Date: 2026-05-20
+Дата: 2026-05-20
 
-## Audit Scope
+## Область аудита
 
-Reviewed project structure, TypeScript modules, CLI scripts, configuration, tests, GitHub Actions, demo data, reports, documentation and portfolio positioning.
+Проверены структура проекта, TypeScript-модули, CLI-скрипты, конфигурация, тесты, GitHub Actions, demo data, отчёты, документация и позиционирование для портфолио.
 
-## Strengths
+## Сильные стороны
 
-- Clear core problem: task descriptions often fail as PM / Engineering / QA handoff artifacts.
-- TypeScript codebase is small and understandable.
-- Existing bot flow still has practical value: GitHub Issue / PR analysis, managed comments, Jira sync and fallback checklist generation.
-- The project already includes strong PM analytics modules: dashboard, retro, risk, readiness, sprint health, evidence brief, decision ledger and quick bug queue.
-- Demo data covers multiple sources, statuses, risk levels, returned tasks, stuck tasks and before/after storytelling.
-- Reports are deterministic and run without a backend or database.
+- Ясная основная проблема: описания задач часто плохо работают как артефакты передачи между PM, разработкой и QA.
+- TypeScript-кодовая база небольшая и понятная.
+- Существующий bot-flow сохраняет практическую пользу: анализ GitHub Issue / PR, управляемые комментарии, Jira sync и fallback-генерация checklist.
+- В проекте уже есть сильные модули PM-аналитики: dashboard, retro, risk, readiness, sprint health, evidence brief, decision ledger и quick bug queue.
+- Demo data покрывает разные источники, статусы, уровни риска, returned tasks, stuck tasks и before/after storytelling.
+- Отчёты детерминированы и работают без backend или базы данных.
 
-## Weak Spots Found
+## Найденные слабые места
 
-- The product story was spread across README sections but lacked a compact product-grade architecture and roadmap entry point.
-- There was no normal CI workflow for push / pull request validation; the existing workflow was product functionality, not repository CI.
-- The tone analyzer had a strong built-in dictionary, but project-specific bad formulations were not configurable as a first-class concept.
-- There was no single per-task health profile combining clarity, risk, readiness, lifecycle, QA risk and manager action.
-- Generated reports existed in `reports/`, but portfolio-friendly sample outputs were not committed because `reports/` is ignored.
-- `package.json` missed some discoverable commands external reviewers expect: `demo`, `report`, `typecheck`, `lint`.
-- Architecture documentation lived mostly inside README, making the repo harder to scan quickly.
+- Продуктовая история была размазана по README и не имела компактной архитектурной и roadmap-точки входа.
+- Не было нормального CI workflow для проверки push / pull request; существующий workflow был продуктовой функциональностью, а не repository CI.
+- Анализатор тона имел сильный встроенный словарь, но project-specific плохие формулировки не были настраиваемым first-class механизмом.
+- Не было единого профиля здоровья задачи, который объединяет ясность, риск, готовность, жизненный цикл, QA-риск и действие менеджера.
+- Сгенерированные отчёты лежали в `reports/`, но удобные для портфолио примеры не были закоммичены, потому что `reports/` игнорируется.
+- В `package.json` не хватало очевидных команд для внешнего ревью: `demo`, `report`, `typecheck`, `lint`.
+- Архитектурная документация в основном жила внутри README, из-за чего репозиторий было сложнее быстро просмотреть.
 
-## Improvements Implemented
+## Реализованные улучшения
 
-- Added configurable bad formulations dictionary with categories such as `vague`, `pressure`, `unclear_reference`, `missing_context`, `weak_acceptance` and `hidden_requirement`.
-- Added configurable Clarity Score weights and thresholds.
-- Added analytics config for ignored labels and statuses.
-- Added `Task Health Profile`, a report that combines per-task clarity, risk, DoR/DoD, lifecycle, weak formulations, delivery risks, QA risks and next best action.
-- Added a normal CI workflow with clean clone install, static TypeScript check, build, tests and demo generation.
-- Added `ARCHITECTURE.md`, `ROADMAP.md` and portfolio-friendly examples.
-- Added package scripts that make the project easier to evaluate: `demo`, `report`, `typecheck`, `lint`, `task:health`.
+- Добавлен настраиваемый словарь плохих формулировок с категориями `vague`, `pressure`, `unclear_reference`, `missing_context`, `weak_acceptance` и `hidden_requirement`.
+- Добавлены настраиваемые веса и thresholds для Clarity Score.
+- Добавлена analytics-конфигурация для ignored labels и statuses.
+- Добавлен `Task Health Profile` - отчёт, который объединяет ясность, риск, DoR/DoD, жизненный цикл, слабые формулировки, delivery-риски, QA-риски и следующий лучший шаг по каждой задаче.
+- Добавлен нормальный CI workflow: clean clone install, статическая TypeScript-проверка, build, tests и demo generation.
+- Добавлены `ARCHITECTURE.md`, `ROADMAP.md` и примеры, удобные для портфолио.
+- Добавлены package scripts, которые упрощают оценку проекта: `demo`, `report`, `typecheck`, `lint`, `task:health`.
 
-## Remaining Product Risks
+## Оставшиеся продуктовые риски
 
-- The tool currently infers many signals heuristically; larger real datasets will need calibration and false-positive review.
-- Dashboard HTML is intentionally static and compact; a richer product would eventually need filtering and trend navigation.
-- Risk thresholds are exposed in config, but deeper domain-specific risk scoring should be validated with real team data before overfitting.
-- Lifecycle analytics depends on status history quality from external trackers.
-- AI-assisted rewriting is deliberately not core because the project must work without secrets or network calls.
+- Инструмент пока выводит многие сигналы эвристически; на больших реальных датасетах понадобится калибровка и false-positive review.
+- Dashboard HTML намеренно статичный и компактный; более зрелому продукту позже понадобятся фильтры и навигация по трендам.
+- Risk thresholds вынесены в config, но более глубокий domain-specific risk scoring нужно валидировать на реальных командных данных до overfitting.
+- Lifecycle analytics зависит от качества status history во внешних трекерах.
+- AI-assisted rewriting намеренно не является ядром продукта, потому что проект должен работать без secrets и network calls.
 
-## Recommended Demo Narrative
+## Рекомендуемый demo-сценарий
 
-1. Start with task handoff pain: unclear requirements create QA returns and delivery drag.
-2. Show `npm run demo` and open `reports/demo/dashboard.html`.
-3. Open `reports/demo/task-health-profile.md` to show how one task becomes an actionable profile.
-4. Open `reports/demo/retro-report.md` to connect clarity with lifecycle friction.
-5. Open `reports/demo/decision-ledger.md` to show mature PM thinking: problem, evidence, decision, owner and risk control.
-6. Open `reports/demo/quick-bug-fix.md` to show operational focus on quick, safe bug fixes.
+1. Начать с боли передачи задач: неясные требования создают возвраты QA и delivery drag.
+2. Показать `npm run demo` и открыть `reports/demo/dashboard.html`.
+3. Открыть `reports/demo/task-health-profile.md`, чтобы показать, как одна задача превращается в actionable-профиль.
+4. Открыть `reports/demo/retro-report.md`, чтобы связать ясность с трением в жизненном цикле задачи.
+5. Открыть `reports/demo/decision-ledger.md`, чтобы показать зрелое PM-мышление: problem, evidence, decision, owner и risk control.
+6. Открыть `reports/demo/quick-bug-fix.md`, чтобы показать операционный фокус на быстрых и безопасных исправлениях багов.
 
-## Audit Conclusion
+## Вывод аудита
 
-The project now reads less like a single GitHub bot and more like a compact PM analytics product: it keeps the original automation use case, but adds project-level reporting, lifecycle analytics, configurable communication rules and demo-ready outputs.
+Проект теперь выглядит не как одиночный GitHub-бот, а как компактный продукт PM-аналитики: он сохраняет исходный automation use case, но добавляет отчётность на уровне проекта, аналитику жизненного цикла, настраиваемые правила коммуникации и outputs, готовые для демо.

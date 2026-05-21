@@ -2,32 +2,32 @@
 
 **Clarity Guardian** - инструмент для анализа качества постановки задач в продуктовых и инженерных командах.
 
-Проект помогает сделать качество задач видимым, измеримым и обсуждаемым. Он анализирует описания задач из GitHub, Jira, Yandex Tracker, JSON-файлов и demo data, рассчитывает **Clarity Score**, выявляет типовые коммуникационные риски, формирует рекомендации для менеджеров и готовит отчёты для ретроспектив.
+Проект помогает сделать качество задач видимым, измеримым и обсуждаемым. Он анализирует описания задач из GitHub, Jira, Yandex Tracker, JSON-файлов и демо-данных, рассчитывает **Clarity Score**, выявляет типовые коммуникационные риски, формирует рекомендации для менеджеров и готовит отчёты для ретроспектив.
 
-Clarity Guardian вырос из GitHub Issue/PR bot, который проверял наличие контекста, ожидаемого результата и критериев приёмки. Сейчас проект работает как лёгкий PM analytics tool: он не просто подсвечивает проблемы в отдельных задачах, а показывает качество постановки задач на уровне проекта, команды и периода.
+Clarity Guardian вырос из бота для GitHub Issue/PR, который проверял наличие контекста, ожидаемого результата и критериев приёмки. Сейчас проект работает как лёгкий инструмент PM-аналитики: он не просто подсвечивает проблемы в отдельных задачах, а показывает качество постановки задач на уровне проекта, команды и периода.
 
-Проект специально сделан простым и demo-friendly: без тяжёлого backend, отдельной базы данных и сложного frontend. Все ключевые сценарии можно показать локально на JSON-данных, demo dataset или через интеграции с рабочими трекерами.
+Проект специально сделан простым и удобным для демо: без тяжёлого backend, отдельной базы данных и сложного frontend. Все ключевые сценарии можно показать локально на JSON-данных, демо-датасете или через интеграции с рабочими трекерами.
 
-Технически проект полностью написан на TypeScript/Node.js. В проекте нет Python-wrapper, отдельной БД или backend-сервера: demo-сценарии запускаются через npm scripts и JSON-файлы.
-
----
-
-## Product Positioning
-
-**Clarity Guardian is a lightweight PM analytics tool that helps teams improve task clarity, detect weak requirements, analyze delivery risks, and prepare retro-ready reports based on task quality and lifecycle data.**
-
-It is useful for:
-
-- PMs who want to improve task handoff and sprint readiness;
-- QA engineers who need testable requirements and fewer unclear tickets;
-- engineering leads who want to see delivery risks, bottlenecks and reopened tasks earlier;
-- portfolio reviewers who need to understand product thinking, architecture and measurable value quickly.
-
-The project is intentionally compact: no heavy backend, no database, no complex frontend. It demonstrates how a real product could start as a bot and grow into a PM / Engineering Analytics workflow.
+Технически проект полностью написан на TypeScript/Node.js. В проекте нет Python-wrapper, отдельной БД или backend-сервера: демо-сценарии запускаются через npm scripts и JSON-файлы.
 
 ---
 
-## Reviewer Quick Start
+## Позиционирование продукта
+
+**Clarity Guardian - лёгкий инструмент PM-аналитики, который помогает командам улучшать ясность задач, находить слабые требования, анализировать delivery-риск и готовить отчёты для ретро на основе качества задач и данных жизненного цикла.**
+
+Проект полезен для:
+
+- PM, которые хотят улучшать передачу задач между ролями и готовность спринта;
+- QA-инженеров, которым нужны проверяемые требования и меньше неясных тикетов;
+- engineering leads, которым важно раньше видеть delivery-риск, bottlenecks и reopened-задачи;
+- ревьюеров портфолио, которым нужно быстро понять продуктовое мышление, архитектуру и измеримую ценность проекта.
+
+Проект намеренно компактный: без тяжёлого backend, базы данных и сложного frontend. Он показывает, как реальный продукт может начаться с бота и вырасти в workflow PM / Engineering analytics.
+
+---
+
+## Быстрый старт для ревьюера
 
 ```bash
 npm ci
@@ -48,7 +48,7 @@ reports/demo/decision-ledger.md
 reports/demo/quick-bug-fix.md
 ```
 
-Для полной production-проверки:
+Для полной проверки проекта:
 
 ```bash
 npm run verify
@@ -56,13 +56,13 @@ npm run verify
 
 ---
 
-## License
+## Лицензия
 
-This project is proprietary and viewing-only. It is not open source.
+Проект является проприетарным и доступен только для просмотра. Это не open source.
 
-You may view the repository for review, portfolio, hiring, educational evaluation, or security inspection purposes only. You may not use, copy, modify, distribute, deploy, integrate, publish, sublicense, sell, or create derivative works from this project without prior written permission from Maria Goncharova.
+Репозиторий можно просматривать только для ревью, оценки портфолио, найма, образовательной оценки или security inspection. Нельзя использовать, копировать, модифицировать, распространять, деплоить, интегрировать, публиковать, сублицензировать, продавать или создавать производные работы на основе проекта без предварительного письменного разрешения Maria Goncharova.
 
-See [LICENSE](LICENSE) for the full terms.
+Полные условия описаны в [LICENSE](LICENSE).
 
 ---
 
@@ -87,7 +87,7 @@ Clarity Guardian переводит качество постановки зад
 - категории найденных проблем;
 - повторяющиеся коммуникационные риски;
 - рекомендации для менеджеров;
-- dashboard по качеству задач;
+- дашборд по качеству задач;
 - отчёты для ретроспектив;
 - сравнение качества задач до и после внедрения инструмента.
 
@@ -95,15 +95,15 @@ Clarity Guardian переводит качество постановки зад
 
 ## Для кого этот проект
 
-### Project Managers / PM
+### Менеджеры проектов / PM
 
-Чтобы улучшать task handoff, снижать неоднозначность требований и видеть, какие проблемы в постановке задач повторяются чаще всего.
+Чтобы улучшать передачу задач между ролями, снижать неоднозначность требований и видеть, какие проблемы в постановке задач повторяются чаще всего.
 
-### Product Managers / продуктовые менеджеры
+### Продуктовые менеджеры
 
 Чтобы связывать задачи с пользовательской ценностью, бизнес-контекстом и ожидаемым результатом.
 
-### QA engineers / тестировщики
+### QA-инженеры / тестировщики
 
 Чтобы быстрее понимать, что именно проверять, какие критерии приёмки есть у задачи и где описание недостаточно тестируемое.
 
@@ -230,7 +230,7 @@ Clarity Fix Suggestions добавляет в `analyze`-результат и ma
 - Jira;
 - Yandex Tracker;
 - JSON-файлы;
-- demo dataset.
+- демо-датасет.
 
 Это позволяет анализировать задачи одинаково независимо от того, где команда ведёт работу.
 
@@ -317,12 +317,12 @@ Dashboard показывает качество задач на уровне п�
 - задачи с самым низким score;
 - динамику score по дням и неделям.
 
-Dashboard можно экспортировать в нескольких форматах:
+Дашборд можно экспортировать в нескольких форматах:
 
 - JSON;
 - Markdown;
 - CSV;
-- static HTML.
+- статический HTML.
 
 Это делает проект удобным как для локальной демонстрации, так и для портфолио.
 
@@ -332,16 +332,16 @@ Dashboard можно экспортировать в нескольких фор
 
 Clarity Guardian формирует отчёт, который можно использовать на ретроспективе.
 
-Retro report включает:
+Отчёт для ретро включает:
 
-- summary за выбранный период;
+- сводку за выбранный период;
 - распределение задач по качеству;
 - средний Clarity Score;
-- top team problems;
-- before/after dynamics;
+- основные проблемы команды;
+- динамику before/after;
 - примеры задач, требующих внимания;
 - рекомендации для команды;
-- блок "what to improve in task writing".
+- блок "что улучшить в постановке задач".
 
 Такой отчёт помогает обсуждать не только скорость разработки, но и качество коммуникации внутри команды.
 
@@ -379,9 +379,9 @@ Clarity Guardian не утверждает причинно-следственн
 
 ---
 
-## Retro Task Analytics
+## Ретро-аналитика задач
 
-Clarity Guardian V2 умеет готовить отдельный retro-ready отчёт по жизненному циклу задач.
+Clarity Guardian V2 умеет готовить отдельный отчёт для ретро по жизненному циклу задач.
 
 Модуль анализирует:
 
@@ -445,11 +445,11 @@ task_id,title,source,assignee,clarity_score,lead_time_days,cycle_time_days,is_re
 
 ---
 
-## Risk Radar
+## Радар рисков
 
-Risk Radar оценивает риск проблем при реализации задачи: насколько вероятны возвраты с тестирования, задержки, лишние уточнения от разработки или QA и разночтения между участниками команды.
+Радар рисков оценивает риск проблем при реализации задачи: насколько вероятны возвраты с тестирования, задержки, лишние уточнения от разработки или QA и разночтения между участниками команды.
 
-Модуль нужен PM-у перед handoff в разработку: он показывает не просто "задача мутная", а какие именно пробелы создают риск. Risk Radar проверяет контекст, ожидаемый результат, критерии приёмки, тестируемость, edge cases, негативные сценарии, ссылки/макеты/логи/примеры данных и расплывчатые формулировки вроде "как обсуждали", "пофиксить", "сделать нормально", "urgent", "fix it".
+Модуль нужен PM-у перед передачей в разработку: он показывает не просто "задача мутная", а какие именно пробелы создают риск. Радар рисков проверяет контекст, ожидаемый результат, критерии приёмки, тестируемость, edge cases, негативные сценарии, ссылки/макеты/логи/примеры данных и расплывчатые формулировки вроде "как обсуждали", "пофиксить", "сделать нормально", "urgent", "fix it".
 
 `riskScore` считается от 0 до 100: за каждую найденную проблему добавляются risk points, затем score ограничивается диапазоном `0-100`.
 
@@ -457,7 +457,7 @@ Risk Radar оценивает риск проблем при реализаци�
 - `31-65` - `medium`;
 - `66-100` - `high`.
 
-Clarity Score усиливает Risk Radar, если он передан в задаче:
+Clarity Score усиливает радар рисков, если он передан в задаче:
 
 - `clarityScore < 40` добавляет сильный риск;
 - `40-69` добавляет умеренный риск;
@@ -490,14 +490,14 @@ Clarity Score усиливает Risk Radar, если он передан в з�
 }
 ```
 
-Risk Radar также генерирует QA notes и `rewrittenTaskSuggestion` со структурой:
+Радар рисков также генерирует QA notes и `rewrittenTaskSuggestion` со структурой:
 
 ```text
 ## Контекст
 ## Ожидаемый результат
 ## Критерии приёмки
-## Edge cases
-## QA notes
+## Граничные случаи
+## Что проверить
 ```
 
 Это помогает снижать риск возвратов с тестирования, задержек и лишних уточнений: PM видит, какие детали нужно добавить до разработки, QA заранее понимает, что нельзя проверить, а команда получает более проверяемую постановку задачи.
@@ -550,9 +550,9 @@ npm run readiness -- --input data/demo_tasks.json --output reports/readiness_rep
 
 ---
 
-## Sprint Health Report
+## Отчёт о здоровье спринта
 
-Sprint Health Report показывает PM, насколько здоровым выглядит спринт перед планированием или на середине спринта.
+Отчёт о здоровье спринта показывает PM, насколько устойчивым выглядит спринт перед планированием или на середине спринта.
 
 Отчёт считает:
 
@@ -568,7 +568,7 @@ Sprint Health Report показывает PM, насколько здоровы�
 - основные факторы риска;
 - рекомендации для следующего grooming или planning.
 
-Health status:
+Статусы здоровья:
 
 - **green** - большинство задач готовы, высокий риск контролируемый;
 - **yellow** - есть заметные проблемы, но спринт можно стабилизировать;
@@ -586,7 +586,7 @@ npm run sprint-health -- --input data/demo_tasks.json --output reports/sprint_he
 
 ## Quality Gate
 
-Quality Gate нужен для CI/CD и planning checks: он анализирует набор задач и завершает процесс с non-zero exit code, если качество постановки ниже заданных порогов.
+Quality Gate нужен для CI/CD и проверок перед planning: он анализирует набор задач и завершает процесс с ненулевым exit code, если качество постановки ниже заданных порогов.
 
 По умолчанию проверяются:
 
@@ -610,16 +610,16 @@ npm run quality:gate -- --input data/demo_tasks.json \
 
 ---
 
-## Action Plan Report
+## Отчёт Action Plan
 
-Action Plan Report превращает результаты анализа в рабочий список для grooming: какие задачи стоит уточнить первыми, почему они попали в план, какие вопросы задать и какие действия выполнить.
+Отчёт Action Plan превращает результаты анализа в рабочий список для grooming: какие задачи стоит уточнить первыми, почему они попали в план, какие вопросы задать и какие действия выполнить.
 
-Отчёт использует Clarity Score, risk level, найденные проблемы и Clarity Fix Suggestions. Для каждой задачи показывает:
+Отчёт использует Clarity Score, уровень риска, найденные проблемы и Clarity Fix Suggestions. Для каждой задачи показывает:
 
 - priority score;
 - причины попадания в action plan;
 - вопросы к автору задачи;
-- next actions;
+- следующие действия;
 - PM-friendly rewrite.
 
 Пример запуска:
@@ -634,19 +634,19 @@ npm run action:plan -- --input data/demo_tasks.json --output reports/action_plan
 
 ---
 
-## Refinement Agenda
+## Повестка refinement
 
-Refinement Agenda превращает аналитику задач в готовую повестку встречи: какие задачи обсуждать первыми, сколько времени заложить, кто нужен в комнате и какое решение надо зафиксировать.
+Повестка refinement превращает аналитику задач в готовую структуру встречи: какие задачи обсуждать первыми, сколько времени заложить, кто нужен в комнате и какое решение надо зафиксировать.
 
 Отчёт помогает PM и team lead проводить refinement без ручной сортировки backlog:
 
 - priority score для порядка обсуждения;
 - решение для каждой задачи: `clarify_requirements`, `split_scope`, `resolve_blocker`, `risk_review` или `ready_to_commit`;
 - timebox в минутах;
-- owner role и нужные участники;
+- роль владельца и нужные участники;
 - вопросы к автору задачи;
-- prep before meeting;
-- decisions to capture после обсуждения.
+- подготовка перед встречей;
+- решения, которые нужно зафиксировать после обсуждения.
 
 Пример запуска:
 
@@ -656,23 +656,23 @@ npm run refinement:agenda -- --input data/demo_tasks.json --output reports/refin
 npm run refinement:agenda -- --input data/demo_tasks.json --output reports/refinement_agenda.csv --format csv --limit 8
 ```
 
-Эта фича закрывает практический PM-сценарий: после анализа команда получает не просто список проблем, а компактный meeting plan для следующего refinement.
+Эта фича закрывает практический PM-сценарий: после анализа команда получает не просто список проблем, а компактный план встречи для следующего refinement.
 
 ---
 
-## Stakeholder Update
+## Статус для стейкхолдеров
 
-Stakeholder Update готовит короткий статус для менеджерского апдейта: что происходит с качеством задач, где есть риски, какие asks нужны от PM / Tech Lead / QA и какие задачи стоит явно упомянуть.
+Статус для стейкхолдеров готовит короткий менеджерский апдейт: что происходит с качеством задач, где есть риски, какие запросы нужны от PM / Tech Lead / QA и какие задачи стоит явно упомянуть.
 
-Отчёт помогает не пересказывать dashboard вручную:
+Отчёт помогает не пересказывать дашборд вручную:
 
-- health status: `green`, `yellow` или `red`;
-- executive summary по Clarity Score, DoR, high-risk, blockers и QA gaps;
+- статус здоровья: `green`, `yellow` или `red`;
+- краткая сводка по Clarity Score, DoR, high-risk задачам, blockers и QA gaps;
 - highlights, которые можно отправить стейкхолдерам;
-- risks to watch с owner role;
-- asks с urgency `now`, `this_week` или `monitor`;
-- task mentions для самых важных задач;
-- next actions для ближайшего planning checkpoint.
+- риски для наблюдения с ролью владельца;
+- запросы с urgency `now`, `this_week` или `monitor`;
+- задачи, которые стоит упомянуть явно;
+- следующие действия для ближайшего planning checkpoint.
 
 Пример запуска:
 
@@ -682,7 +682,7 @@ npm run stakeholder:update -- --input data/demo_tasks.json --output reports/stak
 npm run stakeholder:update -- --input data/demo_tasks.json --output reports/stakeholder_update.csv --format csv
 ```
 
-Эта фича полезна для еженедельного PM/status update: вместо набора внутренних метрик команда получает короткое сообщение о здоровье backlog/sprint и конкретных asks.
+Эта фича полезна для еженедельного PM/status update: вместо набора внутренних метрик команда получает короткое сообщение о здоровье backlog/sprint и конкретных запросах.
 
 ---
 
@@ -692,12 +692,12 @@ Evidence Brief добавляет слой на стыке IT, научной к
 
 Отчёт помогает PM, разработчикам, QA и аналитикам увидеть:
 
-- working hypothesis для задачи;
+- рабочая гипотеза для задачи;
 - evidence signals: контекст, источник наблюдения, критерии проверки, метрики;
 - evidence gaps: отсутствие источника, проверяемого результата, acceptance criteria или метрики успеха;
-- вопросы перед handoff;
-- next actions для PM / Tech Lead / QA / Analytics;
-- communication frame для обсуждения на refinement.
+- вопросы перед передачей задачи;
+- следующие действия для PM / Tech Lead / QA / Analytics;
+- коммуникационный frame для обсуждения на refinement.
 
 Пример запуска:
 
@@ -711,9 +711,9 @@ npm run evidence:brief -- --input data/demo_tasks.json --output reports/evidence
 
 ---
 
-## Decision Ledger
+## Журнал решений
 
-Decision Ledger показывает зрелость управленческой мысли в проекте: он проверяет, прослеживается ли решение от исходной проблемы до проверки, владельца и контроля риска.
+Журнал решений показывает зрелость управленческой мысли в проекте: он проверяет, прослеживается ли решение от исходной проблемы до проверки, владельца и контроля риска.
 
 Это не просто ещё один список проблем. Отчёт собирает по каждой задаче decision trace:
 
@@ -741,28 +741,28 @@ npm run decision:ledger -- --input data/demo_tasks.json --output reports/decisio
 npm run decision:ledger -- --input data/demo_tasks.json --output reports/decision_ledger.csv --format csv
 ```
 
-Эта фича хорошо показывает, что Clarity Guardian думает как PM-инструмент: он связывает требования, evidence, DoR/DoD, риск и ответственность в одну проверяемую цепочку принятия решений.
+Эта фича хорошо показывает, что Clarity Guardian работает как PM-инструмент: он связывает требования, evidence, DoR/DoD, риск и ответственность в одну проверяемую цепочку принятия решений.
 
 ---
 
-## Task Health Profile
+## Профиль здоровья задачи
 
-Task Health Profile собирает по каждой задаче компактный профиль, который удобно использовать на refinement, planning или ретро.
+Профиль здоровья задачи собирает по каждой задаче компактный профиль, который удобно использовать на refinement, planning или ретро.
 
 Профиль показывает:
 
 - Clarity Score;
-- risk level и risk score;
+- уровень риска и risk score;
 - missing sections;
 - weak formulations и tone issues;
 - delivery risks;
 - QA risks;
 - DoR / DoD scores;
 - lead time и cycle time;
-- manager recommendations;
-- next best action.
+- рекомендации для менеджера;
+- следующий лучший шаг.
 
-На уровне проекта отчёт считает Project Quality Summary: средний Clarity Score, процент good tasks, долю задач без acceptance criteria, долю vague formulations, high-risk tasks, reopened tasks, stuck tasks, частые проблемы и рекомендации для процесса.
+На уровне проекта отчёт считает сводку качества: средний Clarity Score, процент задач хорошего качества, долю задач без acceptance criteria, долю vague formulations, high-risk tasks, reopened tasks, stuck tasks, частые проблемы и рекомендации для процесса.
 
 Пример запуска:
 
@@ -776,9 +776,9 @@ npm run task:health -- --input data/demo_tasks.json --output reports/task_health
 
 ---
 
-## Quick Bug Fix Queue
+## Очередь быстрых исправлений багов
 
-Quick Bug Fix Queue помогает быстро не терять мелкие баги в общем потоке задач. Он находит bug-кандидатов, отличает быстрые безопасные фиксы от задач, которые сначала требуют уточнения или risk review, и формирует короткую карточку фикса.
+Очередь быстрых исправлений багов помогает не терять мелкие баги в общем потоке задач. Она находит bug-кандидатов, отличает быстрые безопасные фиксы от задач, которые сначала требуют уточнения или risk review, и формирует короткую карточку фикса.
 
 Для каждой bug-задачи отчёт показывает:
 
@@ -799,7 +799,7 @@ npm run bug:quick-fix -- --input data/demo_tasks.json --output reports/quick_bug
 npm run bug:quick-fix -- --input data/demo_tasks.json --output reports/quick_bug_fix.csv --format csv
 ```
 
-Фича специально не обещает "авточинить" рискованные баги вслепую. Она ускоряет безопасные мелкие фиксы и останавливает те, где сначала нужны reproduction steps, критерии проверки, владелец зависимости или risk review.
+Фича специально не обещает "авточинить" рискованные баги вслепую. Она ускоряет безопасные мелкие фиксы и останавливает те, где сначала нужны шаги воспроизведения, критерии проверки, владелец зависимости или risk review.
 
 ---
 
@@ -821,7 +821,7 @@ data/demo_tasks.json
 - задачи с QA returns и без них;
 - разные development times;
 - high / medium / low risk tasks;
-- Definition of Ready / Done examples;
+- примеры Definition of Ready / Done;
 - внешние зависимости и блокеры;
 - Sprint Health demo;
 - разные authors;
@@ -839,51 +839,51 @@ data/demo_tasks.json
 
 ```text
 src/
-  analyze.ts                 # task analysis и вывод для GitHub/Jira bot
-  clarity-score.ts           # Clarity Score и communication risks
-  recommendations.ts         # manager recommendations
-  task-model.ts              # unified task model
-  yandex-tracker.ts          # Yandex Tracker adapter/service
-  analytics.ts               # dashboard, history, before/after, research data
-  reports.ts                 # Markdown, CSV, HTML report formatting
-  v2-report.ts               # report CLI
+  analyze.ts                 # анализ задачи и вывод для GitHub/Jira bot
+  clarity-score.ts           # Clarity Score и коммуникационные риски
+  recommendations.ts         # рекомендации для менеджера
+  task-model.ts              # единая модель задачи
+  yandex-tracker.ts          # adapter/service для Yandex Tracker
+  analytics.ts               # дашборд, история, before/after, исследовательские данные
+  reports.ts                 # форматирование Markdown, CSV и HTML отчётов
+  v2-report.ts               # CLI для отчётов
   retro-analyzer.ts          # расчёт lead time, cycle time и bottlenecks
   quality-gate.ts            # CI gate по Clarity Score, DoR и high-risk задачам
   action-plan.ts             # приоритизированный список задач для уточнения
   refinement-agenda.ts       # повестка refinement с timebox, ролями и решениями
-  stakeholder-update.ts      # короткий статус для стейкхолдеров с risks и asks
+  stakeholder-update.ts      # короткий статус для стейкхолдеров с рисками и запросами
   evidence-brief.ts          # evidence brief для planning и научной коммуникации
   decision-ledger.ts         # матрица прослеживаемости решений и risk governance
-  task-health-profile.ts     # единый профиль здоровья задачи и project quality summary
+  task-health-profile.ts     # единый профиль здоровья задачи и сводка качества проекта
   quick-bug-fix.ts           # очередь быстрых и безопасных фиксов мелких багов
-  retro-report.ts            # CLI для Retro Task Analytics
-  retro-report-*.ts          # Markdown, JSON и CSV exports для ретро
+  retro-report.ts            # CLI для ретро-аналитики задач
+  retro-report-*.ts          # экспорты Markdown, JSON и CSV для ретро
   retro-delay-reasons.ts     # причины задержек и возвратов
-  task-signals.ts            # общие сигналы задачи для PM analytics
+  task-signals.ts            # общие сигналы задачи для PM-аналитики
   report-utils.ts            # общий вывод Markdown/JSON/CSV
-  risk/                      # Risk Detection
+  risk/                      # определение рисков
   readiness/                 # Definition of Ready / Definition of Done
-  sprint-health/             # Sprint Health Report
-  risk-report.ts             # CLI для risk report
-  readiness-report.ts        # CLI для DoR/DoD report
-  sprint-health-report.ts    # CLI для sprint health report
+  sprint-health/             # отчёт о здоровье спринта
+  risk-report.ts             # CLI для отчёта по рискам
+  readiness-report.ts        # CLI для DoR/DoD отчёта
+  sprint-health-report.ts    # CLI для отчёта о здоровье спринта
   sync-github.ts             # GitHub comments/body sync
   sync-jira.ts               # Jira REST sync
   generate-test-checklist.ts # QA checklist generation
 
 data/
   demo-tasks.json            # демо-данные для portfolio demo
-  demo_tasks.json            # демо-данные для Retro Task Analytics
+  demo_tasks.json            # демо-данные для ретро-аналитики
   README.md                  # пояснение, какой dataset использовать для какого demo
 
 scripts/
-  smoke-test.ts              # end-to-end smoke checks
+  smoke-test.ts              # end-to-end smoke-проверки
 
 templates/
-  *.md                       # manager и tester templates
+  *.md                       # шаблоны для менеджера и тестировщика
 ```
 
-GitHub bot остаётся совместимым с основной логикой анализа. Reporting layer построен поверх того же анализатора и расширяет проект до уровня PM analytics.
+GitHub bot остаётся совместимым с основной логикой анализа. Слой отчётов построен поверх того же анализатора и расширяет проект до уровня PM-аналитики.
 
 ---
 
@@ -926,7 +926,7 @@ reports/demo/analysis-records.json
 
 ---
 
-## Example Reports
+## Примеры отчётов
 
 Чтобы внешний ревьюер мог быстро понять формат результата без запуска проекта, в репозитории есть committed examples:
 
@@ -1040,7 +1040,7 @@ src/yandex-tracker.ts
 ```bash
 YANDEX_TRACKER_TOKEN=...
 YANDEX_TRACKER_ORG_ID=...
-# or
+# или
 CLOUD_ORG_ID=...
 
 YANDEX_TRACKER_QUEUE=CHECKOUT
@@ -1078,7 +1078,7 @@ node dist/yandex-tracker.js --query 'Queue: CHECKOUT "Sort by": Updated DESC' --
 
 Adapter читает:
 
-- summary;
+- сводку;
 - description;
 - status;
 - assignee;
@@ -1159,13 +1159,13 @@ clarity-guardian.config.json
 - mode: `strict`, `non-strict`;
 - `updateDescription`;
 - обязательные секции;
-- common и type-specific rules;
+- common-правила и type-specific rules;
 - project-specific stop phrases;
-- bad formulations dictionary;
+- словарь bad formulations;
 - scoring weights и thresholds;
 - risk thresholds;
 - ignored labels / statuses для аналитики;
-- default report format.
+- формат отчёта по умолчанию.
 
 Пример:
 
@@ -1220,22 +1220,22 @@ Clarity Guardian помогает команде:
 - делать качество задач измеримым;
 - видеть повторяющиеся коммуникационные проблемы;
 - готовить содержательные ретроспективы;
-- связывать task writing с delivery outcomes;
-- делать PM work видимой через structured improvements;
+- связывать постановку задач с delivery outcomes;
+- делать PM-работу видимой через structured improvements;
 - улучшать взаимодействие между PM, разработкой и QA.
 
 ---
 
 ## Ценность для PM
 
-Для PM portfolio проект показывает:
+Для PM-портфолио проект показывает:
 
 - product problem framing;
 - ясное понимание user value;
 - lightweight analytics;
 - integration thinking;
-- умение приоритизировать demo-ready value вместо лишней сложности;
-- коммуникацию между PM, engineering и QA;
+- умение приоритизировать готовую для демо ценность вместо лишней сложности;
+- коммуникацию между PM, разработкой и QA;
 - аккуратное исследовательское мышление без завышения выводов;
 - способность превращать разрозненную боль команды в понятный инструмент.
 
@@ -1247,18 +1247,18 @@ Clarity Guardian помогает команде:
 
 Smoke tests покрывают:
 
-- Clarity Score и task analysis;
-- manager recommendations;
-- demo task analysis;
-- before/after comparison;
-- Markdown, JSON, CSV и HTML exports;
-- Retro Task Analytics edge cases;
-- Risk Detection, DoR/DoD и Sprint Health Report;
-- Refinement Agenda, Stakeholder Update, Evidence Brief, Decision Ledger, Quick Bug Fix Queue и Task Health Profile;
-- Yandex Tracker adapter и missing-field fallback;
-- GitHub comment update behavior;
-- Jira sync behavior;
-- Docker configuration sanity check.
+- Clarity Score и анализ задач;
+- рекомендации для менеджера;
+- анализ demo-задач;
+- сравнение before/after;
+- экспорты Markdown, JSON, CSV и HTML;
+- edge cases ретро-аналитики;
+- определение рисков, DoR/DoD и отчёт о здоровье спринта;
+- повестку refinement, статус для стейкхолдеров, Evidence Brief, журнал решений, очередь быстрых bug-fix задач и профиль здоровья задачи;
+- adapter для Yandex Tracker и fallback для missing fields;
+- поведение обновления комментариев GitHub;
+- поведение Jira sync;
+- sanity check Docker-конфигурации.
 
 Запуск:
 
@@ -1285,14 +1285,14 @@ git diff --check
 
 Документация проекта:
 
-- Communication Guide;
-- Scientific Communication Rationale;
-- Portfolio Case;
-- Demo Guide;
-- Architecture;
-- Roadmap;
-- Product And Engineering Audit;
-- examples with sample reports.
+- руководство по коммуникации;
+- обоснование через научную коммуникацию;
+- портфолио-кейс;
+- demo guide;
+- архитектура;
+- дорожная карта;
+- продуктовый и инженерный аудит;
+- examples с sample reports.
 
 Ключевые файлы:
 
@@ -1306,22 +1306,22 @@ examples/
 
 ---
 
-## Roadmap
+## Дорожная карта
 
-Roadmap находится в `ROADMAP.md` и разделён на этапы:
+Дорожная карта находится в `ROADMAP.md` и разделена на этапы:
 
-- V1 - GitHub Issue / PR clarity bot;
-- V2 - PM analytics and reports;
-- V3 - integrations and dashboards;
-- V4 - SaaS / team workspace potential.
+- V1 - бот ясности для GitHub Issue / PR;
+- V2 - PM-аналитика и отчёты;
+- V3 - интеграции и дашборды;
+- V4 - потенциал SaaS / командного workspace.
 
 ---
 
-## Limitations
+## Ограничения
 
-- Аналитика строится на эвристиках и качестве входных данных, поэтому её стоит использовать как decision support, а не как абсолютную оценку человека или команды.
-- Lifecycle metrics зависят от полноты `statusHistory` во внешнем трекере.
-- Static HTML dashboard намеренно простой: он подходит для demo, но не заменяет полноценный SaaS dashboard.
+- Аналитика строится на эвристиках и качестве входных данных, поэтому её стоит использовать как поддержку принятия решений, а не как абсолютную оценку человека или команды.
+- Метрики жизненного цикла зависят от полноты `statusHistory` во внешнем трекере.
+- Статический HTML dashboard намеренно простой: он подходит для demo, но не заменяет полноценный SaaS dashboard.
 - AI-интеграция не является обязательной частью проекта: все ключевые сценарии работают без API keys.
 - Для коммерческого использования нужно дополнительно валидировать scoring weights и risk thresholds на реальных данных команды.
 
@@ -1329,4 +1329,4 @@ Roadmap находится в `ROADMAP.md` и разделён на этапы:
 
 ## Лицензия
 
-Проект публично доступен для portfolio review и educational demonstration.
+Проект публично доступен для просмотра в рамках ревью портфолио и образовательной демонстрации.

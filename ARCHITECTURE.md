@@ -1,63 +1,63 @@
-# Architecture
+# Архитектура
 
-Clarity Guardian is a lightweight TypeScript/Node.js PM analytics tool. It has no server, database, or heavy frontend: data enters through adapters or JSON files, gets normalized into a unified task model, then flows through analysis and report modules.
+Clarity Guardian - лёгкий инструмент PM-аналитики на TypeScript/Node.js. В проекте нет сервера, базы данных или тяжёлого frontend: данные приходят через adapters или JSON-файлы, нормализуются в единую модель задачи и проходят через модули анализа и отчётов.
 
-## Data Flow
+## Поток данных
 
 ```text
 GitHub / Jira / Yandex / JSON / demo data
-  -> adapters and normalizers
+  -> adapters и normalizers
   -> UnifiedTask[]
-  -> task clarity analysis
-  -> risk, readiness, lifecycle, decision and health analytics
-  -> Markdown / JSON / CSV / static HTML reports
+  -> анализ ясности задачи
+  -> аналитика риска, готовности, жизненного цикла, решений и здоровья задачи
+  -> отчёты Markdown / JSON / CSV / static HTML
 ```
 
-## Main Layers
+## Основные слои
 
-### Adapters
+### Адаптеры
 
-- `src/prepare-event-payload.ts` converts GitHub event payloads into task payloads.
-- `src/sync-github.ts` updates GitHub comments and managed description blocks without duplication.
-- `src/sync-jira.ts` syncs analysis comments to Jira when configured.
-- `src/yandex-tracker.ts` fetches Yandex Tracker tasks and converts them into `UnifiedTask`.
-- `src/task-model.ts` normalizes file/demo tasks and builds task payloads for analysis.
+- `src/prepare-event-payload.ts` превращает GitHub event payloads в task payloads.
+- `src/sync-github.ts` обновляет комментарии GitHub и управляемые блоки описания без дублирования.
+- `src/sync-jira.ts` синхронизирует комментарии анализа в Jira при наличии настроек.
+- `src/yandex-tracker.ts` получает задачи из Yandex Tracker и приводит их к `UnifiedTask`.
+- `src/task-model.ts` нормализует file/demo задачи и собирает task payloads для анализа.
 
-### Core Analysis
+### Базовый анализ
 
-- `src/analyze.ts` is the single-task analysis pipeline used by the bot flow.
-- `src/config.ts` loads project rules: language, strict mode, required sections, stop phrases, bad formulations, scoring weights, thresholds and ignored labels/statuses.
-- `src/clarity-score.ts` calculates Clarity Score and communication risks.
-- `src/analyzers/toneOfVoiceAnalyzer.ts` detects weak tone, pressure, vague wording and configurable bad formulations.
-- `src/clarity-fix-suggestions.ts` turns findings into PM-friendly questions and draft fixes.
+- `src/analyze.ts` - pipeline анализа одной задачи, который используется bot-flow.
+- `src/config.ts` загружает правила проекта: язык, strict mode, обязательные секции, stop phrases, bad formulations, scoring weights, thresholds и ignored labels/statuses.
+- `src/clarity-score.ts` рассчитывает Clarity Score и коммуникационные риски.
+- `src/analyzers/toneOfVoiceAnalyzer.ts` находит слабый тон, давление, vague wording и настраиваемые плохие формулировки.
+- `src/clarity-fix-suggestions.ts` превращает findings в PM-friendly вопросы и черновики исправлений.
 
-### Analytics
+### Аналитика
 
-- `src/analytics.ts` builds project dashboard data, before/after comparison, history and research notes.
-- `src/retro-analyzer.ts` calculates lead time, cycle time, time in status, stuck tasks, reopened tasks and bottlenecks.
-- `src/risk/` evaluates delivery risk.
-- `src/readiness/` checks Definition of Ready and Definition of Done.
-- `src/sprint-health/` summarizes sprint health.
-- `src/decision-ledger.ts` checks decision traceability from problem to evidence, owner, verification and risk control.
-- `src/task-health-profile.ts` creates per-task health profiles and a project quality summary.
-- `src/quick-bug-fix.ts` separates quick, safe bug fixes from unclear or risky defects.
+- `src/analytics.ts` собирает данные дашборда проекта, before/after comparison, history и research notes.
+- `src/retro-analyzer.ts` рассчитывает lead time, cycle time, time in status, stuck tasks, reopened tasks и bottlenecks.
+- `src/risk/` оценивает delivery-риск.
+- `src/readiness/` проверяет Definition of Ready и Definition of Done.
+- `src/sprint-health/` собирает сводку здоровья спринта.
+- `src/decision-ledger.ts` проверяет traceability решения от проблемы до evidence, owner, verification и risk control.
+- `src/task-health-profile.ts` создаёт профили здоровья задач и сводку качества проекта.
+- `src/quick-bug-fix.ts` отделяет быстрые безопасные bug fixes от неясных или рискованных дефектов.
 
-### Reports
+### Отчёты
 
-- `src/reports.ts` formats dashboard, retro, research and CSV exports.
-- `src/report-utils.ts` contains shared Markdown/JSON/CSV helpers.
-- Dedicated report modules expose CLI-friendly Markdown, JSON and CSV output.
-- `src/v2-report.ts` generates the full demo/report bundle.
+- `src/reports.ts` форматирует dashboard, retro, research и CSV exports.
+- `src/report-utils.ts` содержит общие Markdown/JSON/CSV helpers.
+- Отдельные report-модули отдают CLI-friendly вывод в Markdown, JSON и CSV.
+- `src/v2-report.ts` генерирует полный demo/report bundle.
 
-### Tests and Smoke Checks
+### Тесты и smoke-проверки
 
-- `tests/` covers focused business logic.
-- `scripts/smoke-test.ts` runs end-to-end checks for CLI scripts, exports, integrations and generated reports.
-- `.github/workflows/ci.yml` verifies clean clone behavior with `npm ci`, TypeScript checks, build, tests and demo generation.
+- `tests/` покрывают сфокусированную бизнес-логику.
+- `scripts/smoke-test.ts` запускает end-to-end проверки CLI-скриптов, exports, integrations и сгенерированных отчётов.
+- `.github/workflows/ci.yml` проверяет clean clone behavior через `npm ci`, TypeScript checks, build, tests и demo generation.
 
-## Unified Task Model
+## Единая модель задачи
 
-All sources are normalized into `UnifiedTask`:
+Все источники нормализуются в `UnifiedTask`:
 
 ```ts
 interface UnifiedTask {
@@ -79,20 +79,20 @@ interface UnifiedTask {
 }
 ```
 
-This keeps source-specific parsing outside the analytics layer.
+Так source-specific parsing остаётся вне слоя аналитики.
 
-## Adding a New Task Source
+## Добавление нового источника задач
 
-1. Create an adapter that implements `TaskProvider`.
-2. Convert external records into `UnifiedTask`.
-3. Normalize missing optional fields to empty arrays or `undefined`.
-4. Reuse `npm run v2:report -- --input tasks.json --out-dir reports/custom`.
-5. Add a smoke test for missing fields, empty descriptions and representative lifecycle data.
+1. Создать adapter, который реализует `TaskProvider`.
+2. Преобразовать внешние записи в `UnifiedTask`.
+3. Нормализовать отсутствующие optional fields в пустые массивы или `undefined`.
+4. Переиспользовать `npm run v2:report -- --input tasks.json --out-dir reports/custom`.
+5. Добавить smoke test на missing fields, empty descriptions и representative lifecycle data.
 
-## Design Principles
+## Принципы проектирования
 
-- Keep the product demo local and deterministic.
-- Prefer typed data transformations over ad hoc string handling.
-- Keep reports readable for PM, QA and engineering readers.
-- Treat analytics as decision support, not as absolute truth.
-- Add integrations through adapters, not by mixing source-specific logic into scoring.
+- Держать product demo локальным и детерминированным.
+- Предпочитать типизированные преобразования данных вместо ad hoc string handling.
+- Делать отчёты читаемыми для PM, QA и инженерных читателей.
+- Рассматривать аналитику как поддержку принятия решений, а не как абсолютную истину.
+- Добавлять интеграции через adapters, а не смешивать source-specific логику со scoring.

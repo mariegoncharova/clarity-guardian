@@ -1,61 +1,61 @@
-# Roadmap
+# Дорожная карта
 
-Clarity Guardian is intentionally lightweight today: it proves the PM analytics workflow without a heavy backend or SaaS shell. The roadmap shows how it can grow into a commercial product while keeping a clear path from portfolio demo to team workspace.
+Clarity Guardian намеренно остаётся лёгким инструментом: он проверяет PM-analytics сценарий без тяжёлого backend и SaaS-оболочки. Дорожная карта показывает, как проект может вырасти из портфолио-демо в рабочее пространство для команды.
 
-## V1 - GitHub Issue / PR Clarity Bot
+## V1 - бот ясности для GitHub Issue / PR
 
-Status: implemented.
+Статус: реализовано.
 
-- Analyze GitHub Issues and Pull Requests.
-- Check required sections: context, expected result and acceptance criteria.
-- Support strict and non-strict modes.
-- Detect stop phrases and unclear wording.
-- Maintain a managed Clarity Guardian block without duplicating bot comments.
-- Generate QA checklist from local templates when no OpenAI key is available.
-- Sync analysis to Jira when configured.
+- Анализ GitHub Issues и Pull Requests.
+- Проверка обязательных секций: контекст, ожидаемый результат и критерии приёмки.
+- Поддержка strict и non-strict режимов.
+- Поиск стоп-фраз и неясных формулировок.
+- Обновление управляемого блока Clarity Guardian без дублирования комментариев бота.
+- Генерация QA-чек-листа из локальных шаблонов, если OpenAI key не настроен.
+- Синхронизация анализа в Jira при наличии настроек.
 
-## V2 - PM Analytics And Reports
+## V2 - PM-аналитика и отчёты
 
-Status: current focus.
+Статус: текущий фокус.
 
-- Unified task model across GitHub, Jira, Yandex Tracker, JSON and demo data.
-- Clarity Score and communication risk analysis.
-- Tone of Voice Analyzer and configurable bad formulations dictionary.
-- Project Quality Dashboard.
-- Retro-ready lifecycle analytics: lead time, cycle time, stuck tasks, reopened tasks and bottlenecks.
-- Before / After Comparison for process improvement storytelling.
-- Risk Detection, Definition of Ready, Definition of Done and Sprint Health.
-- Refinement Agenda, Stakeholder Update, Evidence Brief, Decision Ledger, Quick Bug Fix Queue and Task Health Profile.
-- Markdown, JSON, CSV and static HTML exports.
-- Demo mode that works on a clean clone.
+- Единая модель задачи для GitHub, Jira, Yandex Tracker, JSON и demo data.
+- Clarity Score и анализ коммуникационных рисков.
+- Анализатор тона коммуникации и настраиваемый словарь плохих формулировок.
+- Дашборд качества проекта.
+- Аналитика жизненного цикла для ретро: lead time, cycle time, зависшие задачи, reopened-задачи и bottlenecks.
+- Сравнение before/after для рассказа об улучшении процесса.
+- Risk Detection, Definition of Ready, Definition of Done и Sprint Health.
+- Повестка refinement, статус для стейкхолдеров, Evidence Brief, Decision Ledger, очередь быстрых bug-fix задач и Task Health Profile.
+- Экспорт в Markdown, JSON, CSV и статический HTML.
+- Demo-режим, который работает на чистом clone.
 
-## V3 - Integrations And Dashboards
+## V3 - интеграции и дашборды
 
-Potential next phase.
+Потенциальный следующий этап.
 
-- GitHub App packaging and clearer installation guide.
-- Jira and Yandex Tracker scheduled exports.
-- GitLab / Linear / YouTrack adapters through the same `TaskProvider` pattern.
-- Historical report snapshots for trend analysis.
-- Lightweight static dashboard with filters by sprint, team, assignee, status and risk.
-- Config presets for PM, QA, engineering lead and product analyst views.
-- Team-level quality goals and warnings for recurring bottlenecks.
+- Упаковка GitHub App и более понятный install guide.
+- Регулярные экспорты из Jira и Yandex Tracker.
+- Адаптеры GitLab / Linear / YouTrack через тот же паттерн `TaskProvider`.
+- Исторические snapshots отчётов для анализа трендов.
+- Лёгкий статический дашборд с фильтрами по sprint, team, assignee, status и risk.
+- Preset-настройки для PM, QA, engineering lead и product analyst.
+- Командные цели по качеству задач и предупреждения о повторяющихся bottlenecks.
 
-## V4 - SaaS / Team Workspace Potential
+## V4 - SaaS / командное workspace-направление
 
-Longer-term product direction.
+Долгосрочное продуктовое направление.
 
-- Workspace setup for multiple teams and projects.
-- Saved dictionaries and process rules per team.
-- Role-specific dashboards for PM, QA, Engineering Lead and Product.
-- Scheduled retro briefs and planning readiness checks.
-- Secure task-source connectors and audit logs.
-- Collaborative recommendations workflow: assign owner, track action, measure improvement.
-- Optional AI-assisted rewriting with deterministic fallback and strict privacy controls.
+- Workspace для нескольких команд и проектов.
+- Сохранённые словари и process rules для каждой команды.
+- Ролевые дашборды для PM, QA, Engineering Lead и Product.
+- Запланированные retro briefs и проверки готовности к planning.
+- Безопасные коннекторы к источникам задач и audit logs.
+- Совместный workflow рекомендаций: назначить владельца, отследить действие, измерить улучшение.
+- Опциональное AI-assisted rewriting с deterministic fallback и строгими privacy controls.
 
-## Product Bets To Validate
+## Продуктовые гипотезы для проверки
 
-- Teams will adopt task-quality analytics if reports are useful for retro and planning, not just for blocking issues.
-- PMs and QA gain the most value when the tool turns vague findings into concrete next actions.
-- Lightweight local exports are enough for early usage before building a hosted workspace.
-- The strongest commercial angle is process improvement: fewer unclear tasks, fewer testing returns and faster refinement.
+- Команды будут использовать аналитику качества задач, если отчёты полезны для ретро и planning, а не только блокируют issues.
+- PM и QA получают больше всего пользы, когда инструмент превращает размытые находки в конкретные next actions.
+- Локальных экспортов достаточно для раннего использования до создания hosted workspace.
+- Самая сильная коммерческая гипотеза - улучшение процесса: меньше неясных задач, меньше возвратов с тестирования и быстрее refinement.
