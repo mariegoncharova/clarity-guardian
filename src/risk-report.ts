@@ -11,6 +11,9 @@ import {
   analyzeRisks
 } from './risk/analyzer';
 import {
+  formatRiskReportSections
+} from './risk/risk-report';
+import {
   normalizeUnifiedTasks
 } from './task-model';
 import {
@@ -26,7 +29,9 @@ import type {
 
 function formatRiskMarkdown(items: RiskAnalysis[]): string {
   return [
-    '# Risk Detection Report',
+    '# Risk Radar Report',
+    '',
+    '_Legacy report name: Risk Detection Report_',
     '',
     '## Summary',
     '',
@@ -35,13 +40,20 @@ function formatRiskMarkdown(items: RiskAnalysis[]): string {
     `- Medium risk: ${items.filter((item) => item.riskLevel === 'medium').length}`,
     `- Low risk: ${items.filter((item) => item.riskLevel === 'low').length}`,
     '',
-    '## Risk Tasks',
+    '## Task Risk Table',
     '',
-    '| Task | Title | Risk Level | Risk Score | Risk Factors | Recommendation |',
+    '| Task | Title | Risk Level | Risk Score | Categories | Recommendation |',
     '| --- | --- | --- | ---: | --- | --- |',
     ...items.map((item) =>
-      `| ${tableCell(item.taskId)} | ${tableCell(item.title)} | ${item.riskLevel} | ${item.riskScore} | ${tableCell(item.riskFactors.join('; '))} | ${tableCell(item.recommendation)} |`
-    )
+      `| ${tableCell(item.taskId)} | ${tableCell(item.title)} | ${item.riskLevel} | ${item.riskScore} | ${tableCell(item.categories.join('; '))} | ${tableCell(item.recommendation)} |`
+    ),
+    '',
+    '---',
+    '',
+    ...items.flatMap((item, index) => [
+      index > 0 ? '\n---\n' : '',
+      formatRiskReportSections(item)
+    ])
   ].join('\n');
 }
 
@@ -63,16 +75,20 @@ function formatRiskCsv(items: RiskAnalysis[]): string {
     'title',
     'riskLevel',
     'riskScore',
+    'categories',
     'riskFactors',
-    'recommendation'
+    'recommendation',
+    'qaNotes'
   ];
   const rows = items.map((item) => [
     item.taskId,
     item.title,
     item.riskLevel,
     item.riskScore,
+    item.categories.join('|'),
     item.riskFactors.join('|'),
-    item.recommendation
+    item.recommendation,
+    item.qaNotes.join('|')
   ]);
 
   return [
@@ -112,7 +128,7 @@ async function main(): Promise<void> {
   const report = analyzeRisks(tasks, { thresholds: config.riskThresholds });
 
   writeReport(outputPath, formatRiskReport(report, format));
-  process.stdout.write(`Отчёт Risk Detection сохранён: ${outputPath}\n`);
+  process.stdout.write(`Отчёт Risk Radar сохранён: ${outputPath}\n`);
 }
 
 if (require.main === module) {

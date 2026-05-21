@@ -1,10 +1,10 @@
-export type RiskLevel = 'low' | 'medium' | 'high';
-
-export interface RiskAnalysis {
-  taskId: string;
-  title: string;
-  riskLevel: RiskLevel;
-  riskScore: number;
-  riskFactors: string[];
-  recommendation: string;
-}
+export type {
+  AnalyzeRiskOptions,
+  NormalizedRiskTask,
+  RiskAnalysis,
+  RiskAnalysisResult,
+  RiskCategory,
+  RiskDetectedProblem,
+  RiskInputTask,
+  RiskLevel
+} from './risk-types';

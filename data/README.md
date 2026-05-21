@@ -13,4 +13,7 @@ Useful commands:
 npm run demo
 npm run task:health -- --input data/demo_tasks.json --output reports/task_health_profile.md
 npm run retro -- --input data/demo_tasks.json --output reports/retro_report.md
+npm run risk -- --input data/risk-radar-demo-tasks.json --output reports/risk_radar_report.md
 ```
+
+`risk-radar-demo-tasks.json` is a focused three-task dataset for Risk Radar: one low-risk task, one medium-risk task and one high-risk task.

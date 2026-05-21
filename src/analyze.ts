@@ -53,6 +53,21 @@ import type {
 
 import type { ToneAnalysisResult } from './types/toneOfVoice';
 
+export {
+  analyzeRisk,
+  analyzeRisks,
+  analyzeTaskRisk
+} from './risk/risk-analyzer';
+export {
+  generateRiskReport
+} from './risk/risk-report';
+export type {
+  RiskAnalysisResult,
+  RiskCategory,
+  RiskInputTask,
+  RiskLevel
+} from './risk/risk-types';
+
 const DESCRIPTION_START_MARKER = '<!-- clarity-guardian:description:start -->';
 const DESCRIPTION_END_MARKER = '<!-- clarity-guardian:description:end -->';
 

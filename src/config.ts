@@ -212,7 +212,7 @@ const DEFAULT_CONFIG: ResolvedConfig = {
   },
   riskThresholds: {
     lowMax: 30,
-    mediumMax: 60
+    mediumMax: 65
   },
   analytics: {
     ignoredLabels: [],
