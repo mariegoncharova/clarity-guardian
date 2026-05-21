@@ -41,6 +41,7 @@ npm run demo
 ```text
 reports/demo/dashboard.html
 reports/demo/task-health-profile.md
+reports/demo/refinement-agenda.md
 reports/demo/retro-report.md
 reports/demo/decision-ledger.md
 reports/demo/quick-bug-fix.md
@@ -632,6 +633,32 @@ npm run action:plan -- --input data/demo_tasks.json --output reports/action_plan
 
 ---
 
+## Refinement Agenda
+
+Refinement Agenda превращает аналитику задач в готовую повестку встречи: какие задачи обсуждать первыми, сколько времени заложить, кто нужен в комнате и какое решение надо зафиксировать.
+
+Отчёт помогает PM и team lead проводить refinement без ручной сортировки backlog:
+
+- priority score для порядка обсуждения;
+- решение для каждой задачи: `clarify_requirements`, `split_scope`, `resolve_blocker`, `risk_review` или `ready_to_commit`;
+- timebox в минутах;
+- owner role и нужные участники;
+- вопросы к автору задачи;
+- prep before meeting;
+- decisions to capture после обсуждения.
+
+Пример запуска:
+
+```bash
+npm run refinement:agenda -- --input data/demo_tasks.json --output reports/refinement_agenda.md
+npm run refinement:agenda -- --input data/demo_tasks.json --output reports/refinement_agenda.json --format json --include-ready
+npm run refinement:agenda -- --input data/demo_tasks.json --output reports/refinement_agenda.csv --format csv --limit 8
+```
+
+Эта фича закрывает практический PM-сценарий: после анализа команда получает не просто список проблем, а компактный meeting plan для следующего refinement.
+
+---
+
 ## Evidence Brief
 
 Evidence Brief добавляет слой на стыке IT, научной коммуникации и project management. Отчёт превращает задачи в короткие проверяемые brief-записи для planning/refinement: какая гипотеза стоит за задачей, на какие данные команда опирается, где не хватает источника, метрики или воспроизводимого метода проверки.
@@ -796,6 +823,7 @@ src/
   retro-analyzer.ts          # расчёт lead time, cycle time и bottlenecks
   quality-gate.ts            # CI gate по Clarity Score, DoR и high-risk задачам
   action-plan.ts             # приоритизированный список задач для уточнения
+  refinement-agenda.ts       # повестка refinement с timebox, ролями и решениями
   evidence-brief.ts          # evidence brief для planning и научной коммуникации
   decision-ledger.ts         # матрица прослеживаемости решений и risk governance
   task-health-profile.ts     # единый профиль здоровья задачи и project quality summary
@@ -857,6 +885,7 @@ reports/demo/research-report.md
 reports/demo/decision-ledger.md
 reports/demo/quick-bug-fix.md
 reports/demo/task-health-profile.md
+reports/demo/refinement-agenda.md
 reports/demo/tasks.csv
 reports/demo/before-after.json
 reports/demo/clarity-history.jsonl
@@ -1196,7 +1225,7 @@ Smoke tests покрывают:
 - Markdown, JSON, CSV и HTML exports;
 - Retro Task Analytics edge cases;
 - Risk Detection, DoR/DoD и Sprint Health Report;
-- Evidence Brief, Decision Ledger, Quick Bug Fix Queue и Task Health Profile;
+- Refinement Agenda, Evidence Brief, Decision Ledger, Quick Bug Fix Queue и Task Health Profile;
 - Yandex Tracker adapter и missing-field fallback;
 - GitHub comment update behavior;
 - Jira sync behavior;

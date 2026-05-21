@@ -27,6 +27,10 @@ import {
   formatRetroReportMarkdown,
   formatTasksCsv
 } from './reports';
+import {
+  buildRefinementAgendaReport,
+  formatRefinementAgendaMarkdown
+} from './refinement-agenda';
 import { normalizeUnifiedTasks } from './task-model';
 import {
   buildTaskHealthReport,
@@ -105,6 +109,10 @@ async function main(): Promise<void> {
     includeHealthy: true,
     riskThresholds: config.riskThresholds
   });
+  const refinementAgenda = buildRefinementAgendaReport(records, {
+    includeReady: true,
+    includeDone: true
+  });
 
   writeJsonFile(resolveOutputPath(outDir, 'dashboard.json'), dashboard);
   writeJsonFile(resolveOutputPath(outDir, 'before-after.json'), comparison);
@@ -113,6 +121,7 @@ async function main(): Promise<void> {
   writeJsonFile(resolveOutputPath(outDir, 'decision-ledger.json'), decisionLedger);
   writeJsonFile(resolveOutputPath(outDir, 'quick-bug-fix.json'), quickBugFix);
   writeJsonFile(resolveOutputPath(outDir, 'task-health-profile.json'), taskHealth);
+  writeJsonFile(resolveOutputPath(outDir, 'refinement-agenda.json'), refinementAgenda);
   writeHistoryJsonl(resolveOutputPath(outDir, 'clarity-history.jsonl'), records);
   writeTextFile(resolveOutputPath(outDir, 'dashboard.md'), formatDashboardMarkdown(dashboard));
   writeTextFile(resolveOutputPath(outDir, 'dashboard.html'), formatDashboardHtml(dashboard));
@@ -121,6 +130,7 @@ async function main(): Promise<void> {
   writeTextFile(resolveOutputPath(outDir, 'decision-ledger.md'), formatDecisionLedgerMarkdown(decisionLedger));
   writeTextFile(resolveOutputPath(outDir, 'quick-bug-fix.md'), formatQuickBugFixMarkdown(quickBugFix));
   writeTextFile(resolveOutputPath(outDir, 'task-health-profile.md'), formatTaskHealthMarkdown(taskHealth));
+  writeTextFile(resolveOutputPath(outDir, 'refinement-agenda.md'), formatRefinementAgendaMarkdown(refinementAgenda));
   writeTextFile(resolveOutputPath(outDir, 'tasks.csv'), formatTasksCsv(records));
 
   process.stdout.write(`Clarity Guardian V2 report generated in ${outDir}\n`);

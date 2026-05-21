@@ -25,7 +25,7 @@ Status: current focus.
 - Retro-ready lifecycle analytics: lead time, cycle time, stuck tasks, reopened tasks and bottlenecks.
 - Before / After Comparison for process improvement storytelling.
 - Risk Detection, Definition of Ready, Definition of Done and Sprint Health.
-- Evidence Brief, Decision Ledger, Quick Bug Fix Queue and Task Health Profile.
+- Refinement Agenda, Evidence Brief, Decision Ledger, Quick Bug Fix Queue and Task Health Profile.
 - Markdown, JSON, CSV and static HTML exports.
 - Demo mode that works on a clean clone.
 
