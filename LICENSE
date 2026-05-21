@@ -1,13 +1,59 @@
-Copyright (c) 2026 Maria Goncharova
+Proprietary Viewing-Only License
 
+Copyright (c) 2026 Maria Goncharova.
 All rights reserved.
 
-This source code and all associated documentation are proprietary and protected by copyright law.
+This repository, including its source code, documentation, examples, demo data,
+configuration files, scripts, reports, templates, and any other associated
+materials, is proprietary intellectual property of Maria Goncharova.
 
-You may view this repository for portfolio, educational, or review purposes only.
+This is not an open-source license.
 
-You may not copy, modify, distribute, publish, sublicense, sell, use in production, or create derivative works based on this software, in whole or in part, without prior written permission from the author.
+Permission is granted only to view the contents of this repository for personal
+review, portfolio review, hiring review, educational evaluation, or security
+inspection purposes.
 
-Unauthorized use of this software or any part of it is strictly prohibited.
+No other rights are granted.
 
-For permission requests, contact the author through the contact information provided in this repository.
+Without prior written permission from Maria Goncharova, you may not, in whole or
+in part:
+
+- use this software or any part of it for any purpose;
+- run, deploy, host, operate, or integrate this software;
+- copy, reproduce, download for reuse, or extract substantial portions of this
+  software;
+- modify, adapt, translate, or create derivative works;
+- publish, distribute, sublicense, sell, rent, lease, or otherwise make this
+  software available to any third party;
+- use this software in commercial, internal, production, research, training,
+  educational, portfolio, or personal projects;
+- use this software to build, benchmark, train, evaluate, or improve any product,
+  service, dataset, model, tool, or competing project;
+- remove or alter copyright, license, ownership, or attribution notices.
+
+Viewing this repository, cloning it for review where technically permitted by a
+hosting platform, or forking it through a hosting platform interface does not
+grant any license to use, copy, modify, distribute, deploy, or create derivative
+works from the software outside the limited viewing permission stated above.
+
+Any use beyond viewing requires explicit prior written permission from Maria
+Goncharova. Permission requests must describe the intended use, scope, duration,
+and distribution plan. Permission is not granted unless confirmed in writing by
+Maria Goncharova.
+
+Third-party dependencies, tools, platforms, and services referenced by this
+project remain subject to their own licenses and terms. Nothing in this license
+grants rights to third-party materials.
+
+This software is provided for viewing only, without warranties or guarantees of
+any kind, express or implied, including but not limited to merchantability,
+fitness for a particular purpose, non-infringement, availability, accuracy,
+security, or suitability for production use.
+
+To the maximum extent permitted by law, Maria Goncharova is not liable for any
+claim, damage, loss, cost, or liability arising from unauthorized access, use,
+copying, modification, distribution, deployment, reliance on, or inability to use
+this software.
+
+Any unauthorized use of this software or associated materials is prohibited and
+may constitute infringement of copyright and other rights.

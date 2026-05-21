@@ -54,6 +54,16 @@ npm run verify
 
 ---
 
+## License
+
+This project is proprietary and viewing-only. It is not open source.
+
+You may view the repository for review, portfolio, hiring, educational evaluation, or security inspection purposes only. You may not use, copy, modify, distribute, deploy, integrate, publish, sublicense, sell, or create derivative works from this project without prior written permission from Maria Goncharova.
+
+See [LICENSE](LICENSE) for the full terms.
+
+---
+
 ## Зачем нужен Clarity Guardian
 
 В продуктовой разработке задача может быть формально заведена в трекере, но при этом оставаться непонятной для команды.
