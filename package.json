@@ -24,6 +24,7 @@
     "quality:gate": "npm run build --silent && node dist/quality-gate.js",
     "action:plan": "npm run build --silent && node dist/action-plan.js",
     "refinement:agenda": "npm run build --silent && node dist/refinement-agenda.js",
+    "stakeholder:update": "npm run build --silent && node dist/stakeholder-update.js",
     "evidence:brief": "npm run build --silent && node dist/evidence-brief.js",
     "decision:ledger": "npm run build --silent && node dist/decision-ledger.js",
     "bug:quick-fix": "npm run build --silent && node dist/quick-bug-fix.js",
@@ -39,7 +40,7 @@
     "check": "tsc --noEmit",
     "typecheck": "npm run check",
     "lint": "npm run check",
-    "verify": "npm run lint && npm run build && npm run smoke && npm run v2:demo && npm run retro:demo && npm run risk -- --input data/demo_tasks.json --output reports/risk_report.md && npm run readiness -- --input data/demo_tasks.json --output reports/readiness_report.md && npm run sprint-health -- --input data/demo_tasks.json --output reports/sprint_health.md && npm run action:plan -- --input data/demo_tasks.json --output reports/action_plan.md && npm run refinement:agenda -- --input data/demo_tasks.json --output reports/refinement_agenda.md && npm run evidence:brief -- --input data/demo_tasks.json --output reports/evidence_brief.md && npm run decision:ledger -- --input data/demo_tasks.json --output reports/decision_ledger.md && npm run bug:quick-fix -- --input data/demo_tasks.json --output reports/quick_bug_fix.md && npm run task:health -- --input data/demo_tasks.json --output reports/task_health_profile.md && npm audit --audit-level=moderate"
+    "verify": "npm run lint && npm run build && npm run smoke && npm run v2:demo && npm run retro:demo && npm run risk -- --input data/demo_tasks.json --output reports/risk_report.md && npm run readiness -- --input data/demo_tasks.json --output reports/readiness_report.md && npm run sprint-health -- --input data/demo_tasks.json --output reports/sprint_health.md && npm run action:plan -- --input data/demo_tasks.json --output reports/action_plan.md && npm run refinement:agenda -- --input data/demo_tasks.json --output reports/refinement_agenda.md && npm run stakeholder:update -- --input data/demo_tasks.json --output reports/stakeholder_update.md && npm run evidence:brief -- --input data/demo_tasks.json --output reports/evidence_brief.md && npm run decision:ledger -- --input data/demo_tasks.json --output reports/decision_ledger.md && npm run bug:quick-fix -- --input data/demo_tasks.json --output reports/quick_bug_fix.md && npm run task:health -- --input data/demo_tasks.json --output reports/task_health_profile.md && npm audit --audit-level=moderate"
   },
   "keywords": [
     "github-actions",

@@ -319,6 +319,47 @@ interface TaskHealthSmokeReport {
   }>;
 }
 
+interface RefinementAgendaSmokeReport {
+  totalTasks?: number;
+  includedTasks?: number;
+  totalTimeboxMinutes?: number;
+  summary?: {
+    mustRefine?: number;
+    riskReviewItems?: number;
+    blockerItems?: number;
+  };
+  items?: Array<{
+    taskId?: string;
+    decision?: string;
+    timeboxMinutes?: number;
+    questions?: string[];
+  }>;
+}
+
+interface StakeholderUpdateSmokeReport {
+  health?: string;
+  totalTasks?: number;
+  summary?: {
+    readyTasksPercent?: number;
+    highRiskTasks?: number;
+    blockerTasks?: number;
+    qaGapTasks?: number;
+  };
+  risks?: Array<{
+    code?: string;
+    ownerRole?: string;
+  }>;
+  asks?: Array<{
+    ownerRole?: string;
+    urgency?: string;
+  }>;
+  nextActions?: string[];
+  taskMentions?: Array<{
+    taskId?: string;
+    reason?: string;
+  }>;
+}
+
 interface UnifiedTaskSmokeResult {
   id?: string;
   source?: string;
@@ -904,6 +945,10 @@ function smokeV2Reports(): void {
   const quickBugFixMarkdown = fs.readFileSync(path.join(outDir, 'quick-bug-fix.md'), 'utf8');
   const taskHealth = readJson<TaskHealthSmokeReport>(path.join(outDir, 'task-health-profile.json'));
   const taskHealthMarkdown = fs.readFileSync(path.join(outDir, 'task-health-profile.md'), 'utf8');
+  const refinementAgenda = readJson<RefinementAgendaSmokeReport>(path.join(outDir, 'refinement-agenda.json'));
+  const refinementAgendaMarkdown = fs.readFileSync(path.join(outDir, 'refinement-agenda.md'), 'utf8');
+  const stakeholderUpdate = readJson<StakeholderUpdateSmokeReport>(path.join(outDir, 'stakeholder-update.json'));
+  const stakeholderUpdateMarkdown = fs.readFileSync(path.join(outDir, 'stakeholder-update.md'), 'utf8');
   const csv = fs.readFileSync(path.join(outDir, 'tasks.csv'), 'utf8');
   const html = fs.readFileSync(path.join(outDir, 'dashboard.html'), 'utf8');
   const taskHistory = readJson<Record<string, unknown>>(path.join(outDir, 'task-history.json'));
@@ -927,6 +972,13 @@ function smokeV2Reports(): void {
   assert(quickBugFixMarkdown.includes('Quick Bug Fix Queue'), 'V2 demo should include Quick Bug Fix markdown');
   assert(taskHealth.summary?.totalTasks === 8, 'V2 demo should include Task Health Profile JSON');
   assert(taskHealthMarkdown.includes('Task Health Profile'), 'V2 demo should include Task Health Profile markdown');
+  assert(refinementAgenda.totalTasks === 8, 'V2 demo should include Refinement Agenda JSON');
+  assert((refinementAgenda.includedTasks || 0) > 0, 'Refinement Agenda should include agenda items');
+  assert(refinementAgendaMarkdown.includes('Refinement Agenda'), 'V2 demo should include Refinement Agenda markdown');
+  assert(stakeholderUpdate.totalTasks === 8, 'V2 demo should include Stakeholder Update JSON');
+  assert(Boolean(stakeholderUpdate.health), 'Stakeholder Update should include health status');
+  assert((stakeholderUpdate.asks || []).length > 0, 'Stakeholder Update should include asks');
+  assert(stakeholderUpdateMarkdown.includes('Stakeholder Update'), 'V2 demo should include Stakeholder Update markdown');
   assert(csv.startsWith('id,key,source,title'), 'CSV export should include a header row');
   assert(html.includes('Clarity Guardian Dashboard'), 'Dashboard HTML should be generated');
 }

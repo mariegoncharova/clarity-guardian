@@ -42,6 +42,7 @@ npm run demo
 reports/demo/dashboard.html
 reports/demo/task-health-profile.md
 reports/demo/refinement-agenda.md
+reports/demo/stakeholder-update.md
 reports/demo/retro-report.md
 reports/demo/decision-ledger.md
 reports/demo/quick-bug-fix.md
@@ -659,6 +660,32 @@ npm run refinement:agenda -- --input data/demo_tasks.json --output reports/refin
 
 ---
 
+## Stakeholder Update
+
+Stakeholder Update готовит короткий статус для менеджерского апдейта: что происходит с качеством задач, где есть риски, какие asks нужны от PM / Tech Lead / QA и какие задачи стоит явно упомянуть.
+
+Отчёт помогает не пересказывать dashboard вручную:
+
+- health status: `green`, `yellow` или `red`;
+- executive summary по Clarity Score, DoR, high-risk, blockers и QA gaps;
+- highlights, которые можно отправить стейкхолдерам;
+- risks to watch с owner role;
+- asks с urgency `now`, `this_week` или `monitor`;
+- task mentions для самых важных задач;
+- next actions для ближайшего planning checkpoint.
+
+Пример запуска:
+
+```bash
+npm run stakeholder:update -- --input data/demo_tasks.json --output reports/stakeholder_update.md
+npm run stakeholder:update -- --input data/demo_tasks.json --output reports/stakeholder_update.json --format json --task-limit 5
+npm run stakeholder:update -- --input data/demo_tasks.json --output reports/stakeholder_update.csv --format csv
+```
+
+Эта фича полезна для еженедельного PM/status update: вместо набора внутренних метрик команда получает короткое сообщение о здоровье backlog/sprint и конкретных asks.
+
+---
+
 ## Evidence Brief
 
 Evidence Brief добавляет слой на стыке IT, научной коммуникации и project management. Отчёт превращает задачи в короткие проверяемые brief-записи для planning/refinement: какая гипотеза стоит за задачей, на какие данные команда опирается, где не хватает источника, метрики или воспроизводимого метода проверки.
@@ -824,6 +851,7 @@ src/
   quality-gate.ts            # CI gate по Clarity Score, DoR и high-risk задачам
   action-plan.ts             # приоритизированный список задач для уточнения
   refinement-agenda.ts       # повестка refinement с timebox, ролями и решениями
+  stakeholder-update.ts      # короткий статус для стейкхолдеров с risks и asks
   evidence-brief.ts          # evidence brief для planning и научной коммуникации
   decision-ledger.ts         # матрица прослеживаемости решений и risk governance
   task-health-profile.ts     # единый профиль здоровья задачи и project quality summary
@@ -886,6 +914,7 @@ reports/demo/decision-ledger.md
 reports/demo/quick-bug-fix.md
 reports/demo/task-health-profile.md
 reports/demo/refinement-agenda.md
+reports/demo/stakeholder-update.md
 reports/demo/tasks.csv
 reports/demo/before-after.json
 reports/demo/clarity-history.jsonl
@@ -1225,7 +1254,7 @@ Smoke tests покрывают:
 - Markdown, JSON, CSV и HTML exports;
 - Retro Task Analytics edge cases;
 - Risk Detection, DoR/DoD и Sprint Health Report;
-- Refinement Agenda, Evidence Brief, Decision Ledger, Quick Bug Fix Queue и Task Health Profile;
+- Refinement Agenda, Stakeholder Update, Evidence Brief, Decision Ledger, Quick Bug Fix Queue и Task Health Profile;
 - Yandex Tracker adapter и missing-field fallback;
 - GitHub comment update behavior;
 - Jira sync behavior;
