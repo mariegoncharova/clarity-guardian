@@ -35,6 +35,10 @@ function htmlEscape(value: unknown): string {
     .replace(/"/g, '&quot;');
 }
 
+function getSmartCriterionScore(record: TaskAnalysisRecord, key: string): number | '' {
+  return record.smartAnalysis.criteria.find((criterion) => criterion.key === key)?.score ?? '';
+}
+
 function topItems(items: Array<{ name: string; count: number }>, limit = 5): string[] {
   return items.slice(0, limit).map((item, index) =>
     `${index + 1}. ${item.name} - ${item.count}`
@@ -51,9 +55,15 @@ export function formatDashboardMarkdown(dashboard: ClarityDashboard): string {
     '',
     `- Всего задач: ${dashboard.totalTasks}`,
     `- Средний Clarity Score: ${dashboard.averageScore}/100`,
+    `- Средний SMART Score: ${dashboard.averageSmartScore}/100`,
     `- Задач с высоким качеством: ${dashboard.quality.good}`,
     `- Задач со средним качеством: ${dashboard.quality.medium}`,
     `- Задач с низким качеством: ${dashboard.quality.poor}`,
+    `- Сильных SMART-задач: ${dashboard.smartQuality.strong}`,
+    `- SMART-задач, требующих улучшения: ${dashboard.smartQuality.needsImprovement}`,
+    `- Слабых SMART-задач: ${dashboard.smartQuality.weak}`,
+    '',
+    'Clarity Score отвечает за качество описания задачи. SMART Score отвечает за качество постановки цели.',
     '',
     '## Основные проблемы',
     '',
@@ -62,7 +72,7 @@ export function formatDashboardMarkdown(dashboard: ClarityDashboard): string {
     '## Задачи с самым низким score',
     '',
     ...dashboard.lowestScoreTasks.map((task, index) =>
-      `${index + 1}. ${task.key || task.id} - ${task.score}/100 - ${task.title}`
+      `${index + 1}. ${task.key || task.id} - Clarity ${task.score}/100, SMART ${task.smartScore}/100 - ${task.title}`
     )
   ].join('\n');
 }
@@ -86,9 +96,12 @@ export function formatRetroReportMarkdown(
     '',
     `- Всего задач: ${dashboard.totalTasks}`,
     `- Средний Clarity Score: ${dashboard.averageScore}/100`,
+    `- Средний SMART Score: ${dashboard.averageSmartScore}/100`,
     `- Задач с высоким качеством: ${dashboard.quality.good}`,
     `- Задач со средним качеством: ${dashboard.quality.medium}`,
     `- Задач с низким качеством: ${dashboard.quality.poor}`,
+    '',
+    'Clarity Score отвечает за качество описания задачи, SMART Score - за качество постановки цели.',
     '',
     '## Основные проблемы',
     '',
@@ -107,7 +120,7 @@ export function formatRetroReportMarkdown(
     '## Примеры задач, требующих внимания',
     '',
     ...dashboard.lowestScoreTasks.map((task, index) =>
-      `${index + 1}. **${task.key || task.id}** - ${task.score}/100 - ${task.title}`
+      `${index + 1}. **${task.key || task.id}** - Clarity ${task.score}/100, SMART ${task.smartScore}/100 - ${task.title}`
     ),
     '',
     '## Рекомендации для команды',
@@ -176,7 +189,15 @@ export function formatTasksCsv(records: TaskAnalysisRecord[]): string {
     'qaReturns',
     'cycleTimeHours',
     'commentsCount',
-    'descriptionChanges'
+    'descriptionChanges',
+    'smart_score',
+    'smart_status',
+    'smart_specific_score',
+    'smart_measurable_score',
+    'smart_achievable_score',
+    'smart_relevant_score',
+    'smart_time_bound_score',
+    'smart_recommendation'
   ];
   const rows = records.map((record) => [
     record.task.id,
@@ -193,7 +214,15 @@ export function formatTasksCsv(records: TaskAnalysisRecord[]): string {
     record.task.metrics?.qaReturns ?? '',
     record.task.metrics?.cycleTimeHours ?? '',
     record.task.metrics?.commentsCount ?? '',
-    record.task.metrics?.descriptionChanges ?? ''
+    record.task.metrics?.descriptionChanges ?? '',
+    record.smartAnalysis.totalScore,
+    record.smartAnalysis.status,
+    getSmartCriterionScore(record, 'specific'),
+    getSmartCriterionScore(record, 'measurable'),
+    getSmartCriterionScore(record, 'achievable'),
+    getSmartCriterionScore(record, 'relevant'),
+    getSmartCriterionScore(record, 'timeBound'),
+    record.smartAnalysis.summary
   ]);
 
   return [
@@ -207,7 +236,7 @@ export function formatDashboardHtml(dashboard: ClarityDashboard): string {
     `<tr><td>${htmlEscape(problem.name)}</td><td>${problem.count}</td></tr>`
   ).join('');
   const lowScoreRows = dashboard.lowestScoreTasks.map((task) =>
-    `<tr><td>${htmlEscape(task.key || task.id)}</td><td>${htmlEscape(task.title)}</td><td>${task.score}</td><td>${task.riskLevel}</td></tr>`
+    `<tr><td>${htmlEscape(task.key || task.id)}</td><td>${htmlEscape(task.title)}</td><td>${task.score}</td><td>${task.smartScore}</td><td>${htmlEscape(task.smartStatus)}</td><td>${task.riskLevel}</td></tr>`
   ).join('');
 
   return [
@@ -233,15 +262,18 @@ export function formatDashboardHtml(dashboard: ClarityDashboard): string {
     `<p>Сгенерировано: ${dashboard.generatedAt}</p>`,
     '<section class="metrics">',
     `<div class="metric"><div>Всего задач</div><div class="value">${dashboard.totalTasks}</div></div>`,
-    `<div class="metric"><div>Средний score</div><div class="value">${dashboard.averageScore}</div></div>`,
+    `<div class="metric"><div>Средний Clarity Score</div><div class="value">${dashboard.averageScore}</div></div>`,
+    `<div class="metric"><div>Средний SMART Score</div><div class="value">${dashboard.averageSmartScore}</div></div>`,
     `<div class="metric"><div>Высокое качество</div><div class="value">${dashboard.quality.good}</div></div>`,
     `<div class="metric"><div>Среднее качество</div><div class="value">${dashboard.quality.medium}</div></div>`,
     `<div class="metric"><div>Низкое качество</div><div class="value">${dashboard.quality.poor}</div></div>`,
+    `<div class="metric"><div>Сильные SMART-задачи</div><div class="value">${dashboard.smartQuality.strong}</div></div>`,
     '</section>',
+    '<p>Clarity Score отвечает за качество описания задачи. SMART Score отвечает за качество постановки цели.</p>',
     '<h2>Основные проблемы</h2>',
     `<table><thead><tr><th>Проблема</th><th>Количество</th></tr></thead><tbody>${problemRows}</tbody></table>`,
     '<h2>Задачи с самым низким score</h2>',
-    `<table><thead><tr><th>Задача</th><th>Название</th><th>Score</th><th>Риск</th></tr></thead><tbody>${lowScoreRows}</tbody></table>`,
+    `<table><thead><tr><th>Задача</th><th>Название</th><th>Clarity Score</th><th>SMART Score</th><th>SMART статус</th><th>Риск</th></tr></thead><tbody>${lowScoreRows}</tbody></table>`,
     '</main></body></html>'
   ].join('');
 }

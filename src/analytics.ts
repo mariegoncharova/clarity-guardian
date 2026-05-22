@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import { analyzeTask } from './analyze';
+import { analyzeSmartTask } from './smart/smartAnalyzer';
 import { unifiedTaskToTaskPayload } from './task-model';
 import { normalizeText, writeJsonFile } from './utils';
 
@@ -187,6 +188,8 @@ function toTaskSummary(record: TaskAnalysisRecord): DashboardTaskSummary {
     author: record.task.author,
     score: record.score,
     riskLevel: record.riskLevel,
+    smartScore: record.smartAnalysis.totalScore,
+    smartStatus: record.smartAnalysis.status,
     problemCodes: record.problemCodes,
     recommendations: record.recommendations
   };
@@ -264,11 +267,16 @@ export function analyzeUnifiedTasks(
       unifiedTaskToTaskPayload(task, options.config),
       options.config ? { config: options.config } : {}
     );
+    const smartAnalysis = analyzeSmartTask(task);
+
+    analysis.smartAnalysis = smartAnalysis;
+
     const record: TaskAnalysisRecord = {
       task,
       analyzedAt,
       score: analysis.clarityScore.score,
       riskLevel: analysis.clarityScore.riskLevel,
+      smartAnalysis,
       problemCodes: [],
       recommendations: analysis.managerRecommendations,
       analysis
@@ -282,6 +290,7 @@ export function analyzeUnifiedTasks(
 
 export function buildDashboard(records: TaskAnalysisRecord[]): ClarityDashboard {
   const scores = records.map((record) => record.score);
+  const smartScores = records.map((record) => record.smartAnalysis.totalScore);
   const topProblems = countBy(records.flatMap((record) => record.problemCodes))
     .map((item) => ({
       name: PROBLEM_LABELS[item.name] || item.name,
@@ -292,10 +301,16 @@ export function buildDashboard(records: TaskAnalysisRecord[]): ClarityDashboard 
     generatedAt: new Date().toISOString(),
     totalTasks: records.length,
     averageScore: average(scores),
+    averageSmartScore: average(smartScores),
     quality: {
       good: records.filter((record) => record.score >= 80).length,
       medium: records.filter((record) => record.score >= 50 && record.score < 80).length,
       poor: records.filter((record) => record.score < 50).length
+    },
+    smartQuality: {
+      strong: records.filter((record) => record.smartAnalysis.status === 'strong').length,
+      needsImprovement: records.filter((record) => record.smartAnalysis.status === 'needs_improvement').length,
+      weak: records.filter((record) => record.smartAnalysis.status === 'weak').length
     },
     topProblems,
     statusDistribution: countBy(records.map((record) => record.task.status || 'Не указано')),
@@ -319,6 +334,8 @@ export function toHistoryEntries(records: TaskAnalysisRecord[]): ClarityScoreHis
     analyzedAt: record.analyzedAt,
     score: record.score,
     riskLevel: record.riskLevel,
+    smartScore: record.smartAnalysis.totalScore,
+    smartStatus: record.smartAnalysis.status,
     problemCodes: record.problemCodes,
     recommendations: record.recommendations
   }));
@@ -331,6 +348,8 @@ export function buildTaskScoreHistory(records: TaskAnalysisRecord[]): Record<str
     analyzedAt: string;
     score: number;
     riskLevel: 'low' | 'medium' | 'high';
+    smartScore: number;
+    smartStatus: string;
     problemCodes: string[];
   }>;
 }> {
@@ -341,6 +360,8 @@ export function buildTaskScoreHistory(records: TaskAnalysisRecord[]): Record<str
       analyzedAt: string;
       score: number;
       riskLevel: 'low' | 'medium' | 'high';
+      smartScore: number;
+      smartStatus: string;
       problemCodes: string[];
     }>;
   }> = {};
@@ -355,6 +376,8 @@ export function buildTaskScoreHistory(records: TaskAnalysisRecord[]): Record<str
       analyzedAt: record.analyzedAt,
       score: record.score,
       riskLevel: record.riskLevel,
+      smartScore: record.smartAnalysis.totalScore,
+      smartStatus: record.smartAnalysis.status,
       problemCodes: record.problemCodes
     });
   }

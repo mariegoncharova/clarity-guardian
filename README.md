@@ -2,7 +2,7 @@
 
 **Clarity Guardian** - лёгкий инструмент PM-аналитики для команд, которые хотят писать задачи яснее, раньше видеть delivery-риск и обсуждать качество работы на фактах, а не на ощущениях.
 
-Он анализирует задачи из GitHub, Jira, Yandex Tracker и JSON-файлов, считает **Clarity Score**, находит слабые требования, показывает риски для разработки и тестирования, готовит отчёты для planning, refinement, ретро и предрелизной проверки.
+Он анализирует задачи из GitHub, Jira, Yandex Tracker и JSON-файлов, считает **Clarity Score** и **SMART Score**, находит слабые требования, показывает риски для разработки и тестирования, готовит отчёты для planning, refinement, ретро и предрелизной проверки.
 
 Проект сделан как практичный portfolio/product demo: без отдельной базы данных, тяжёлого backend и сложного frontend. Все ключевые сценарии запускаются локально через TypeScript/Node.js, npm scripts и JSON-данные.
 
@@ -75,6 +75,7 @@ Clarity Guardian превращает такие сигналы в понятн�
 - контекст и цель задачи;
 - ожидаемый результат;
 - критерии приёмки;
+- SMART-критерии: конкретность, измеримость, достижимость, актуальность и срок;
 - тестируемость;
 - тон коммуникации;
 - vague wording и stop phrases;
@@ -92,7 +93,7 @@ Clarity Guardian превращает такие сигналы в понятн�
 
 | Отчёт | Для чего нужен |
 | --- | --- |
-| Dashboard | Общая картина качества задач, Clarity Score, top problems и trend. |
+| Dashboard | Общая картина качества задач, Clarity Score, SMART Score, top problems и trend. |
 | Task Health Profile | Компактный профиль каждой задачи: что не так, какой риск и какой следующий шаг. |
 | Refinement Agenda | Готовая повестка refinement: что обсуждать, кто нужен и какое решение зафиксировать. |
 | Stakeholder Update | Короткий статус для менеджеров и стейкхолдеров: health, risks, asks, next actions. |
@@ -140,6 +141,10 @@ npm run release:guard -- --input data/demo_tasks.json --output reports/release_g
 
 **Clarity Score** показывает, насколько задача понятна для передачи в работу. Низкий score не означает, что автор плохой. Он означает, что команде не хватает информации.
 
+**SMART Score** показывает, насколько задача сформулирована как управляемая цель: конкретная, измеримая, достижимая, актуальная и ограниченная во времени.
+
+Clarity Score отвечает за качество описания задачи. SMART Score отвечает за качество постановки цели.
+
 **Risk level** показывает delivery-риск. Он растёт, если задача неясная, слишком широкая, касается критичного домена, имеет внешние зависимости или историю возвратов.
 
 **Definition of Ready / Done** помогает разделить две вещи: можно ли брать задачу в работу и можно ли считать её завершённой.
@@ -155,6 +160,7 @@ npm run release:guard -- --input data/demo_tasks.json --output reports/release_g
 ```text
 data/demo-tasks.json
 data/demo_tasks.json
+data/smart-demo-tasks.json
 ```
 
 Они нужны для локального demo, ретро-аналитики и проверки отчётов без доступа к реальным трекерам. Папка `reports/` содержит сгенерированный вывод и игнорируется git.
@@ -220,6 +226,7 @@ GitHub / Jira / Yandex Tracker / JSON / demo data
 ```text
 src/analyze.ts             # анализ одной задачи для bot-flow
 src/task-model.ts          # единая модель задачи
+src/smart/                 # SMART Task Check
 src/analytics.ts           # dashboard, history, before/after, research data
 src/task-signals.ts        # общие сигналы задач
 src/risk/                  # delivery risk
@@ -289,6 +296,7 @@ Smoke tests проверяют:
 ARCHITECTURE.md
 ROADMAP.md
 docs/PRODUCT_AUDIT.md
+docs/smart-task-check.md
 docs/V2_DEMO_GUIDE.md
 docs/PORTFOLIO_CASE.md
 docs/COMMUNICATION_GUIDE.md

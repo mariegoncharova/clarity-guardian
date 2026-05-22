@@ -259,6 +259,8 @@ export function normalizeUnifiedTask(raw: Record<string, unknown>): UnifiedTask 
     createdAt: normalizeText(raw.createdAt ?? raw.created_at) || undefined,
     updatedAt: normalizeText(raw.updatedAt ?? raw.updated_at) || undefined,
     completedAt: normalizeText(raw.completedAt ?? raw.completed_at) || undefined,
+    deadline: normalizeText(raw.deadline ?? raw.due ?? raw.due_at) || undefined,
+    dueDate: normalizeText(raw.dueDate ?? raw.due_date ?? raw.targetDate ?? raw.target_date) || undefined,
     clarityScore: normalizeClarityScore(raw.clarityScore ?? raw.clarity_score),
     statusHistory: normalizeStatusHistory(raw.statusHistory ?? raw.status_history),
     comments: normalizeList(raw.comments),

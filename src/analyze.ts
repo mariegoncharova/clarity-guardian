@@ -22,6 +22,8 @@ import {
 } from './clarity-fix-suggestions';
 
 import { generateManagerRecommendations } from './recommendations';
+import { analyzeSmartTask } from './smart/smartAnalyzer';
+import { formatSmartAnalysisMarkdown } from './smart/smartFormatter';
 
 import {
   countNonWhitespaceChars,
@@ -52,6 +54,7 @@ import type {
 } from './types';
 
 import type { ToneAnalysisResult } from './types/toneOfVoice';
+import type { SmartAnalysisResult } from './smart/smartTypes';
 
 export {
   analyzeRisk,
@@ -67,6 +70,19 @@ export type {
   RiskInputTask,
   RiskLevel
 } from './risk/risk-types';
+export {
+  analyzeSmartTask
+} from './smart/smartAnalyzer';
+export {
+  formatSmartAnalysisMarkdown
+} from './smart/smartFormatter';
+export type {
+  SmartAnalysisResult,
+  SmartAnalysisStatus,
+  SmartCriterionKey,
+  SmartCriterionResult,
+  SmartCriterionStatus
+} from './smart/smartTypes';
 
 const DESCRIPTION_START_MARKER = '<!-- clarity-guardian:description:start -->';
 const DESCRIPTION_END_MARKER = '<!-- clarity-guardian:description:end -->';
@@ -288,6 +304,21 @@ function buildClarityScoreBlock(clarityScore: ClarityScoreResult): string {
   return formatClarityScoreMarkdown(clarityScore);
 }
 
+function buildScoreSummaryBlock(
+  clarityScore: ClarityScoreResult,
+  smartAnalysis: SmartAnalysisResult
+): string {
+  return [
+    '## Итоговые метрики',
+    '',
+    `- Clarity Score: ${clarityScore.score}/100`,
+    `- SMART Score: ${smartAnalysis.totalScore}/100`,
+    '',
+    'Clarity Score отвечает за качество описания задачи.',
+    'SMART Score отвечает за качество постановки цели.'
+  ].join('\n');
+}
+
 function buildToneOfVoiceBlock(toneOfVoice: ToneAnalysisResult): string {
   const problematicPhrases = toneOfVoice.problematicPhrases.length > 0
     ? toneOfVoice.problematicPhrases.map((item, index) =>
@@ -327,6 +358,7 @@ function buildManagerChecklistComment(
   remarks: Remark[],
   mode: ClarityMode,
   clarityScore: ClarityScoreResult,
+  smartAnalysis: SmartAnalysisResult,
   toneOfVoice: ToneAnalysisResult,
   clarityFixSuggestionsMarkdown: string,
   managerRecommendations: string[]
@@ -335,7 +367,9 @@ function buildManagerChecklistComment(
   const managerChecklist = readTextFile(managerChecklistPath);
   const text = LOCALIZED_TEXT[task.language];
   const remarksMarkdown = formatRemarks(task, remarks);
+  const scoreSummaryMarkdown = buildScoreSummaryBlock(clarityScore, smartAnalysis);
   const clarityScoreMarkdown = buildClarityScoreBlock(clarityScore);
+  const smartAnalysisMarkdown = formatSmartAnalysisMarkdown(smartAnalysis);
   const toneOfVoiceMarkdown = buildToneOfVoiceBlock(toneOfVoice);
 
   return [
@@ -349,7 +383,11 @@ function buildManagerChecklistComment(
     `**${text.modeLabel}:** ${mode}`,
     `**${text.languageLabel}:** ${task.language}`,
     '',
+    scoreSummaryMarkdown,
+    '',
     clarityScoreMarkdown,
+    '',
+    smartAnalysisMarkdown,
     '',
     toneOfVoiceMarkdown,
     '',
@@ -380,13 +418,16 @@ function buildDescriptionBlock(
   remarks: Remark[],
   mode: ClarityMode,
   clarityScore: ClarityScoreResult,
+  smartAnalysis: SmartAnalysisResult,
   toneOfVoice: ToneAnalysisResult,
   clarityFixSuggestionsMarkdown: string,
   managerRecommendations: string[]
 ): string {
   const text = LOCALIZED_TEXT[task.language];
   const remarksMarkdown = formatRemarks(task, remarks);
+  const scoreSummaryMarkdown = buildScoreSummaryBlock(clarityScore, smartAnalysis);
   const clarityScoreMarkdown = buildClarityScoreBlock(clarityScore);
+  const smartAnalysisMarkdown = formatSmartAnalysisMarkdown(smartAnalysis);
   const toneOfVoiceMarkdown = buildToneOfVoiceBlock(toneOfVoice);
 
   return [
@@ -399,7 +440,11 @@ function buildDescriptionBlock(
     `- ${text.modeLabel}: ${mode}`,
     `- ${text.languageLabel}: ${task.language}`,
     '',
+    scoreSummaryMarkdown,
+    '',
     clarityScoreMarkdown,
+    '',
+    smartAnalysisMarkdown,
     '',
     toneOfVoiceMarkdown,
     '',
@@ -499,6 +544,7 @@ export function analyzeTask(
     remarks,
     scoring: config.scoring
   });
+  const smartAnalysis = analyzeSmartTask(`${normalizedTask.title}\n${normalizedTask.body}`);
   const toneOfVoice = analyzeToneOfVoice(`${normalizedTask.title}\n${normalizedTask.body}`, {
     badFormulations: config.badFormulations,
     language: normalizedTask.language,
@@ -522,6 +568,7 @@ export function analyzeTask(
     remarks,
     config.mode,
     clarityScore,
+    smartAnalysis,
     toneOfVoice,
     clarityFixSuggestionsMarkdown,
     managerRecommendations
@@ -532,6 +579,7 @@ export function analyzeTask(
     remarks,
     config.mode,
     clarityScore,
+    smartAnalysis,
     toneOfVoice,
     clarityFixSuggestionsMarkdown,
     managerRecommendations
@@ -549,6 +597,7 @@ export function analyzeTask(
     workItemType: normalizedTask.workItemType,
     remarks,
     clarityScore,
+    smartAnalysis,
     toneOfVoice,
     clarityFixSuggestions,
     managerRecommendations,

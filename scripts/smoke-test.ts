@@ -46,10 +46,16 @@ interface ChecklistSmokeResult {
 interface DashboardSmokeResult {
   totalTasks?: number;
   averageScore?: number;
+  averageSmartScore?: number;
   quality?: {
     good?: number;
     medium?: number;
     poor?: number;
+  };
+  smartQuality?: {
+    strong?: number;
+    needsImprovement?: number;
+    weak?: number;
   };
   topProblems?: Array<{
     name?: string;
@@ -967,6 +973,12 @@ function smokeV2Reports(): void {
   ]);
 
   const dashboard = readJson<DashboardSmokeResult>(path.join(outDir, 'dashboard.json'));
+  const analysisRecords = readJson<Array<{
+    smartAnalysis?: {
+      totalScore?: number;
+      status?: string;
+    };
+  }>>(path.join(outDir, 'analysis-records.json'));
   const comparison = readJson<BeforeAfterSmokeResult>(path.join(outDir, 'before-after.json'));
   const history = fs.readFileSync(path.join(outDir, 'clarity-history.jsonl'), 'utf8').trim().split('\n');
   const retro = fs.readFileSync(path.join(outDir, 'retro-report.md'), 'utf8');
@@ -989,6 +1001,9 @@ function smokeV2Reports(): void {
 
   assert(dashboard.totalTasks === 8, 'V2 demo dashboard should analyze demo tasks');
   assert((dashboard.averageScore || 0) > 0, 'V2 dashboard should calculate average score');
+  assert((dashboard.averageSmartScore || 0) > 0, 'V2 dashboard should calculate average SMART score');
+  assert((dashboard.smartQuality?.strong || 0) > 0, 'V2 dashboard should include strong SMART tasks');
+  assert(typeof analysisRecords[0]?.smartAnalysis?.totalScore === 'number', 'Analysis records JSON should include SMART analysis');
   assert((dashboard.quality?.good || 0) > 0, 'V2 dashboard should include good tasks');
   assert((dashboard.quality?.medium || 0) > 0, 'V2 dashboard should include medium tasks');
   assert((dashboard.quality?.poor || 0) > 0, 'V2 dashboard should include poor tasks');
@@ -1019,7 +1034,9 @@ function smokeV2Reports(): void {
   assert(releaseGuardMarkdown.includes('Release Guard'), 'V2 demo should include Release Guard markdown');
   assert(releaseGuardMarkdown.includes('Решение по релизу'), 'Release Guard markdown should be localized');
   assert(csv.startsWith('id,key,source,title'), 'CSV export should include a header row');
+  assert(csv.includes('smart_score'), 'CSV export should include SMART fields');
   assert(html.includes('Clarity Guardian Dashboard'), 'Dashboard HTML should be generated');
+  assert(html.includes('SMART Score'), 'Dashboard HTML should include SMART Score');
 }
 
 function smokeRetroAnalytics(): void {

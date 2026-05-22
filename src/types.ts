@@ -1,4 +1,8 @@
 import type { ToneAnalysisResult } from './types/toneOfVoice';
+import type {
+  SmartAnalysisResult,
+  SmartAnalysisStatus
+} from './smart/smartTypes';
 
 export type TaskType = 'issue' | 'pr';
 export type WorkItemType = 'bug' | 'task' | 'story' | 'research' | 'tech_debt';
@@ -73,6 +77,8 @@ export interface UnifiedTask {
   createdAt?: string;
   updatedAt?: string;
   completedAt?: string;
+  deadline?: string;
+  dueDate?: string;
   clarityScore?: number;
   statusHistory?: StatusHistoryEntry[];
   comments?: string[];
@@ -120,6 +126,7 @@ export interface AnalysisResult {
       recommendation: string;
     }>;
   };
+  smartAnalysis: SmartAnalysisResult;
   toneOfVoice: ToneAnalysisResult;
   clarityFixSuggestions: ClarityFixSuggestions;
   managerRecommendations: string[];
@@ -295,6 +302,7 @@ export interface TaskAnalysisRecord {
   analyzedAt: string;
   score: number;
   riskLevel: 'low' | 'medium' | 'high';
+  smartAnalysis: SmartAnalysisResult;
   problemCodes: string[];
   recommendations: string[];
   analysis: AnalysisResult;
@@ -308,6 +316,8 @@ export interface ClarityScoreHistoryEntry {
   analyzedAt: string;
   score: number;
   riskLevel: 'low' | 'medium' | 'high';
+  smartScore?: number;
+  smartStatus?: SmartAnalysisStatus;
   problemCodes: string[];
   recommendations: string[];
 }
@@ -327,6 +337,8 @@ export interface DashboardTaskSummary {
   author?: string;
   score: number;
   riskLevel: 'low' | 'medium' | 'high';
+  smartScore: number;
+  smartStatus: SmartAnalysisStatus;
   problemCodes: string[];
   recommendations: string[];
 }
@@ -335,10 +347,16 @@ export interface ClarityDashboard {
   generatedAt: string;
   totalTasks: number;
   averageScore: number;
+  averageSmartScore: number;
   quality: {
     good: number;
     medium: number;
     poor: number;
+  };
+  smartQuality: {
+    strong: number;
+    needsImprovement: number;
+    weak: number;
   };
   topProblems: DistributionItem[];
   statusDistribution: DistributionItem[];
