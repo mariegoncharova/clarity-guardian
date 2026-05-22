@@ -12,6 +12,7 @@
 - TypeScript-кодовая база небольшая и понятная.
 - Существующий bot-flow сохраняет практическую пользу: анализ GitHub Issue / PR, управляемые комментарии, Jira sync и fallback-генерация checklist.
 - В проекте уже есть сильные модули PM-аналитики: dashboard, retro, risk, readiness, sprint health, evidence brief, decision ledger и quick bug queue.
+- SMART Task Check усиливает продуктовую логику: проект теперь оценивает не только качество описания, но и качество постановки цели.
 - Demo data покрывает разные источники, статусы, уровни риска, returned tasks, stuck tasks и before/after storytelling.
 - Отчёты детерминированы и работают без backend или базы данных.
 
@@ -34,6 +35,9 @@
 - Добавлен нормальный CI workflow: clean clone install, статическая TypeScript-проверка, build, tests и demo generation.
 - Добавлены `ARCHITECTURE.md`, `ROADMAP.md` и примеры, удобные для портфолио.
 - Добавлены package scripts, которые упрощают оценку проекта: `demo`, `report`, `typecheck`, `lint`, `task:health`.
+- Добавлен `docs/PRODUCT_LOGIC.md`, который объясняет проект как цельную PM analytics system, а не как набор отдельных проверок.
+- README и portfolio case перепозиционированы вокруг workflow: backlog quality, refinement, QA handoff, release readiness и retro.
+- Научная коммуникация встроена в позиционирование как методологическая база: evidence, traceability, проверяемость и аккуратная интерпретация данных.
 
 ## Оставшиеся продуктовые риски
 
@@ -47,10 +51,12 @@
 
 1. Начать с боли передачи задач: неясные требования создают возвраты QA и delivery drag.
 2. Показать `npm run demo` и открыть `reports/demo/dashboard.html`.
-3. Открыть `reports/demo/task-health-profile.md`, чтобы показать, как одна задача превращается в actionable-профиль.
-4. Открыть `reports/demo/retro-report.md`, чтобы связать ясность с трением в жизненном цикле задачи.
-5. Открыть `reports/demo/decision-ledger.md`, чтобы показать зрелое PM-мышление: problem, evidence, decision, owner и risk control.
-6. Открыть `reports/demo/quick-bug-fix.md`, чтобы показать операционный фокус на быстрых и безопасных исправлениях багов.
+3. Показать рядом Clarity Score и SMART Score: качество описания и качество постановки цели.
+4. Открыть `reports/demo/task-health-profile.md`, чтобы показать, как одна задача превращается в actionable-профиль.
+5. Открыть `reports/demo/refinement-agenda.md`, чтобы показать переход от findings к рабочей встрече.
+6. Открыть `reports/demo/decision-ledger.md`, чтобы показать зрелое PM-мышление: problem, evidence, decision, owner и risk control.
+7. Открыть `reports/demo/release-guard.md`, чтобы показать связь качества задач с release readiness.
+8. Открыть `reports/demo/retro-report.md`, чтобы связать ясность с трением в жизненном цикле задачи.
 
 ## Вывод аудита
 

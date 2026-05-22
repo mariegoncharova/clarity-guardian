@@ -1,6 +1,16 @@
-# Архитектура
+# Architecture
 
 Clarity Guardian - лёгкий инструмент PM-аналитики на TypeScript/Node.js. В проекте нет сервера, базы данных или тяжёлого frontend: данные приходят через adapters или JSON-файлы, нормализуются в единую модель задачи и проходят через модули анализа и отчётов.
+
+## Design Intent
+
+Архитектура построена вокруг одной идеи: качество задачи нужно анализировать независимо от источника данных. GitHub Issue, Jira task, Yandex Tracker issue или demo JSON после нормализации должны выглядеть одинаково для аналитических модулей.
+
+Это дает три преимущества:
+
+- новые источники можно добавлять через adapters без переписывания scoring;
+- бизнес-логика остается deterministic и тестируемой;
+- отчеты можно строить на одном наборе records и экспортировать в Markdown, JSON, CSV и static HTML.
 
 ## Поток данных
 
@@ -8,10 +18,22 @@ Clarity Guardian - лёгкий инструмент PM-аналитики на 
 GitHub / Jira / Yandex / JSON / demo data
   -> adapters и normalizers
   -> UnifiedTask[]
-  -> анализ ясности задачи
-  -> аналитика риска, готовности, жизненного цикла, решений, релизной проверки и здоровья задачи
-  -> отчёты Markdown / JSON / CSV / static HTML
+  -> task quality signals
+  -> Clarity Score + SMART Score
+  -> risk, readiness, evidence, lifecycle, release and health analytics
+  -> Markdown / JSON / CSV / static HTML reports
 ```
+
+## Product Layers
+
+| Layer | Responsibility |
+| --- | --- |
+| Source adapters | Получить задачи из внешних систем или файлов. |
+| Unified model | Убрать различия источников и дать аналитике стабильный контракт. |
+| Signal extraction | Найти sections, criteria, vague wording, deadlines, dependencies, lifecycle data и другие признаки. |
+| Scoring | Рассчитать Clarity, SMART, risk, readiness и traceability metrics. |
+| Interpretation | Превратить findings в понятные рекомендации для PM, QA, Engineering и Analytics. |
+| Reporting | Собрать dashboard, task profiles, agenda, release checks, CSV/JSON exports и demo bundle. |
 
 ## Основные слои
 
@@ -28,12 +50,13 @@ GitHub / Jira / Yandex / JSON / demo data
 - `src/analyze.ts` - pipeline анализа одной задачи, который используется bot-flow.
 - `src/config.ts` загружает правила проекта: язык, strict mode, обязательные секции, stop phrases, bad formulations, scoring weights, thresholds и ignored labels/statuses.
 - `src/clarity-score.ts` рассчитывает Clarity Score и коммуникационные риски.
+- `src/smart/` рассчитывает SMART Score по Specific, Measurable, Achievable, Relevant и Time-bound.
 - `src/analyzers/toneOfVoiceAnalyzer.ts` находит слабый тон, давление, vague wording и настраиваемые плохие формулировки.
 - `src/clarity-fix-suggestions.ts` превращает findings в PM-friendly вопросы и черновики исправлений.
 
 ### Аналитика
 
-- `src/analytics.ts` собирает данные дашборда проекта, before/after comparison, history и research notes.
+- `src/analytics.ts` собирает project-level records: dashboard, before/after comparison, history, Clarity/SMART metrics и research notes.
 - `src/retro-analyzer.ts` рассчитывает lead time, cycle time, time in status, stuck tasks, reopened tasks и bottlenecks.
 - `src/risk/` оценивает delivery-риск.
 - `src/readiness/` проверяет Definition of Ready и Definition of Done.
@@ -75,12 +98,48 @@ interface UnifiedTask {
   context?: string;
   expectedResult?: string;
   acceptanceCriteria?: string[];
+  dependencies?: string[];
+  sprint?: string;
+  deadline?: string;
+  dueDate?: string;
   period?: 'before' | 'after';
   metrics?: TaskMetrics;
 }
 ```
 
 Так source-specific parsing остаётся вне слоя аналитики.
+
+## Analysis Record
+
+После анализа задача превращается в `TaskAnalysisRecord`. Это основной объект для reports:
+
+```text
+TaskAnalysisRecord
+  task
+  analyzedAt
+  score / riskLevel
+  smartAnalysis
+  problemCodes
+  recommendations
+  full analysis result
+```
+
+Такой record можно сериализовать в JSON, использовать для CSV, передать в dashboard или переиспользовать отдельными workflow-модулями.
+
+## Почему отчеты разделены по workflow
+
+В проекте много отчетов, но они не дублируют друг друга. Каждый отвечает на отдельный управленческий вопрос:
+
+| Report | Question |
+| --- | --- |
+| Dashboard | Что происходит с качеством backlog в целом? |
+| Task Health Profile | Какие задачи требуют внимания и почему? |
+| Refinement Agenda | Что нужно обсудить до старта работы? |
+| Risk Radar | Где delivery может сорваться? |
+| Evidence Brief | На чем основано решение и чего не хватает? |
+| Decision Ledger | Можно ли проследить путь от проблемы до verification? |
+| Release Guard | Можно ли выпускать результат? |
+| Retro Report | Какие паттерны friction повторяются? |
 
 ## Добавление нового источника задач
 
@@ -94,6 +153,8 @@ interface UnifiedTask {
 
 - Держать product demo локальным и детерминированным.
 - Предпочитать типизированные преобразования данных вместо ad hoc string handling.
+- Разделять source adapters, analysis и report formatting.
 - Делать отчёты читаемыми для PM, QA и инженерных читателей.
 - Рассматривать аналитику как поддержку принятия решений, а не как абсолютную истину.
 - Добавлять интеграции через adapters, а не смешивать source-specific логику со scoring.
+- Сохранять научную аккуратность в выводах: не выдавать correlation за causation и явно показывать evidence gaps.

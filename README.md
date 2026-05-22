@@ -1,21 +1,65 @@
 # Clarity Guardian
 
-**Clarity Guardian** - лёгкий инструмент PM-аналитики для команд, которые хотят писать задачи яснее, раньше видеть delivery-риск и обсуждать качество работы на фактах, а не на ощущениях.
+**Clarity Guardian** - локальный инструмент PM analytics для команд, которые хотят управлять качеством задач, снижать delivery-риск и обсуждать backlog на фактах, а не на ощущениях.
 
-Он анализирует задачи из GitHub, Jira, Yandex Tracker и JSON-файлов, считает **Clarity Score** и **SMART Score**, находит слабые требования, показывает риски для разработки и тестирования, готовит отчёты для planning, refinement, ретро и предрелизной проверки.
+Он анализирует задачи из GitHub, Jira, Yandex Tracker и JSON-файлов, приводит их к единой модели, считает **Clarity Score** и **SMART Score**, находит слабые требования, подсвечивает риски для разработки и QA, а затем собирает управленческие отчёты для planning, refinement, ретро и release readiness.
 
-Проект сделан как практичный portfolio/product demo: без отдельной базы данных, тяжёлого backend и сложного frontend. Все ключевые сценарии запускаются локально через TypeScript/Node.js, npm scripts и JSON-данные.
+Проект сделан как профессиональный CLI-first product demo: без базы данных, тяжёлого backend и внешних AI/API-зависимостей в ядре. Вся аналитика детерминирована, типизирована и запускается локально через TypeScript/Node.js, npm scripts и JSON-данные.
+
+## Продуктовая идея
+
+В большинстве команд задача - это не просто текст в трекере. Это контракт между PM, разработкой, QA, аналитикой и стейкхолдерами. Если контракт написан расплывчато, команда теряет время на уточнения, возвращает задачи с тестирования, принимает решения без evidence и замечает релизные риски слишком поздно.
+
+Clarity Guardian превращает описание задачи в набор рабочих сигналов:
+
+- насколько задача понятна как артефакт передачи между ролями;
+- насколько цель сформулирована по SMART;
+- можно ли брать задачу в работу по Definition of Ready;
+- можно ли считать её завершённой по Definition of Done;
+- какие delivery, QA, decision и release risks уже видны;
+- какое следующее действие нужно от PM, QA, Tech Lead, Engineering или Analytics.
+
+Научная коммуникация здесь не отдельная “тема проекта”, а методологическая основа: ясность, проверяемость, осторожная интерпретация данных, traceability решений и отделение фактов от предположений. Поверх неё построен практичный PM-инструмент для engineering workflow.
+
+## Как работает система
+
+```text
+GitHub / Jira / Yandex Tracker / JSON / demo data
+  -> UnifiedTask normalization
+  -> task quality signals
+  -> Clarity Score + SMART Score
+  -> risk, readiness, evidence, lifecycle and release analytics
+  -> Markdown / JSON / CSV / static HTML reports
+```
+
+Ключевая логика проекта: не пытаться заменить Jira или GitHub, а дать команде независимый аналитический слой поверх задач. Источники данных могут быть разными, но после нормализации все задачи проходят один и тот же pipeline анализа.
 
 ## Кому полезен
 
 | Роль | Что даёт Clarity Guardian |
 | --- | --- |
-| Научные коммуникаторы | Аккуратные формулировки, evidence-based brief, проверяемые гипотезы и осторожные выводы без ложной причинности. |
-| Продуктовые и проектные менеджеры | Видимость качества backlog, готовность к planning, повестка refinement, stakeholder update и action plan. |
-| QA и тестировщики | Acceptance criteria, проверяемый expected result, QA gaps, Definition of Done и release checklist. |
-| DevOps и platform engineers | CLI, deterministic demo, smoke-проверки, Quality Gate и отчёты, которые можно встроить в CI. |
-| Аналитики | CSV/JSON exports, before/after comparison, research notes, evidence gaps и метрики качества задач. |
-| Разработчики | Единая модель задачи, risk radar, ясные требования, меньше скрытых договорённостей и возвратов с тестирования. |
+| PM / Project Manager | Видимость качества backlog, SMART-постановка задач, agenda для refinement, action plan и stakeholder update. |
+| Engineering Lead | Ранние delivery-риск сигналы, large scope, blockers, external dependencies и release readiness. |
+| QA | Проверяемый expected result, acceptance criteria, QA gaps, DoD, regression и release checklist. |
+| Product / Analytics | Evidence Brief, decision traceability, аккуратные гипотезы, CSV/JSON exports и before/after comparison. |
+| Developers | Единая модель задачи, меньше скрытых договорённостей, понятный scope и меньше возвратов из-за неясных требований. |
+| DevOps / Platform | CLI-first запуск, deterministic demo, smoke-проверки, Quality Gate и отчёты, которые можно встроить в CI. |
+
+## Почему это не просто набор проверок
+
+Clarity Guardian построен как система связанных аналитических слоёв:
+
+| Слой | Что решает |
+| --- | --- |
+| Task Clarity | Проверяет, достаточно ли задача понятна для передачи между ролями. |
+| SMART Task Check | Проверяет, сформулирована ли задача как конкретная и управляемая цель. |
+| Risk Radar | Показывает delivery-риск до того, как задача застрянет в работе. |
+| Readiness | Разделяет “можно начинать” и “можно закрывать” через DoR/DoD. |
+| Evidence & Decision | Связывает проблему, evidence, решение, владельца и verification plan. |
+| Lifecycle Analytics | Смотрит на lead time, cycle time, reopened tasks, stuck statuses и QA returns. |
+| Release Guard | Переводит качество задач в go / review_required / no_go сигналы перед релизом. |
+
+Каждый модуль можно запускать отдельно, но вместе они дают цельную картину: от качества постановки задачи до управленческого решения.
 
 ## Быстрый старт
 
@@ -47,26 +91,17 @@ npm run verify
 
 `verify` запускает TypeScript checks, build, smoke tests, demo generation, основные отчёты и `npm audit`.
 
-## Идея проекта
+## Рабочие сценарии
 
-Проблема обычно не в том, что команда не умеет работать. Часто задача просто передана недостаточно ясно:
+Clarity Guardian закрывает несколько реальных PM/engineering workflows:
 
-- не описан контекст;
-- непонятно, какую проблему решаем;
-- expected result звучит расплывчато;
-- acceptance criteria отсутствуют или не проверяемы;
-- QA не понимает, что считать готовым;
-- критичная зависимость живёт в переписке, а не в задаче;
-- релизный риск виден слишком поздно.
-
-Clarity Guardian превращает такие сигналы в понятные отчёты:
-
-- где задача уже готова к работе;
-- где нужен refinement;
-- где high-risk или blocker;
-- где не хватает evidence;
-- где есть риск регрессии перед релизом;
-- какие действия нужны от PM, QA, Tech Lead, Engineering или Analytics.
+- **Backlog grooming:** найти задачи без контекста, результата, метрик, срока или проверяемых критериев.
+- **Refinement:** собрать список вопросов, решений и владельцев до старта разработки.
+- **Sprint planning:** оценить готовность задач, scope и внешние зависимости.
+- **QA handoff:** понять, сможет ли QA построить тест-кейсы только по описанию задачи.
+- **Release readiness:** увидеть no-go/review/go сигналы до релиза.
+- **Retro:** связать качество задач с возвратами, stuck statuses, cycle time и repeated gaps.
+- **Stakeholder communication:** подготовить короткий статус: что здорово, где риск, какие asks и next actions.
 
 ## Что анализируется
 
@@ -155,7 +190,7 @@ Clarity Score отвечает за качество описания задач
 
 ## Демо-данные
 
-В проекте есть два основных набора данных:
+В проекте есть несколько demo-наборов данных:
 
 ```text
 data/demo-tasks.json
@@ -295,6 +330,7 @@ Smoke tests проверяют:
 ```text
 ARCHITECTURE.md
 ROADMAP.md
+docs/PRODUCT_LOGIC.md
 docs/PRODUCT_AUDIT.md
 docs/smart-task-check.md
 docs/V2_DEMO_GUIDE.md
