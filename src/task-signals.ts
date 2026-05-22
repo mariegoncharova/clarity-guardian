@@ -19,6 +19,9 @@ import {
 import {
   unifiedTaskToTaskPayload
 } from './task-model';
+import {
+  TASK_SIGNAL_KEYWORDS
+} from './dictionaries/taskQualityDictionary';
 
 import type {
   UnifiedTask,
@@ -26,89 +29,27 @@ import type {
 } from './types';
 
 export const VAGUE_PHRASES = [
-  'сделать красиво',
-  'сделать нормально',
-  'как обсуждали',
-  'починить',
-  'улучшить',
-  'оптимизировать',
-  'доработать',
-  'быстро поправить',
-  'примерно',
-  'на всякий случай',
-  'что-то не работает'
+  ...TASK_SIGNAL_KEYWORDS.vaguePhrases
 ];
 
 export const RISKY_DOMAIN_KEYWORDS = [
-  'payment',
-  'refund',
-  'billing',
-  'оплата',
-  'платёж',
-  'платеж',
-  'возврат',
-  'деньги',
-  'карта',
-  'авторизация',
-  'регистрация',
-  'персональные данные',
-  'доступы',
-  'безопасность',
-  'интеграция',
-  'миграция',
-  'production',
-  'prod',
-  'релиз'
+  ...TASK_SIGNAL_KEYWORDS.riskyDomainKeywords
 ];
 
 export const EXTERNAL_DEPENDENCY_KEYWORDS = [
-  'blocked',
-  'блокер',
-  'зависимость',
-  'ждём',
-  'ждем',
-  'ожидаем',
-  'нет ответа',
-  'external',
-  'third-party',
-  'api партнёра',
-  'api партнера',
-  'интеграция с внешней системой'
+  ...TASK_SIGNAL_KEYWORDS.externalDependencyKeywords
 ];
 
 export const LARGE_SCOPE_KEYWORDS = [
-  'много сценариев',
-  'несколько сценариев',
-  'несколько сервисов',
-  'весь флоу',
-  'полностью переделать',
-  'рефакторинг',
-  'миграция',
-  'затрагивает несколько команд',
-  'слишком широкая задача',
-  'декомпозировать',
-  'end-to-end',
-  'e2e'
+  ...TASK_SIGNAL_KEYWORDS.largeScopeKeywords
 ];
 
 export const TESTING_KEYWORDS = [
-  'tested',
-  'qa passed',
-  'проверено',
-  'протестировано',
-  'тестирование пройдено',
-  'passed qa',
-  'qa ok'
+  ...TASK_SIGNAL_KEYWORDS.testingKeywords
 ];
 
 export const BLOCKER_KEYWORDS = [
-  'blocked',
-  'блокер',
-  'не можем завершить',
-  'ждём',
-  'ждем',
-  'нет ответа',
-  'зависимость'
+  ...TASK_SIGNAL_KEYWORDS.blockerKeywords
 ];
 
 export const DONE_STATUSES = [

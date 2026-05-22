@@ -1,6 +1,9 @@
 import {
   normalizeText
 } from '../utils';
+import {
+  TASK_SIGNAL_KEYWORDS
+} from '../dictionaries/taskQualityDictionary';
 
 export type RiskPhraseGroup =
   | 'subjective_quality'
@@ -54,148 +57,38 @@ export const RISK_VAGUE_PHRASES: RiskPhraseRule[] = [
 ];
 
 export const RISKY_DOMAIN_KEYWORDS = [
-  'payment',
-  'refund',
-  'billing',
-  'оплата',
-  'платёж',
-  'платеж',
-  'возврат',
-  'деньги',
-  'карта',
-  'авторизация',
-  'регистрация',
-  'персональные данные',
-  'доступы',
-  'безопасность',
-  'security',
-  'production',
-  'prod',
-  'релиз'
+  ...TASK_SIGNAL_KEYWORDS.riskyDomainKeywords
 ];
 
 export const EXTERNAL_DEPENDENCY_KEYWORDS = [
-  'blocked',
-  'блокер',
-  'зависимость',
-  'ждём',
-  'ждем',
-  'ожидаем',
-  'нет ответа',
-  'external',
-  'third-party',
-  'api партнёра',
-  'api партнера',
-  'интеграция с внешней системой'
+  ...TASK_SIGNAL_KEYWORDS.externalDependencyKeywords
 ];
 
 export const LARGE_SCOPE_KEYWORDS = [
-  'много сценариев',
-  'несколько сценариев',
-  'несколько сервисов',
-  'весь флоу',
-  'полностью переделать',
-  'рефакторинг',
-  'миграция',
-  'затрагивает несколько команд',
-  'слишком широкая задача',
-  'декомпозировать',
-  'end-to-end',
-  'e2e'
+  ...TASK_SIGNAL_KEYWORDS.largeScopeKeywords
 ];
 
 const EVIDENCE_KEYWORDS = [
-  'figma',
-  'макет',
-  'скриншот',
-  'screenshot',
-  'пример',
-  'example',
-  'лог',
-  'logs',
-  'payload',
-  'dataset',
-  'test data',
-  'тестовые данные',
-  'исходные данные',
-  'input data',
-  'source data',
-  'staging',
-  'дашборд',
-  'dashboard'
+  ...TASK_SIGNAL_KEYWORDS.evidenceKeywords
 ];
 
 const EDGE_CASE_KEYWORDS = [
-  'edge case',
-  'edge cases',
-  'corner case',
-  'boundary',
-  'гранич',
-  'погранич',
-  'негатив',
-  'negative scenario',
-  'error case',
-  'при ошибке',
-  'ошибка банка',
-  'таймаут',
-  'timeout',
-  'empty',
-  'пуст',
-  'null',
-  'fallback',
-  'retry',
-  'повтор',
-  'роль',
-  'roles',
-  'права',
-  'permissions'
+  ...TASK_SIGNAL_KEYWORDS.edgeCaseKeywords
 ];
 
 const URGENCY_REASON_KEYWORDS = [
-  'потому что',
-  'из-за',
+  ...TASK_SIGNAL_KEYWORDS.urgencyReasonMarkers,
   'причина',
-  'дедлайн',
   'до ',
-  'релиз',
   'инцидент',
-  'блокирует',
   'sla',
-  'production',
-  'prod',
   'customer',
-  'because',
   'reason',
-  'deadline',
-  'release',
-  'incident',
-  'blocks',
   'blocked'
 ];
 
 const TESTABLE_OUTCOME_KEYWORDS = [
-  'показывается',
-  'отображается',
-  'видит',
-  'получает',
-  'переходит',
-  'сохраняет',
-  'отправляется',
-  'возвращает',
-  'статус',
-  'код',
-  'событие',
-  'логируется',
-  'visible',
-  'shown',
-  'returns',
-  'receives',
-  'status',
-  'event',
-  'saved',
-  'logged',
-  'redirects',
-  'opens'
+  ...TASK_SIGNAL_KEYWORDS.testableOutcomeKeywords
 ];
 
 function escapeRegExp(value: string): string {

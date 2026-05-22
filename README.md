@@ -333,6 +333,7 @@ ROADMAP.md
 docs/PRODUCT_LOGIC.md
 docs/PRODUCT_AUDIT.md
 docs/smart-task-check.md
+docs/task-quality-dictionaries.md
 docs/V2_DEMO_GUIDE.md
 docs/PORTFOLIO_CASE.md
 docs/COMMUNICATION_GUIDE.md

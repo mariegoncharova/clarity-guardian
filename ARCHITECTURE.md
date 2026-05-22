@@ -49,6 +49,7 @@ GitHub / Jira / Yandex / JSON / demo data
 
 - `src/analyze.ts` - pipeline анализа одной задачи, который используется bot-flow.
 - `src/config.ts` загружает правила проекта: язык, strict mode, обязательные секции, stop phrases, bad formulations, scoring weights, thresholds и ignored labels/statuses.
+- `src/dictionaries/` содержит общие словари качества задач: stop phrases, bad formulations, tone phrases, positive SMART signals, risk keywords.
 - `src/clarity-score.ts` рассчитывает Clarity Score и коммуникационные риски.
 - `src/smart/` рассчитывает SMART Score по Specific, Measurable, Achievable, Relevant и Time-bound.
 - `src/analyzers/toneOfVoiceAnalyzer.ts` находит слабый тон, давление, vague wording и настраиваемые плохие формулировки.

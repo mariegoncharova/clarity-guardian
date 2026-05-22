@@ -1,9 +1,14 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
+import {
+  DEFAULT_BAD_FORMULATIONS,
+  DEFAULT_STOP_PHRASES
+} from './dictionaries/taskQualityDictionary';
 import { normalizeText } from './utils';
 
 import type {
+  BadFormulationRuleConfig,
   ClarityGuardianConfig,
   ClarityMode,
   ConfigLanguage,
@@ -105,79 +110,6 @@ Record<WorkItemType, SectionRuleConfig[]>
     tech_debt: []
   }
 };
-
-const DEFAULT_STOP_PHRASES: StopPhraseRuleConfig[] = [
-  {
-    phrase: 'сделать красиво',
-    level: 'warning',
-    code: 'vague_phrase',
-    message: 'Фраза «сделать красиво» слишком субъективна. Лучше описать конкретные признаки результата.',
-    languages: ['ru']
-  },
-  {
-    phrase: 'как обсуждали',
-    level: 'warning',
-    code: 'hidden_context',
-    message: 'Фраза «как обсуждали» прячет важный контекст. Добавь краткое резюме договорённостей прямо в задачу.',
-    languages: ['ru']
-  },
-  {
-    phrase: 'как в прошлый раз',
-    level: 'warning',
-    code: 'hidden_reference',
-    message: 'Фраза «как в прошлый раз» может быть понята по-разному. Добавь ссылку или явно опиши нужное поведение.',
-    languages: ['ru']
-  },
-  {
-    phrase: 'срочно',
-    level: 'warning',
-    code: 'urgency_without_reason',
-    message: 'Фраза «срочно» не объясняет приоритет. Лучше указать дедлайн, причину срочности и последствия задержки.',
-    languages: ['ru']
-  },
-  {
-    phrase: 'пофиксить',
-    level: 'warning',
-    code: 'vague_fix',
-    message: 'Фраза «пофиксить» слишком общая. Опиши текущее поведение, ожидаемое поведение и критерии проверки.',
-    languages: ['ru']
-  },
-  {
-    phrase: 'make it nice',
-    level: 'warning',
-    code: 'vague_phrase',
-    message: 'The phrase "make it nice" is subjective. Describe the exact visible or behavioral outcome instead.',
-    languages: ['en']
-  },
-  {
-    phrase: 'as discussed',
-    level: 'warning',
-    code: 'hidden_context',
-    message: 'The phrase "as discussed" hides important context. Add a short summary of the decision to the task.',
-    languages: ['en']
-  },
-  {
-    phrase: 'same as last time',
-    level: 'warning',
-    code: 'hidden_reference',
-    message: 'The phrase "same as last time" can be interpreted differently. Add a link or describe the behavior explicitly.',
-    languages: ['en']
-  },
-  {
-    phrase: 'urgent',
-    level: 'warning',
-    code: 'urgency_without_reason',
-    message: 'The word "urgent" does not explain priority. Add a deadline, reason, and impact of delay.',
-    languages: ['en']
-  },
-  {
-    phrase: 'fix it',
-    level: 'warning',
-    code: 'vague_fix',
-    message: 'The phrase "fix it" is too broad. Describe the current behavior, expected behavior, and verification criteria.',
-    languages: ['en']
-  }
-];
 
 const DEFAULT_CONFIG: ResolvedConfig = {
   language: 'auto',
@@ -318,6 +250,60 @@ function resolveReportFormat(config: ClarityGuardianConfig): ResolvedConfig['rep
   return DEFAULT_CONFIG.reports.defaultFormat;
 }
 
+function normalizeRuleKeyParts(values: string[] | undefined): string {
+  return (values || []).map((value) => normalizeText(value).toLowerCase()).sort().join('|');
+}
+
+function stopPhraseRuleKey(rule: StopPhraseRuleConfig): string {
+  return [
+    normalizeText(rule.phrase).toLowerCase(),
+    normalizeRuleKeyParts(rule.languages),
+    normalizeRuleKeyParts(rule.workItemTypes),
+    normalizeText(rule.code).toLowerCase()
+  ].join('::');
+}
+
+function badFormulationRuleKey(rule: BadFormulationRuleConfig): string {
+  return [
+    normalizeText(rule.phrase).toLowerCase(),
+    rule.category,
+    normalizeRuleKeyParts(rule.languages),
+    normalizeRuleKeyParts(rule.workItemTypes)
+  ].join('::');
+}
+
+function mergeStopPhrases(...groups: StopPhraseRuleConfig[][]): StopPhraseRuleConfig[] {
+  const seen = new Set<string>();
+  const result: StopPhraseRuleConfig[] = [];
+
+  for (const rule of groups.flat()) {
+    const key = stopPhraseRuleKey(rule);
+
+    if (!key.startsWith('::') && !seen.has(key)) {
+      seen.add(key);
+      result.push(rule);
+    }
+  }
+
+  return result;
+}
+
+function mergeBadFormulations(...groups: BadFormulationRuleConfig[][]): BadFormulationRuleConfig[] {
+  const seen = new Set<string>();
+  const result: BadFormulationRuleConfig[] = [];
+
+  for (const rule of groups.flat()) {
+    const key = badFormulationRuleKey(rule);
+
+    if (!key.startsWith('::') && !seen.has(key)) {
+      seen.add(key);
+      result.push(rule);
+    }
+  }
+
+  return result;
+}
+
 export function loadConfig(configPath?: string): ResolvedConfig {
   const config = readConfig(configPath);
   const rules = {
@@ -334,17 +320,17 @@ export function loadConfig(configPath?: string): ResolvedConfig {
     mode: resolveMode(config),
     updateDescription: resolveUpdateDescription(config),
     rules,
-    stopPhrases: [
-      ...DEFAULT_STOP_PHRASES,
-      ...(config.stopPhrases || []),
-      ...(config.rules?.common?.stopPhrases || []),
-      ...(config.rules?.bug?.stopPhrases || []),
-      ...(config.rules?.task?.stopPhrases || []),
-      ...(config.rules?.story?.stopPhrases || []),
-      ...(config.rules?.research?.stopPhrases || []),
-      ...(config.rules?.tech_debt?.stopPhrases || [])
-    ],
-    badFormulations: config.badFormulations || [],
+    stopPhrases: mergeStopPhrases(
+      DEFAULT_STOP_PHRASES,
+      config.stopPhrases || [],
+      config.rules?.common?.stopPhrases || [],
+      config.rules?.bug?.stopPhrases || [],
+      config.rules?.task?.stopPhrases || [],
+      config.rules?.story?.stopPhrases || [],
+      config.rules?.research?.stopPhrases || [],
+      config.rules?.tech_debt?.stopPhrases || []
+    ),
+    badFormulations: mergeBadFormulations(DEFAULT_BAD_FORMULATIONS, config.badFormulations || []),
     scoring: {
       weights: resolveScoreWeights(config),
       thresholds: resolveScoreThresholds(config)
