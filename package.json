@@ -32,6 +32,7 @@
     "task:health": "npm run build --silent && node dist/task-health-profile.js",
     "v2:demo": "npm run build --silent && node dist/v2-report.js --demo --out-dir reports/demo",
     "v2:report": "npm run build --silent && node dist/v2-report.js",
+    "smart:demo": "npm run v2:report -- --input data/smart-demo-tasks.json --out-dir reports/smart-demo",
     "demo": "npm run v2:demo",
     "report": "npm run v2:report",
     "build:smoke": "rm -rf .smoke-dist && tsc -p tsconfig.scripts.json",

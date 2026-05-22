@@ -332,6 +332,7 @@ ARCHITECTURE.md
 ROADMAP.md
 docs/PRODUCT_LOGIC.md
 docs/PRODUCT_AUDIT.md
+docs/DEMO_SCRIPT.md
 docs/smart-task-check.md
 docs/task-quality-dictionaries.md
 docs/V2_DEMO_GUIDE.md
