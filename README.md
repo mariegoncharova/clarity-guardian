@@ -81,6 +81,7 @@ reports/demo/release-guard.md
 reports/demo/retro-report.md
 reports/demo/decision-ledger.md
 reports/demo/quick-bug-fix.md
+reports/demo/ownership-risk.md
 ```
 
 Полная проверка проекта:
@@ -98,6 +99,7 @@ Clarity Guardian закрывает несколько реальных PM/engin
 - **Backlog grooming:** найти задачи без контекста, результата, метрик, срока или проверяемых критериев.
 - **Refinement:** собрать список вопросов, решений и владельцев до старта разработки.
 - **Sprint planning:** оценить готовность задач, scope и внешние зависимости.
+- **Ownership review:** увидеть, у каких владельцев сконцентрированы рискованные задачи и где нет assignee.
 - **QA handoff:** понять, сможет ли QA построить тест-кейсы только по описанию задачи.
 - **Release readiness:** увидеть no-go/review/go сигналы до релиза.
 - **Retro:** связать качество задач с возвратами, stuck statuses, cycle time и repeated gaps.
@@ -120,6 +122,7 @@ Clarity Guardian закрывает несколько реальных PM/engin
 - large scope;
 - reopened/returned задачи;
 - DoR/DoD готовность;
+- ownership gaps и концентрацию риска по assignee;
 - evidence gaps и traceability решений.
 
 Поддерживаются русские и английские задачи, но документация и основные пользовательские сценарии в проекте ведутся на русском.
@@ -136,6 +139,7 @@ Clarity Guardian закрывает несколько реальных PM/engin
 | Evidence Brief | Проверяемая формулировка гипотезы, evidence signals и gaps для аналитики и научной коммуникации. |
 | Decision Ledger | Traceability решения: проблема, evidence, owner, verification и risk control. |
 | Quick Bug Fix Queue | Отделяет быстрые безопасные bug fixes от дефектов, где нужен risk review. |
+| Ownership Risk | Показывает концентрацию риска по assignee, overloaded owners и рискованные задачи без владельца. |
 | Retro Report | Lead time, cycle time, stuck tasks, reopened tasks и bottlenecks. |
 | Risk / Readiness / Sprint Health | Delivery-риск, Definition of Ready, Definition of Done и здоровье спринта. |
 
@@ -163,6 +167,7 @@ npm run release:guard -- --input data/demo_tasks.json --output reports/release_g
 npm run evidence:brief -- --input data/demo_tasks.json --output reports/evidence_brief.md
 npm run decision:ledger -- --input data/demo_tasks.json --output reports/decision_ledger.md
 npm run bug:quick-fix -- --input data/demo_tasks.json --output reports/quick_bug_fix.md
+npm run ownership:risk -- --input data/demo_tasks.json --output reports/ownership_risk.md
 ```
 
 Получить JSON или CSV:
@@ -187,6 +192,8 @@ Clarity Score отвечает за качество описания задач
 **Release Guard** смотрит на задачу как на часть релиза. Он не заменяет релизный процесс, а подсвечивает то, что нельзя выпускать без проверки: blockers, QA gaps, reopened history, risky domains и отсутствие rollback/fallback notes.
 
 **Evidence Brief** полезен там, где важно не только сделать изменение, но и корректно объяснить, на каких данных, наблюдениях или гипотезах оно основано.
+
+**Ownership Risk** помогает не потерять риск между ролями: он показывает critical/watch owners, overloaded assignees, QA gaps у конкретных владельцев и задачи без assignee, которые нельзя оставлять до planning.
 
 ## Демо-данные
 
@@ -271,6 +278,7 @@ src/v2-report.ts           # полный bundle отчётов
 src/release-guard.ts       # предрелизная проверка
 src/evidence-brief.ts      # evidence-based brief
 src/decision-ledger.ts     # traceability решений
+src/ownership-risk.ts      # концентрация риска по владельцам задач
 scripts/smoke-test.ts      # end-to-end smoke checks
 ```
 

@@ -21,6 +21,10 @@ import {
   formatQuickBugFixMarkdown
 } from './quick-bug-fix';
 import {
+  buildOwnershipRiskReport,
+  formatOwnershipRiskMarkdown
+} from './ownership-risk';
+import {
   formatDashboardHtml,
   formatDashboardMarkdown,
   formatResearchReportMarkdown,
@@ -113,6 +117,7 @@ async function main(): Promise<void> {
   const research = buildResearchData(records);
   const decisionLedger = buildDecisionLedgerReport(records);
   const quickBugFix = buildQuickBugFixReport(records, { includeNeedsReview: true });
+  const ownershipRisk = buildOwnershipRiskReport(records);
   const taskHealth = buildTaskHealthReport(records, {
     includeHealthy: true,
     riskThresholds: config.riskThresholds
@@ -132,6 +137,7 @@ async function main(): Promise<void> {
   writeJsonFile(resolveOutputPath(outDir, 'analysis-records.json'), records);
   writeJsonFile(resolveOutputPath(outDir, 'decision-ledger.json'), decisionLedger);
   writeJsonFile(resolveOutputPath(outDir, 'quick-bug-fix.json'), quickBugFix);
+  writeJsonFile(resolveOutputPath(outDir, 'ownership-risk.json'), ownershipRisk);
   writeJsonFile(resolveOutputPath(outDir, 'task-health-profile.json'), taskHealth);
   writeJsonFile(resolveOutputPath(outDir, 'refinement-agenda.json'), refinementAgenda);
   writeJsonFile(resolveOutputPath(outDir, 'release-guard.json'), releaseGuard);
@@ -143,6 +149,7 @@ async function main(): Promise<void> {
   writeTextFile(resolveOutputPath(outDir, 'research-report.md'), formatResearchReportMarkdown(research));
   writeTextFile(resolveOutputPath(outDir, 'decision-ledger.md'), formatDecisionLedgerMarkdown(decisionLedger));
   writeTextFile(resolveOutputPath(outDir, 'quick-bug-fix.md'), formatQuickBugFixMarkdown(quickBugFix));
+  writeTextFile(resolveOutputPath(outDir, 'ownership-risk.md'), formatOwnershipRiskMarkdown(ownershipRisk));
   writeTextFile(resolveOutputPath(outDir, 'task-health-profile.md'), formatTaskHealthMarkdown(taskHealth));
   writeTextFile(resolveOutputPath(outDir, 'refinement-agenda.md'), formatRefinementAgendaMarkdown(refinementAgenda));
   writeTextFile(resolveOutputPath(outDir, 'release-guard.md'), formatReleaseGuardMarkdown(releaseGuard));
