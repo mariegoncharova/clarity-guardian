@@ -42,21 +42,29 @@
 ## Оставшиеся продуктовые риски
 
 - Инструмент пока выводит многие сигналы эвристически; на больших реальных датасетах понадобится калибровка и false-positive review.
-- Dashboard HTML намеренно статичный и компактный; более зрелому продукту позже понадобятся фильтры и навигация по трендам.
+- Dashboard HTML намеренно статичный и компактный; Project Pulse закрывает стартовую навигацию, но более зрелому продукту позже понадобятся интерактивные фильтры и навигация по трендам.
 - Risk thresholds вынесены в config, но более глубокий domain-specific risk scoring нужно валидировать на реальных командных данных до overfitting.
 - Lifecycle analytics зависит от качества status history во внешних трекерах.
 - AI-assisted rewriting намеренно не является ядром продукта, потому что проект должен работать без secrets и network calls.
 
+## Дополнительное усиление от 2026-05-25
+
+- Добавлен `Project Pulse` как единая стартовая страница demo bundle: health score, executive summary, focus areas, task spotlight, next actions и карта отчётов.
+- `reports/demo/index.html` стал первым экраном для ревьюера или команды; dashboard остаётся аналитическим срезом, а Project Pulse объясняет, что открыть дальше.
+- Добавлен отдельный CLI `npm run project:pulse`, поддерживающий markdown, json, csv и html output.
+- Smoke tests теперь проверяют, что V2 bundle содержит Project Pulse JSON, markdown и HTML index с навигацией по отчётам.
+
 ## Рекомендуемый demo-сценарий
 
 1. Начать с боли передачи задач: неясные требования создают возвраты QA и delivery drag.
-2. Показать `npm run demo` и открыть `reports/demo/dashboard.html`.
-3. Показать рядом Clarity Score и SMART Score: качество описания и качество постановки цели.
-4. Открыть `reports/demo/task-health-profile.md`, чтобы показать, как одна задача превращается в actionable-профиль.
-5. Открыть `reports/demo/refinement-agenda.md`, чтобы показать переход от findings к рабочей встрече.
-6. Открыть `reports/demo/decision-ledger.md`, чтобы показать зрелое PM-мышление: problem, evidence, decision, owner и risk control.
-7. Открыть `reports/demo/release-guard.md`, чтобы показать связь качества задач с release readiness.
-8. Открыть `reports/demo/retro-report.md`, чтобы связать ясность с трением в жизненном цикле задачи.
+2. Показать `npm run demo` и открыть `reports/demo/index.html`.
+3. Через Project Pulse показать health score, focus areas, task spotlight и карту отчётов.
+4. Открыть `reports/demo/dashboard.html` и показать рядом Clarity Score и SMART Score: качество описания и качество постановки цели.
+5. Открыть `reports/demo/task-health-profile.md`, чтобы показать, как одна задача превращается в actionable-профиль.
+6. Открыть `reports/demo/refinement-agenda.md`, чтобы показать переход от findings к рабочей встрече.
+7. Открыть `reports/demo/decision-ledger.md`, чтобы показать зрелое PM-мышление: problem, evidence, decision, owner и risk control.
+8. Открыть `reports/demo/release-guard.md`, чтобы показать связь качества задач с release readiness.
+9. Открыть `reports/demo/retro-report.md`, чтобы связать ясность с трением в жизненном цикле задачи.
 
 ## Вывод аудита
 

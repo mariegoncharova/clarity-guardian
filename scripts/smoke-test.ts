@@ -302,6 +302,28 @@ interface QuickBugFixSmokeReport {
   }>;
 }
 
+interface ProjectPulseSmokeReport {
+  status?: string;
+  projectHealthScore?: number;
+  metrics?: {
+    totalTasks?: number;
+    releaseDecision?: string;
+    criticalOwners?: number;
+    quickFixReady?: number;
+  };
+  focusAreas?: Array<{
+    code?: string;
+    sourceReports?: string[];
+  }>;
+  taskSpotlight?: Array<{
+    taskId?: string;
+    priorityScore?: number;
+  }>;
+  reportMap?: Array<{
+    fileName?: string;
+  }>;
+}
+
 interface TaskHealthSmokeReport {
   summary?: {
     totalTasks?: number;
@@ -983,10 +1005,15 @@ function smokeV2Reports(): void {
   const history = fs.readFileSync(path.join(outDir, 'clarity-history.jsonl'), 'utf8').trim().split('\n');
   const retro = fs.readFileSync(path.join(outDir, 'retro-report.md'), 'utf8');
   const research = fs.readFileSync(path.join(outDir, 'research-report.md'), 'utf8');
+  const actionPlan = readJson<ActionPlanSmokeReport>(path.join(outDir, 'action-plan.json'));
+  const actionPlanMarkdown = fs.readFileSync(path.join(outDir, 'action-plan.md'), 'utf8');
   const decisionLedger = readJson<DecisionLedgerSmokeReport>(path.join(outDir, 'decision-ledger.json'));
   const decisionLedgerMarkdown = fs.readFileSync(path.join(outDir, 'decision-ledger.md'), 'utf8');
   const quickBugFix = readJson<QuickBugFixSmokeReport>(path.join(outDir, 'quick-bug-fix.json'));
   const quickBugFixMarkdown = fs.readFileSync(path.join(outDir, 'quick-bug-fix.md'), 'utf8');
+  const projectPulse = readJson<ProjectPulseSmokeReport>(path.join(outDir, 'project-pulse.json'));
+  const projectPulseMarkdown = fs.readFileSync(path.join(outDir, 'project-pulse.md'), 'utf8');
+  const projectPulseHtml = fs.readFileSync(path.join(outDir, 'index.html'), 'utf8');
   const taskHealth = readJson<TaskHealthSmokeReport>(path.join(outDir, 'task-health-profile.json'));
   const taskHealthMarkdown = fs.readFileSync(path.join(outDir, 'task-health-profile.md'), 'utf8');
   const refinementAgenda = readJson<RefinementAgendaSmokeReport>(path.join(outDir, 'refinement-agenda.json'));
@@ -1015,10 +1042,24 @@ function smokeV2Reports(): void {
   assert(Boolean(taskHistory['demo-before-1']), 'Task score history should be grouped by task');
   assert(retro.includes('Clarity Guardian Retro Report'), 'Retro markdown should be generated');
   assert(research.includes('может указывать на корреляцию'), 'Research report should use careful wording');
+  assert(actionPlan.totalTasks === 8, 'V2 demo should include Action Plan JSON');
+  assert(actionPlanMarkdown.includes('Clarity Action Plan'), 'V2 demo should include Action Plan markdown');
   assert(decisionLedger.totalTasks === 8, 'V2 demo should include Decision Ledger JSON');
   assert(decisionLedgerMarkdown.includes('Decision Traceability Matrix'), 'V2 demo should include Decision Ledger markdown');
   assert(quickBugFix.totalTasks === 8, 'V2 demo should include Quick Bug Fix JSON');
   assert(quickBugFixMarkdown.includes('Quick Bug Fix Queue'), 'V2 demo should include Quick Bug Fix markdown');
+  assert(projectPulse.metrics?.totalTasks === 8, 'V2 demo should include Project Pulse JSON');
+  assert(Boolean(projectPulse.status), 'Project Pulse should include project status');
+  assert(typeof projectPulse.projectHealthScore === 'number', 'Project Pulse should include health score');
+  assert((projectPulse.focusAreas || []).length > 0, 'Project Pulse should include focus areas');
+  assert((projectPulse.taskSpotlight || []).length > 0, 'Project Pulse should include task spotlight');
+  assert(
+    Boolean((projectPulse.reportMap || []).some((link) => link.fileName === 'dashboard.html')),
+    'Project Pulse should include report map links'
+  );
+  assert(projectPulseMarkdown.includes('Project Pulse'), 'V2 demo should include Project Pulse markdown');
+  assert(projectPulseHtml.includes('Clarity Guardian Project Pulse'), 'V2 demo should include Project Pulse index HTML');
+  assert(projectPulseHtml.includes('href="dashboard.html"'), 'Project Pulse index should link to dashboard HTML');
   assert(taskHealth.summary?.totalTasks === 8, 'V2 demo should include Task Health Profile JSON');
   assert(taskHealthMarkdown.includes('Task Health Profile'), 'V2 demo should include Task Health Profile markdown');
   assert(refinementAgenda.totalTasks === 8, 'V2 demo should include Refinement Agenda JSON');

@@ -10,6 +10,10 @@ import {
   writeHistoryJsonl
 } from './analytics';
 import {
+  buildActionPlanReport,
+  formatActionPlanMarkdown
+} from './action-plan';
+import {
   loadConfig
 } from './config';
 import {
@@ -24,6 +28,11 @@ import {
   buildOwnershipRiskReport,
   formatOwnershipRiskMarkdown
 } from './ownership-risk';
+import {
+  buildProjectPulseReport,
+  formatProjectPulseHtml,
+  formatProjectPulseMarkdown
+} from './project-pulse';
 import {
   formatDashboardHtml,
   formatDashboardMarkdown,
@@ -115,9 +124,11 @@ async function main(): Promise<void> {
   const dashboard = buildDashboard(records);
   const comparison = compareBeforeAfter(records);
   const research = buildResearchData(records);
+  const actionPlan = buildActionPlanReport(records);
   const decisionLedger = buildDecisionLedgerReport(records);
   const quickBugFix = buildQuickBugFixReport(records, { includeNeedsReview: true });
   const ownershipRisk = buildOwnershipRiskReport(records);
+  const projectPulse = buildProjectPulseReport(records, { generatedAt: analyzedAt });
   const taskHealth = buildTaskHealthReport(records, {
     includeHealthy: true,
     riskThresholds: config.riskThresholds
@@ -135,9 +146,11 @@ async function main(): Promise<void> {
   writeJsonFile(resolveOutputPath(outDir, 'before-after.json'), comparison);
   writeJsonFile(resolveOutputPath(outDir, 'task-history.json'), buildTaskScoreHistory(records));
   writeJsonFile(resolveOutputPath(outDir, 'analysis-records.json'), records);
+  writeJsonFile(resolveOutputPath(outDir, 'action-plan.json'), actionPlan);
   writeJsonFile(resolveOutputPath(outDir, 'decision-ledger.json'), decisionLedger);
   writeJsonFile(resolveOutputPath(outDir, 'quick-bug-fix.json'), quickBugFix);
   writeJsonFile(resolveOutputPath(outDir, 'ownership-risk.json'), ownershipRisk);
+  writeJsonFile(resolveOutputPath(outDir, 'project-pulse.json'), projectPulse);
   writeJsonFile(resolveOutputPath(outDir, 'task-health-profile.json'), taskHealth);
   writeJsonFile(resolveOutputPath(outDir, 'refinement-agenda.json'), refinementAgenda);
   writeJsonFile(resolveOutputPath(outDir, 'release-guard.json'), releaseGuard);
@@ -147,9 +160,12 @@ async function main(): Promise<void> {
   writeTextFile(resolveOutputPath(outDir, 'dashboard.html'), formatDashboardHtml(dashboard));
   writeTextFile(resolveOutputPath(outDir, 'retro-report.md'), formatRetroReportMarkdown(dashboard, comparison));
   writeTextFile(resolveOutputPath(outDir, 'research-report.md'), formatResearchReportMarkdown(research));
+  writeTextFile(resolveOutputPath(outDir, 'action-plan.md'), formatActionPlanMarkdown(actionPlan));
   writeTextFile(resolveOutputPath(outDir, 'decision-ledger.md'), formatDecisionLedgerMarkdown(decisionLedger));
   writeTextFile(resolveOutputPath(outDir, 'quick-bug-fix.md'), formatQuickBugFixMarkdown(quickBugFix));
   writeTextFile(resolveOutputPath(outDir, 'ownership-risk.md'), formatOwnershipRiskMarkdown(ownershipRisk));
+  writeTextFile(resolveOutputPath(outDir, 'project-pulse.md'), formatProjectPulseMarkdown(projectPulse));
+  writeTextFile(resolveOutputPath(outDir, 'index.html'), formatProjectPulseHtml(projectPulse));
   writeTextFile(resolveOutputPath(outDir, 'task-health-profile.md'), formatTaskHealthMarkdown(taskHealth));
   writeTextFile(resolveOutputPath(outDir, 'refinement-agenda.md'), formatRefinementAgendaMarkdown(refinementAgenda));
   writeTextFile(resolveOutputPath(outDir, 'release-guard.md'), formatReleaseGuardMarkdown(releaseGuard));

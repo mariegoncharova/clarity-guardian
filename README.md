@@ -29,7 +29,7 @@ GitHub / Jira / Yandex Tracker / JSON / demo data
   -> task quality signals
   -> Clarity Score + SMART Score
   -> risk, readiness, evidence, lifecycle and release analytics
-  -> Markdown / JSON / CSV / static HTML reports
+  -> Project Pulse + Markdown / JSON / CSV / static HTML reports
 ```
 
 Ключевая логика проекта: не пытаться заменить Jira или GitHub, а дать команде независимый аналитический слой поверх задач. Источники данных могут быть разными, но после нормализации все задачи проходят один и тот же pipeline анализа.
@@ -57,6 +57,7 @@ Clarity Guardian построен как система связанных ан�
 | Readiness | Разделяет “можно начинать” и “можно закрывать” через DoR/DoD. |
 | Evidence & Decision | Связывает проблему, evidence, решение, владельца и verification plan. |
 | Lifecycle Analytics | Смотрит на lead time, cycle time, reopened tasks, stuck statuses и QA returns. |
+| Project Pulse | Собирает executive summary, next actions, task spotlight и карту отчётов в одну стартовую страницу. |
 | Release Guard | Переводит качество задач в go / review_required / no_go сигналы перед релизом. |
 
 Каждый модуль можно запускать отдельно, но вместе они дают цельную картину: от качества постановки задачи до управленческого решения.
@@ -73,7 +74,10 @@ npm run demo
 После `npm run demo` открой:
 
 ```text
+reports/demo/index.html
 reports/demo/dashboard.html
+reports/demo/project-pulse.md
+reports/demo/action-plan.md
 reports/demo/task-health-profile.md
 reports/demo/refinement-agenda.md
 reports/demo/stakeholder-update.md
@@ -97,6 +101,7 @@ npm run verify
 Clarity Guardian закрывает несколько реальных PM/engineering workflows:
 
 - **Backlog grooming:** найти задачи без контекста, результата, метрик, срока или проверяемых критериев.
+- **Project review:** открыть один Project Pulse и сразу увидеть статус, next actions и какие отчёты читать дальше.
 - **Refinement:** собрать список вопросов, решений и владельцев до старта разработки.
 - **Sprint planning:** оценить готовность задач, scope и внешние зависимости.
 - **Ownership review:** увидеть, у каких владельцев сконцентрированы рискованные задачи и где нет assignee.
@@ -131,6 +136,7 @@ Clarity Guardian закрывает несколько реальных PM/engin
 
 | Отчёт | Для чего нужен |
 | --- | --- |
+| Project Pulse | Первая страница demo bundle: executive summary, health score, focus areas, task spotlight и карта отчётов. |
 | Dashboard | Общая картина качества задач, Clarity Score, SMART Score, top problems и trend. |
 | Task Health Profile | Компактный профиль каждой задачи: что не так, какой риск и какой следующий шаг. |
 | Refinement Agenda | Готовая повестка refinement: что обсуждать, кто нужен и какое решение зафиксировать. |
@@ -168,6 +174,7 @@ npm run evidence:brief -- --input data/demo_tasks.json --output reports/evidence
 npm run decision:ledger -- --input data/demo_tasks.json --output reports/decision_ledger.md
 npm run bug:quick-fix -- --input data/demo_tasks.json --output reports/quick_bug_fix.md
 npm run ownership:risk -- --input data/demo_tasks.json --output reports/ownership_risk.md
+npm run project:pulse -- --input data/demo_tasks.json --output reports/project_pulse.html
 ```
 
 Получить JSON или CSV:
@@ -188,6 +195,8 @@ Clarity Score отвечает за качество описания задач
 **Risk level** показывает delivery-риск. Он растёт, если задача неясная, слишком широкая, касается критичного домена, имеет внешние зависимости или историю возвратов.
 
 **Definition of Ready / Done** помогает разделить две вещи: можно ли брать задачу в работу и можно ли считать её завершённой.
+
+**Project Pulse** - первый экран для команды и ревьюера. Он собирает health score, executive summary, focus areas, next actions, task spotlight и ссылки на остальные отчёты, чтобы demo bundle не выглядел россыпью файлов.
 
 **Release Guard** смотрит на задачу как на часть релиза. Он не заменяет релизный процесс, а подсвечивает то, что нельзя выпускать без проверки: blockers, QA gaps, reopened history, risky domains и отсутствие rollback/fallback notes.
 
@@ -279,6 +288,7 @@ src/release-guard.ts       # предрелизная проверка
 src/evidence-brief.ts      # evidence-based brief
 src/decision-ledger.ts     # traceability решений
 src/ownership-risk.ts      # концентрация риска по владельцам задач
+src/project-pulse.ts       # единая стартовая страница и executive summary для bundle
 scripts/smoke-test.ts      # end-to-end smoke checks
 ```
 
