@@ -7,6 +7,7 @@
 Показать, что Clarity Guardian - это не только checker для задач, а лёгкий инструмент PM-аналитики:
 
 - анализирует постановку задач;
+- проверяет качество входного JSON перед аналитикой;
 - считает Clarity Score;
 - находит повторяющиеся проблемы качества;
 - сравнивает периоды `before` и `after`;
@@ -35,6 +36,7 @@ reports/demo/
 
 - `index.html` - стартовый Project Pulse: статус, health score, focus areas, task spotlight и карта отчётов;
 - `project-pulse.md` - markdown-версия executive summary и next actions;
+- `data-doctor.md` - диагностика входных данных: dropped rows, duplicate ids, даты, coverage и status history;
 - `dashboard.html` - быстрый визуальный обзор;
 - `action-plan.md` - приоритетный список задач, вопросов и правок описания;
 - `dashboard.json` - структурированные данные дашборда;
@@ -53,13 +55,14 @@ reports/demo/
 2. Показать `data/README.md`: `data/demo-tasks.json` используется для portfolio before/after demo, а `data/demo_tasks.json` - для более насыщенной аналитики жизненного цикла.
 3. Запустить `npm run v2:demo`.
 4. Открыть `reports/demo/index.html`: начать с Project Pulse, показать статус, health score, next actions и ссылки на отчёты.
-5. Открыть `reports/demo/dashboard.html` и показать обзор на уровне проекта.
-6. Открыть `reports/demo/retro-report.md` и объяснить, как PM может использовать отчёт на ретро.
-7. Открыть `reports/demo/research-report.md` и подчеркнуть осторожную формулировку: это анализ корреляций, а не ложное научное утверждение.
-8. Запустить `npm run decision:ledger -- --input data/demo_tasks.json --output reports/decision_ledger.md` и показать, как задачи раскладываются на проблему, решение, evidence, проверку, владельца и контроль риска.
-9. Открыть `reports/demo/task-health-profile.md` и показать, как одна карточка соединяет ясность, риск, DoR/DoD, QA-риск, delivery-риск и следующий лучший шаг.
-10. Запустить `npm run bug:quick-fix -- --input data/demo_tasks.json --output reports/quick_bug_fix.md --include-needs-review` и показать, какие баги можно чинить быстро, а какие нужно сначала уточнить.
-11. Отдельно отметить, что GitHub и Jira flow остались совместимыми, а Yandex Tracker добавлен отдельным adapter.
+5. Открыть `reports/demo/data-doctor.md` и объяснить, что проект сначала проверяет качество входных данных.
+6. Открыть `reports/demo/dashboard.html` и показать обзор на уровне проекта.
+7. Открыть `reports/demo/retro-report.md` и объяснить, как PM может использовать отчёт на ретро.
+8. Открыть `reports/demo/research-report.md` и подчеркнуть осторожную формулировку: это анализ корреляций, а не ложное научное утверждение.
+9. Запустить `npm run decision:ledger -- --input data/demo_tasks.json --output reports/decision_ledger.md` и показать, как задачи раскладываются на проблему, решение, evidence, проверку, владельца и контроль риска.
+10. Открыть `reports/demo/task-health-profile.md` и показать, как одна карточка соединяет ясность, риск, DoR/DoD, QA-риск, delivery-риск и следующий лучший шаг.
+11. Запустить `npm run bug:quick-fix -- --input data/demo_tasks.json --output reports/quick_bug_fix.md --include-needs-review` и показать, какие баги можно чинить быстро, а какие нужно сначала уточнить.
+12. Отдельно отметить, что GitHub и Jira flow остались совместимыми, а Yandex Tracker добавлен отдельным adapter.
 
 ## Что подчеркнуть
 
@@ -71,4 +74,5 @@ reports/demo/
 - Operational thinking: мелкие баги получают короткий patch plan, verification checklist и safety checks.
 - Готовность к демо: отчёты генерируются локально одной командой.
 - Усиленная юзабельность: Project Pulse говорит, что открыть первым и какие действия сделать дальше.
+- Доверие к данным: Data Doctor показывает, насколько входной dataset пригоден для аналитики.
 - Расширяемость: внешние трекеры подключаются через adapters, не смешиваясь с core analysis.

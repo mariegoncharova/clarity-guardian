@@ -225,6 +225,22 @@ interface ActionPlanSmokeReport {
   }>;
 }
 
+interface DataDoctorSmokeReport {
+  status?: string;
+  dataQualityScore?: number;
+  rawItemsCount?: number;
+  normalizedTasksCount?: number;
+  droppedItemsCount?: number;
+  fieldCoverage?: Array<{
+    field?: string;
+    percent?: number;
+  }>;
+  issues?: Array<{
+    code?: string;
+    severity?: string;
+  }>;
+}
+
 interface EvidenceBriefSmokeReport {
   totalTasks?: number;
   includedTasks?: number;
@@ -1007,6 +1023,8 @@ function smokeV2Reports(): void {
   const research = fs.readFileSync(path.join(outDir, 'research-report.md'), 'utf8');
   const actionPlan = readJson<ActionPlanSmokeReport>(path.join(outDir, 'action-plan.json'));
   const actionPlanMarkdown = fs.readFileSync(path.join(outDir, 'action-plan.md'), 'utf8');
+  const dataDoctor = readJson<DataDoctorSmokeReport>(path.join(outDir, 'data-doctor.json'));
+  const dataDoctorMarkdown = fs.readFileSync(path.join(outDir, 'data-doctor.md'), 'utf8');
   const decisionLedger = readJson<DecisionLedgerSmokeReport>(path.join(outDir, 'decision-ledger.json'));
   const decisionLedgerMarkdown = fs.readFileSync(path.join(outDir, 'decision-ledger.md'), 'utf8');
   const quickBugFix = readJson<QuickBugFixSmokeReport>(path.join(outDir, 'quick-bug-fix.json'));
@@ -1044,6 +1062,11 @@ function smokeV2Reports(): void {
   assert(research.includes('может указывать на корреляцию'), 'Research report should use careful wording');
   assert(actionPlan.totalTasks === 8, 'V2 demo should include Action Plan JSON');
   assert(actionPlanMarkdown.includes('Clarity Action Plan'), 'V2 demo should include Action Plan markdown');
+  assert(dataDoctor.rawItemsCount === 8, 'V2 demo should include Data Doctor JSON');
+  assert(dataDoctor.normalizedTasksCount === 8, 'Data Doctor should count normalized tasks');
+  assert(typeof dataDoctor.dataQualityScore === 'number', 'Data Doctor should include data quality score');
+  assert(Boolean((dataDoctor.fieldCoverage || []).some((field) => field.field === 'assignee')), 'Data Doctor should include field coverage');
+  assert(dataDoctorMarkdown.includes('Data Doctor'), 'V2 demo should include Data Doctor markdown');
   assert(decisionLedger.totalTasks === 8, 'V2 demo should include Decision Ledger JSON');
   assert(decisionLedgerMarkdown.includes('Decision Traceability Matrix'), 'V2 demo should include Decision Ledger markdown');
   assert(quickBugFix.totalTasks === 8, 'V2 demo should include Quick Bug Fix JSON');

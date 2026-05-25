@@ -26,6 +26,7 @@ Clarity Guardian превращает описание задачи в набо�
 ```text
 GitHub / Jira / Yandex Tracker / JSON / demo data
   -> UnifiedTask normalization
+  -> Data Doctor input validation
   -> task quality signals
   -> Clarity Score + SMART Score
   -> risk, readiness, evidence, lifecycle and release analytics
@@ -51,6 +52,7 @@ Clarity Guardian построен как система связанных ан�
 
 | Слой | Что решает |
 | --- | --- |
+| Data Doctor | Проверяет качество входного JSON до аналитики: dropped rows, duplicate ids, даты, coverage и status history. |
 | Task Clarity | Проверяет, достаточно ли задача понятна для передачи между ролями. |
 | SMART Task Check | Проверяет, сформулирована ли задача как конкретная и управляемая цель. |
 | Risk Radar | Показывает delivery-риск до того, как задача застрянет в работе. |
@@ -77,6 +79,7 @@ npm run demo
 reports/demo/index.html
 reports/demo/dashboard.html
 reports/demo/project-pulse.md
+reports/demo/data-doctor.md
 reports/demo/action-plan.md
 reports/demo/task-health-profile.md
 reports/demo/refinement-agenda.md
@@ -102,6 +105,7 @@ Clarity Guardian закрывает несколько реальных PM/engin
 
 - **Backlog grooming:** найти задачи без контекста, результата, метрик, срока или проверяемых критериев.
 - **Project review:** открыть один Project Pulse и сразу увидеть статус, next actions и какие отчёты читать дальше.
+- **Data onboarding:** проверить новый экспорт задач до анализа, чтобы не строить выводы на плохих данных.
 - **Refinement:** собрать список вопросов, решений и владельцев до старта разработки.
 - **Sprint planning:** оценить готовность задач, scope и внешние зависимости.
 - **Ownership review:** увидеть, у каких владельцев сконцентрированы рискованные задачи и где нет assignee.
@@ -115,6 +119,7 @@ Clarity Guardian закрывает несколько реальных PM/engin
 Инструмент приводит разные источники к единой модели `UnifiedTask` и проверяет:
 
 - контекст и цель задачи;
+- качество входного dataset: dropped rows, duplicate ids, даты, coverage и status history;
 - ожидаемый результат;
 - критерии приёмки;
 - SMART-критерии: конкретность, измеримость, достижимость, актуальность и срок;
@@ -137,6 +142,7 @@ Clarity Guardian закрывает несколько реальных PM/engin
 | Отчёт | Для чего нужен |
 | --- | --- |
 | Project Pulse | Первая страница demo bundle: executive summary, health score, focus areas, task spotlight и карта отчётов. |
+| Data Doctor | Предпроверка входных данных: сколько задач нормализовалось, где дубли, битые даты и слабое покрытие полей. |
 | Dashboard | Общая картина качества задач, Clarity Score, SMART Score, top problems и trend. |
 | Task Health Profile | Компактный профиль каждой задачи: что не так, какой риск и какой следующий шаг. |
 | Refinement Agenda | Готовая повестка refinement: что обсуждать, кто нужен и какое решение зафиксировать. |
@@ -166,6 +172,7 @@ npm run v2:report -- --input data/demo_tasks.json --out-dir reports/custom
 Запустить отдельные отчёты:
 
 ```bash
+npm run data:doctor -- --input data/demo_tasks.json --output reports/data_doctor.md
 npm run task:health -- --input data/demo_tasks.json --output reports/task_health_profile.md
 npm run refinement:agenda -- --input data/demo_tasks.json --output reports/refinement_agenda.md
 npm run stakeholder:update -- --input data/demo_tasks.json --output reports/stakeholder_update.md
@@ -197,6 +204,8 @@ Clarity Score отвечает за качество описания задач
 **Definition of Ready / Done** помогает разделить две вещи: можно ли брать задачу в работу и можно ли считать её завершённой.
 
 **Project Pulse** - первый экран для команды и ревьюера. Он собирает health score, executive summary, focus areas, next actions, task spotlight и ссылки на остальные отчёты, чтобы demo bundle не выглядел россыпью файлов.
+
+**Data Doctor** проверяет, можно ли доверять входному JSON: обнаруживает dropped rows, нестабильные или дублирующиеся id, битые даты, проблемы status history и неполное покрытие ключевых полей.
 
 **Release Guard** смотрит на задачу как на часть релиза. Он не заменяет релизный процесс, а подсвечивает то, что нельзя выпускать без проверки: blockers, QA gaps, reopened history, risky domains и отсутствие rollback/fallback notes.
 
@@ -277,6 +286,7 @@ GitHub / Jira / Yandex Tracker / JSON / demo data
 ```text
 src/analyze.ts             # анализ одной задачи для bot-flow
 src/task-model.ts          # единая модель задачи
+src/data-doctor.ts         # диагностика качества входного dataset
 src/smart/                 # SMART Task Check
 src/analytics.ts           # dashboard, history, before/after, research data
 src/task-signals.ts        # общие сигналы задач

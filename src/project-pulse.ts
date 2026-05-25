@@ -126,6 +126,12 @@ const DEFAULT_REPORT_MAP: ProjectPulseReportLink[] = [
     openWhen: 'Нужна общая картина качества backlog.'
   },
   {
+    fileName: 'data-doctor.md',
+    title: 'Data Doctor',
+    purpose: 'Проверяет качество входного dataset: dropped rows, duplicate ids, даты, coverage и status history.',
+    openWhen: 'Открывать перед доверием к аналитике или при подключении нового экспорта из трекера.'
+  },
+  {
     fileName: 'task-health-profile.md',
     title: 'Task Health Profile',
     purpose: 'Показывает здоровье каждой задачи, слабые места и next best action.',

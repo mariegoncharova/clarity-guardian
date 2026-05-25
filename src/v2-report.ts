@@ -17,6 +17,10 @@ import {
   loadConfig
 } from './config';
 import {
+  buildDataDoctorReport,
+  formatDataDoctorMarkdown
+} from './data-doctor';
+import {
   buildDecisionLedgerReport,
   formatDecisionLedgerMarkdown
 } from './decision-ledger';
@@ -86,6 +90,22 @@ function loadTasksFromFile(filePath: string): UnifiedTask[] {
   return normalizeUnifiedTasks(readJsonFile<unknown>(filePath));
 }
 
+function loadRawTasksInput(args: Record<string, string | boolean>): unknown | undefined {
+  const inputPath = getStringArg(args, 'input');
+  const source = getStringArg(args, 'source');
+  const demo = args.demo === true || source === 'demo';
+
+  if (demo) {
+    return readJsonFile<unknown>(getStringArg(args, 'demo-data') || DEFAULT_DEMO_DATA_PATH);
+  }
+
+  if (inputPath) {
+    return readJsonFile<unknown>(inputPath);
+  }
+
+  return undefined;
+}
+
 async function loadTasks(args: Record<string, string | boolean>): Promise<UnifiedTask[]> {
   const inputPath = getStringArg(args, 'input');
   const source = getStringArg(args, 'source');
@@ -116,6 +136,7 @@ async function main(): Promise<void> {
   const outDir = getStringArg(args, 'out-dir') || DEFAULT_OUT_DIR;
   const analyzedAt = getStringArg(args, 'analyzed-at') || new Date().toISOString();
   const config = loadConfig(getStringArg(args, 'config'));
+  const rawTasksInput = loadRawTasksInput(args);
   const tasks = await loadTasks(args);
 
   ensureDir(outDir);
@@ -125,6 +146,7 @@ async function main(): Promise<void> {
   const comparison = compareBeforeAfter(records);
   const research = buildResearchData(records);
   const actionPlan = buildActionPlanReport(records);
+  const dataDoctor = buildDataDoctorReport(rawTasksInput ?? tasks, { generatedAt: analyzedAt });
   const decisionLedger = buildDecisionLedgerReport(records);
   const quickBugFix = buildQuickBugFixReport(records, { includeNeedsReview: true });
   const ownershipRisk = buildOwnershipRiskReport(records);
@@ -147,6 +169,7 @@ async function main(): Promise<void> {
   writeJsonFile(resolveOutputPath(outDir, 'task-history.json'), buildTaskScoreHistory(records));
   writeJsonFile(resolveOutputPath(outDir, 'analysis-records.json'), records);
   writeJsonFile(resolveOutputPath(outDir, 'action-plan.json'), actionPlan);
+  writeJsonFile(resolveOutputPath(outDir, 'data-doctor.json'), dataDoctor);
   writeJsonFile(resolveOutputPath(outDir, 'decision-ledger.json'), decisionLedger);
   writeJsonFile(resolveOutputPath(outDir, 'quick-bug-fix.json'), quickBugFix);
   writeJsonFile(resolveOutputPath(outDir, 'ownership-risk.json'), ownershipRisk);
@@ -161,6 +184,7 @@ async function main(): Promise<void> {
   writeTextFile(resolveOutputPath(outDir, 'retro-report.md'), formatRetroReportMarkdown(dashboard, comparison));
   writeTextFile(resolveOutputPath(outDir, 'research-report.md'), formatResearchReportMarkdown(research));
   writeTextFile(resolveOutputPath(outDir, 'action-plan.md'), formatActionPlanMarkdown(actionPlan));
+  writeTextFile(resolveOutputPath(outDir, 'data-doctor.md'), formatDataDoctorMarkdown(dataDoctor));
   writeTextFile(resolveOutputPath(outDir, 'decision-ledger.md'), formatDecisionLedgerMarkdown(decisionLedger));
   writeTextFile(resolveOutputPath(outDir, 'quick-bug-fix.md'), formatQuickBugFixMarkdown(quickBugFix));
   writeTextFile(resolveOutputPath(outDir, 'ownership-risk.md'), formatOwnershipRiskMarkdown(ownershipRisk));

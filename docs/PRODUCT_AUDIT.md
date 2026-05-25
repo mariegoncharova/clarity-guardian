@@ -53,18 +53,22 @@
 - `reports/demo/index.html` стал первым экраном для ревьюера или команды; dashboard остаётся аналитическим срезом, а Project Pulse объясняет, что открыть дальше.
 - Добавлен отдельный CLI `npm run project:pulse`, поддерживающий markdown, json, csv и html output.
 - Smoke tests теперь проверяют, что V2 bundle содержит Project Pulse JSON, markdown и HTML index с навигацией по отчётам.
+- Добавлен `Data Doctor` как предпроверка входного dataset: dropped rows, duplicate ids, unstable ids, invalid dates, status history и coverage ключевых полей.
+- Добавлен отдельный CLI `npm run data:doctor`, чтобы новый экспорт из трекера можно было проверить до генерации управленческих отчётов.
+- V2 bundle теперь включает `data-doctor.md/json`, а Project Pulse содержит ссылку на Data Doctor в карте отчётов.
 
 ## Рекомендуемый demo-сценарий
 
 1. Начать с боли передачи задач: неясные требования создают возвраты QA и delivery drag.
 2. Показать `npm run demo` и открыть `reports/demo/index.html`.
 3. Через Project Pulse показать health score, focus areas, task spotlight и карту отчётов.
-4. Открыть `reports/demo/dashboard.html` и показать рядом Clarity Score и SMART Score: качество описания и качество постановки цели.
-5. Открыть `reports/demo/task-health-profile.md`, чтобы показать, как одна задача превращается в actionable-профиль.
-6. Открыть `reports/demo/refinement-agenda.md`, чтобы показать переход от findings к рабочей встрече.
-7. Открыть `reports/demo/decision-ledger.md`, чтобы показать зрелое PM-мышление: problem, evidence, decision, owner и risk control.
-8. Открыть `reports/demo/release-guard.md`, чтобы показать связь качества задач с release readiness.
-9. Открыть `reports/demo/retro-report.md`, чтобы связать ясность с трением в жизненном цикле задачи.
+4. Открыть `reports/demo/data-doctor.md`, чтобы показать контроль качества входных данных.
+5. Открыть `reports/demo/dashboard.html` и показать рядом Clarity Score и SMART Score: качество описания и качество постановки цели.
+6. Открыть `reports/demo/task-health-profile.md`, чтобы показать, как одна задача превращается в actionable-профиль.
+7. Открыть `reports/demo/refinement-agenda.md`, чтобы показать переход от findings к рабочей встрече.
+8. Открыть `reports/demo/decision-ledger.md`, чтобы показать зрелое PM-мышление: problem, evidence, decision, owner и risk control.
+9. Открыть `reports/demo/release-guard.md`, чтобы показать связь качества задач с release readiness.
+10. Открыть `reports/demo/retro-report.md`, чтобы связать ясность с трением в жизненном цикле задачи.
 
 ## Вывод аудита
 
