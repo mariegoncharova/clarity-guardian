@@ -58,6 +58,7 @@ Clarity Guardian построен как система связанных ан�
 | Risk Radar | Показывает delivery-риск до того, как задача застрянет в работе. |
 | Readiness | Разделяет “можно начинать” и “можно закрывать” через DoR/DoD. |
 | Evidence & Decision | Связывает проблему, evidence, решение, владельца и verification plan. |
+| Team Handoff | Показывает, готова ли задача к передаче между Analyst, Developer и QA. |
 | Lifecycle Analytics | Смотрит на lead time, cycle time, reopened tasks, stuck statuses и QA returns. |
 | Project Pulse | Собирает executive summary, next actions, task spotlight и карту отчётов в одну стартовую страницу. |
 | Release Guard | Переводит качество задач в go / review_required / no_go сигналы перед релизом. |
@@ -80,6 +81,7 @@ reports/demo/index.html
 reports/demo/dashboard.html
 reports/demo/project-pulse.md
 reports/demo/data-doctor.md
+reports/demo/team-handoff.md
 reports/demo/action-plan.md
 reports/demo/task-health-profile.md
 reports/demo/refinement-agenda.md
@@ -106,6 +108,7 @@ Clarity Guardian закрывает несколько реальных PM/engin
 - **Backlog grooming:** найти задачи без контекста, результата, метрик, срока или проверяемых критериев.
 - **Project review:** открыть один Project Pulse и сразу увидеть статус, next actions и какие отчёты читать дальше.
 - **Data onboarding:** проверить новый экспорт задач до анализа, чтобы не строить выводы на плохих данных.
+- **Team handoff:** увидеть, что нужно аналитику, разработчику и QA перед передачей задачи дальше.
 - **Refinement:** собрать список вопросов, решений и владельцев до старта разработки.
 - **Sprint planning:** оценить готовность задач, scope и внешние зависимости.
 - **Ownership review:** увидеть, у каких владельцев сконцентрированы рискованные задачи и где нет assignee.
@@ -132,6 +135,7 @@ Clarity Guardian закрывает несколько реальных PM/engin
 - large scope;
 - reopened/returned задачи;
 - DoR/DoD готовность;
+- готовность передачи между аналитиком, разработчиком и QA;
 - ownership gaps и концентрацию риска по assignee;
 - evidence gaps и traceability решений.
 
@@ -143,6 +147,7 @@ Clarity Guardian закрывает несколько реальных PM/engin
 | --- | --- |
 | Project Pulse | Первая страница demo bundle: executive summary, health score, focus areas, task spotlight и карта отчётов. |
 | Data Doctor | Предпроверка входных данных: сколько задач нормализовалось, где дубли, битые даты и слабое покрытие полей. |
+| Team Handoff Matrix | Матрица передачи задач между Analyst, Developer и QA: blockers, ready signals, meeting и open reports. |
 | Dashboard | Общая картина качества задач, Clarity Score, SMART Score, top problems и trend. |
 | Task Health Profile | Компактный профиль каждой задачи: что не так, какой риск и какой следующий шаг. |
 | Refinement Agenda | Готовая повестка refinement: что обсуждать, кто нужен и какое решение зафиксировать. |
@@ -173,6 +178,7 @@ npm run v2:report -- --input data/demo_tasks.json --out-dir reports/custom
 
 ```bash
 npm run data:doctor -- --input data/demo_tasks.json --output reports/data_doctor.md
+npm run team:handoff -- --input data/demo_tasks.json --output reports/team_handoff.md
 npm run task:health -- --input data/demo_tasks.json --output reports/task_health_profile.md
 npm run refinement:agenda -- --input data/demo_tasks.json --output reports/refinement_agenda.md
 npm run stakeholder:update -- --input data/demo_tasks.json --output reports/stakeholder_update.md
@@ -206,6 +212,8 @@ Clarity Score отвечает за качество описания задач
 **Project Pulse** - первый экран для команды и ревьюера. Он собирает health score, executive summary, focus areas, next actions, task spotlight и ссылки на остальные отчёты, чтобы demo bundle не выглядел россыпью файлов.
 
 **Data Doctor** проверяет, можно ли доверять входному JSON: обнаруживает dropped rows, нестабильные или дублирующиеся id, битые даты, проблемы status history и неполное покрытие ключевых полей.
+
+**Team Handoff Matrix** показывает, готова ли каждая задача для аналитика, разработчика и QA отдельно. Это помогает не смешивать разные виды неготовности: слабый problem framing, delivery blockers и QA gaps требуют разных владельцев и разных встреч.
 
 **Release Guard** смотрит на задачу как на часть релиза. Он не заменяет релизный процесс, а подсвечивает то, что нельзя выпускать без проверки: blockers, QA gaps, reopened history, risky domains и отсутствие rollback/fallback notes.
 
@@ -287,6 +295,7 @@ GitHub / Jira / Yandex Tracker / JSON / demo data
 src/analyze.ts             # анализ одной задачи для bot-flow
 src/task-model.ts          # единая модель задачи
 src/data-doctor.ts         # диагностика качества входного dataset
+src/team-handoff.ts        # role-based handoff Analyst / Developer / QA
 src/smart/                 # SMART Task Check
 src/analytics.ts           # dashboard, history, before/after, research data
 src/task-signals.ts        # общие сигналы задач

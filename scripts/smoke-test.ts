@@ -241,6 +241,42 @@ interface DataDoctorSmokeReport {
   }>;
 }
 
+interface TeamHandoffSmokeReport {
+  totalTasks?: number;
+  includedTasks?: number;
+  summary?: {
+    readyForDevelopment?: number;
+    blockedForDevelopment?: number;
+    readyForQa?: number;
+    blockedForQa?: number;
+    analystNeedsInput?: number;
+    totalRoleBlockers?: number;
+    roleDistribution?: Array<{
+      role?: string;
+      ready?: number;
+      needsInput?: number;
+      blocked?: number;
+    }>;
+  };
+  items?: Array<{
+    taskId?: string;
+    overallStatus?: string;
+    recommendedMeeting?: string;
+    analyst?: {
+      status?: string;
+      blockers?: string[];
+    };
+    developer?: {
+      status?: string;
+      blockers?: string[];
+    };
+    qa?: {
+      status?: string;
+      blockers?: string[];
+    };
+  }>;
+}
+
 interface EvidenceBriefSmokeReport {
   totalTasks?: number;
   includedTasks?: number;
@@ -1025,6 +1061,8 @@ function smokeV2Reports(): void {
   const actionPlanMarkdown = fs.readFileSync(path.join(outDir, 'action-plan.md'), 'utf8');
   const dataDoctor = readJson<DataDoctorSmokeReport>(path.join(outDir, 'data-doctor.json'));
   const dataDoctorMarkdown = fs.readFileSync(path.join(outDir, 'data-doctor.md'), 'utf8');
+  const teamHandoff = readJson<TeamHandoffSmokeReport>(path.join(outDir, 'team-handoff.json'));
+  const teamHandoffMarkdown = fs.readFileSync(path.join(outDir, 'team-handoff.md'), 'utf8');
   const decisionLedger = readJson<DecisionLedgerSmokeReport>(path.join(outDir, 'decision-ledger.json'));
   const decisionLedgerMarkdown = fs.readFileSync(path.join(outDir, 'decision-ledger.md'), 'utf8');
   const quickBugFix = readJson<QuickBugFixSmokeReport>(path.join(outDir, 'quick-bug-fix.json'));
@@ -1067,6 +1105,11 @@ function smokeV2Reports(): void {
   assert(typeof dataDoctor.dataQualityScore === 'number', 'Data Doctor should include data quality score');
   assert(Boolean((dataDoctor.fieldCoverage || []).some((field) => field.field === 'assignee')), 'Data Doctor should include field coverage');
   assert(dataDoctorMarkdown.includes('Data Doctor'), 'V2 demo should include Data Doctor markdown');
+  assert(teamHandoff.totalTasks === 8, 'V2 demo should include Team Handoff JSON');
+  assert((teamHandoff.summary?.totalRoleBlockers || 0) > 0, 'Team Handoff should include role blockers');
+  assert(Boolean((teamHandoff.summary?.roleDistribution || []).some((role) => role.role === 'QA')), 'Team Handoff should include role distribution');
+  assert((teamHandoff.items || []).length > 0, 'Team Handoff should include handoff items');
+  assert(teamHandoffMarkdown.includes('Team Handoff Matrix'), 'V2 demo should include Team Handoff markdown');
   assert(decisionLedger.totalTasks === 8, 'V2 demo should include Decision Ledger JSON');
   assert(decisionLedgerMarkdown.includes('Decision Traceability Matrix'), 'V2 demo should include Decision Ledger markdown');
   assert(quickBugFix.totalTasks === 8, 'V2 demo should include Quick Bug Fix JSON');

@@ -61,6 +61,10 @@ import {
   buildTaskHealthReport,
   formatTaskHealthMarkdown
 } from './task-health-profile';
+import {
+  buildTeamHandoffReport,
+  formatTeamHandoffMarkdown
+} from './team-handoff';
 import { createYandexTrackerProviderFromEnv } from './yandex-tracker';
 import {
   getStringArg,
@@ -163,6 +167,9 @@ async function main(): Promise<void> {
     includeReady: true
   });
   const stakeholderUpdate = buildStakeholderUpdateReport(records);
+  const teamHandoff = buildTeamHandoffReport(records, {
+    includeReady: true
+  });
 
   writeJsonFile(resolveOutputPath(outDir, 'dashboard.json'), dashboard);
   writeJsonFile(resolveOutputPath(outDir, 'before-after.json'), comparison);
@@ -178,6 +185,7 @@ async function main(): Promise<void> {
   writeJsonFile(resolveOutputPath(outDir, 'refinement-agenda.json'), refinementAgenda);
   writeJsonFile(resolveOutputPath(outDir, 'release-guard.json'), releaseGuard);
   writeJsonFile(resolveOutputPath(outDir, 'stakeholder-update.json'), stakeholderUpdate);
+  writeJsonFile(resolveOutputPath(outDir, 'team-handoff.json'), teamHandoff);
   writeHistoryJsonl(resolveOutputPath(outDir, 'clarity-history.jsonl'), records);
   writeTextFile(resolveOutputPath(outDir, 'dashboard.md'), formatDashboardMarkdown(dashboard));
   writeTextFile(resolveOutputPath(outDir, 'dashboard.html'), formatDashboardHtml(dashboard));
@@ -194,6 +202,7 @@ async function main(): Promise<void> {
   writeTextFile(resolveOutputPath(outDir, 'refinement-agenda.md'), formatRefinementAgendaMarkdown(refinementAgenda));
   writeTextFile(resolveOutputPath(outDir, 'release-guard.md'), formatReleaseGuardMarkdown(releaseGuard));
   writeTextFile(resolveOutputPath(outDir, 'stakeholder-update.md'), formatStakeholderUpdateMarkdown(stakeholderUpdate));
+  writeTextFile(resolveOutputPath(outDir, 'team-handoff.md'), formatTeamHandoffMarkdown(teamHandoff));
   writeTextFile(resolveOutputPath(outDir, 'tasks.csv'), formatTasksCsv(records));
 
   process.stdout.write(`Clarity Guardian V2 report generated in ${outDir}\n`);

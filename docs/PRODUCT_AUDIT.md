@@ -56,6 +56,8 @@
 - Добавлен `Data Doctor` как предпроверка входного dataset: dropped rows, duplicate ids, unstable ids, invalid dates, status history и coverage ключевых полей.
 - Добавлен отдельный CLI `npm run data:doctor`, чтобы новый экспорт из трекера можно было проверить до генерации управленческих отчётов.
 - V2 bundle теперь включает `data-doctor.md/json`, а Project Pulse содержит ссылку на Data Doctor в карте отчётов.
+- Добавлен `Team Handoff Matrix`: role-based отчёт для Analyst, Developer и QA с отдельными статусами, blockers, ready signals, recommended meeting и ссылками на нужные отчёты.
+- Добавлен отдельный CLI `npm run team:handoff`, а V2 bundle теперь включает `team-handoff.md/json`.
 
 ## Рекомендуемый demo-сценарий
 
@@ -63,12 +65,13 @@
 2. Показать `npm run demo` и открыть `reports/demo/index.html`.
 3. Через Project Pulse показать health score, focus areas, task spotlight и карту отчётов.
 4. Открыть `reports/demo/data-doctor.md`, чтобы показать контроль качества входных данных.
-5. Открыть `reports/demo/dashboard.html` и показать рядом Clarity Score и SMART Score: качество описания и качество постановки цели.
-6. Открыть `reports/demo/task-health-profile.md`, чтобы показать, как одна задача превращается в actionable-профиль.
-7. Открыть `reports/demo/refinement-agenda.md`, чтобы показать переход от findings к рабочей встрече.
-8. Открыть `reports/demo/decision-ledger.md`, чтобы показать зрелое PM-мышление: problem, evidence, decision, owner и risk control.
-9. Открыть `reports/demo/release-guard.md`, чтобы показать связь качества задач с release readiness.
-10. Открыть `reports/demo/retro-report.md`, чтобы связать ясность с трением в жизненном цикле задачи.
+5. Открыть `reports/demo/team-handoff.md`, чтобы показать разную готовность задач для аналитика, разработчика и QA.
+6. Открыть `reports/demo/dashboard.html` и показать рядом Clarity Score и SMART Score: качество описания и качество постановки цели.
+7. Открыть `reports/demo/task-health-profile.md`, чтобы показать, как одна задача превращается в actionable-профиль.
+8. Открыть `reports/demo/refinement-agenda.md`, чтобы показать переход от findings к рабочей встрече.
+9. Открыть `reports/demo/decision-ledger.md`, чтобы показать зрелое PM-мышление: problem, evidence, decision, owner и risk control.
+10. Открыть `reports/demo/release-guard.md`, чтобы показать связь качества задач с release readiness.
+11. Открыть `reports/demo/retro-report.md`, чтобы связать ясность с трением в жизненном цикле задачи.
 
 ## Вывод аудита
 

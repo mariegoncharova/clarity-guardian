@@ -138,6 +138,12 @@ const DEFAULT_REPORT_MAP: ProjectPulseReportLink[] = [
     openWhen: 'Нужно понять, какие задачи разбирать первыми.'
   },
   {
+    fileName: 'team-handoff.md',
+    title: 'Team Handoff Matrix',
+    purpose: 'Показывает готовность задач для Analyst, Developer и QA, роль-владельца блокера и нужный meeting.',
+    openWhen: 'Нужно передать задачи между ролями без потери контекста.'
+  },
+  {
     fileName: 'action-plan.md',
     title: 'Action Plan',
     purpose: 'Приоритизирует задачи, вопросы и конкретные правки описаний.',
