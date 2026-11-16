@@ -1136,6 +1136,10 @@ function smokeV2Reports(): void {
   const changeReview = readJson<{ summary: { changed: number; added: number; missing: number } }>(path.join(outDir, 'change-review.json'));
   assert(changeReview.summary.changed === 1 && changeReview.summary.added === 1 && changeReview.summary.missing === 1, 'Demo should distinguish changed, added, and missing tasks');
   assert(projectPulseHtml.includes('href="agent-handoff.md"') && projectPulseHtml.includes('href="change-review.md"'), 'Demo index should link to the new reports');
+  const pmAgentPreview = path.join(tmpDir, 'pm-agent-preview.json');
+  runNode(['dist/pm-agent.js', '--demo', '--output', pmAgentPreview]);
+  const pmAgent = readJson<{ mode: string; handoff?: unknown; changeReview?: unknown }>(pmAgentPreview);
+  assert(pmAgent.mode === 'local_preview' && Boolean(pmAgent.handoff) && Boolean(pmAgent.changeReview), 'PM Agent should run its local demo without a model');
   const standalonePulse = path.join(tmpDir, 'standalone-pulse.html');
   runNode(['dist/project-pulse.js', '--input', 'data/demo-tasks.json', '--output', standalonePulse]);
   assert(!fs.readFileSync(standalonePulse, 'utf8').includes('href="'), 'Standalone Project Pulse should not link to files it did not generate');
