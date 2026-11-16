@@ -4,7 +4,7 @@ import {
   loadConfig
 } from './config';
 
-import { normalizeText } from './utils';
+import { extractFirstMarkdownSection, normalizeText } from './utils';
 
 import type {
   ResolvedConfig,
@@ -102,12 +102,7 @@ function normalizeStatusHistory(values: unknown): StatusHistoryEntry[] {
 
 function buildUnifiedTaskBody(task: UnifiedTask, language: 'ru' | 'en'): string {
   const body = normalizeText(task.body);
-
-  if (body) {
-    return body;
-  }
-
-  const sections: string[] = [];
+  const sections = body ? [body] : [];
   const context = normalizeText(task.context);
   const expectedResult = normalizeText(task.expectedResult);
   const acceptanceCriteria = (task.acceptanceCriteria || [])
@@ -125,15 +120,15 @@ function buildUnifiedTaskBody(task: UnifiedTask, language: 'ru' | 'en'): string 
       acceptanceCriteria: '## Критерии приёмки'
     };
 
-  if (context) {
+  if (context && extractFirstMarkdownSection(body, ['Контекст', 'Context']) === null) {
     sections.push([headings.context, context].join('\n'));
   }
 
-  if (expectedResult) {
+  if (expectedResult && extractFirstMarkdownSection(body, ['Ожидаемый результат', 'Expected result', 'Expected outcome']) === null) {
     sections.push([headings.expectedResult, expectedResult].join('\n'));
   }
 
-  if (acceptanceCriteria.length > 0) {
+  if (acceptanceCriteria.length > 0 && extractFirstMarkdownSection(body, ['Критерии приёмки', 'Критерии приемки', 'Acceptance criteria']) === null) {
     sections.push([
       headings.acceptanceCriteria,
       ...acceptanceCriteria.map((item) => `- ${item}`)
@@ -181,6 +176,7 @@ export function taskPayloadToUnifiedTask(
     body: normalizeText(payload.body),
     url: payload.htmlUrl,
     projectKey: payload.repository,
+    repository: payload.repository,
     status: payload.isDraft ? 'Draft' : undefined,
     author: undefined,
     assignee: undefined,
@@ -261,6 +257,7 @@ export function normalizeUnifiedTask(raw: Record<string, unknown>, fallbackId = 
     body: normalizeTaskText(raw.body) || normalizeTaskText(raw.description),
     url: normalizeText(raw.url) || undefined,
     projectKey: normalizeText(raw.projectKey ?? raw.project) || undefined,
+    repository: normalizeTaskText(raw.repository) || undefined,
     queue: normalizeText(raw.queue) || undefined,
     status: normalizeText(raw.status) || undefined,
     assignee: normalizeText(raw.assignee) || undefined,
@@ -276,6 +273,8 @@ export function normalizeUnifiedTask(raw: Record<string, unknown>, fallbackId = 
     labels,
     context: normalizeTaskText(raw.context) || undefined,
     expectedResult: normalizeTaskText(raw.expectedResult) || normalizeTaskText(raw.expected_result) || undefined,
+    scope: normalizeTaskText(raw.scope) || undefined,
+    verification: normalizeTaskText(raw.verification) || undefined,
     acceptanceCriteria: normalizeList(raw.acceptanceCriteria ?? raw.acceptance_criteria),
     dependencies: normalizeList(raw.dependencies),
     workItemType,

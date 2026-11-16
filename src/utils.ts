@@ -91,18 +91,15 @@ export function extractMarkdownSection(markdown: string, heading: string): strin
   const normalized = normalizeText(markdown);
   const escapedHeading = heading.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-  const regex = new RegExp(
-    `^##\\s+${escapedHeading}\\s*\\n([\\s\\S]*?)(?=^##\\s+|\\n*$)`,
-    'im'
-  );
-
-  const match = normalized.match(regex);
+  const match = new RegExp(`^##[ \\t]+${escapedHeading}[ \\t]*$`, 'im').exec(normalized);
 
   if (!match) {
     return null;
   }
 
-  return normalizeText(match[1]);
+  const content = normalized.slice(match.index + match[0].length);
+  const nextHeading = content.search(/^##[ \t]+/m);
+  return normalizeText(nextHeading === -1 ? content : content.slice(0, nextHeading));
 }
 
 export function extractFirstMarkdownSection(

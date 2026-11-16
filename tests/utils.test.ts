@@ -5,8 +5,16 @@ import {
   csvEscape
 } from '../src/report-utils';
 import {
+  extractMarkdownSection,
   parseArgs
 } from '../src/utils';
+
+test('extractMarkdownSection keeps every line until the next heading at the same level', () => {
+  const markdown = '## Acceptance criteria\n- First\n- Second\n\n### Details\nExtra note\n\n## Verification\nRun the tests.';
+  assert.equal(extractMarkdownSection(markdown, 'Acceptance criteria'), '- First\n- Second\n\n### Details\nExtra note');
+  assert.equal(extractMarkdownSection(markdown, 'Verification'), 'Run the tests.');
+  assert.equal(extractMarkdownSection('## Acceptance criteria', 'Acceptance criteria'), '');
+});
 
 test('parseArgs supports --key value, --key=value, boolean flags, and -- terminator', () => {
   const args = parseArgs([

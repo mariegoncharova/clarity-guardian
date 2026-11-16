@@ -1131,6 +1131,11 @@ function smokeV2Reports(): void {
   }
   const evidenceBrief = readJson<{ totalTasks: number }>(path.join(outDir, 'evidence-brief.json'));
   assert(evidenceBrief.totalTasks === 8, 'V2 demo should include Evidence Brief JSON');
+  const handoff = readJson<{ summary: { readyForAgent: number; humanReview: number } }>(path.join(outDir, 'agent-handoff.json'));
+  assert(handoff.summary.readyForAgent > 0 && handoff.summary.humanReview > 0, 'Demo should show both agent-ready work and work needing human review');
+  const changeReview = readJson<{ summary: { changed: number; added: number; missing: number } }>(path.join(outDir, 'change-review.json'));
+  assert(changeReview.summary.changed === 1 && changeReview.summary.added === 1 && changeReview.summary.missing === 1, 'Demo should distinguish changed, added, and missing tasks');
+  assert(projectPulseHtml.includes('href="agent-handoff.md"') && projectPulseHtml.includes('href="change-review.md"'), 'Demo index should link to the new reports');
   const standalonePulse = path.join(tmpDir, 'standalone-pulse.html');
   runNode(['dist/project-pulse.js', '--input', 'data/demo-tasks.json', '--output', standalonePulse]);
   assert(!fs.readFileSync(standalonePulse, 'utf8').includes('href="'), 'Standalone Project Pulse should not link to files it did not generate');

@@ -161,6 +161,23 @@ export function getExpectedResult(task: UnifiedTask): string {
   );
 }
 
+export function getExecutionDetails(task: UnifiedTask): {
+  repository: string;
+  scope: string;
+  verification: string;
+} {
+  return {
+    repository: task.repository
+      || extractFirstMarkdownSection(task.body, ['Repository', 'Репозиторий'])
+      || (task.source === 'github' ? task.projectKey : undefined)
+      || '',
+    scope: task.scope || extractFirstMarkdownSection(task.body, ['Scope', 'Объём работ', 'Объем работ']) || '',
+    verification: task.verification
+      || extractFirstMarkdownSection(task.body, ['Verification', 'План проверки', 'Как проверить'])
+      || ''
+  };
+}
+
 export function getAcceptanceCriteria(task: UnifiedTask): string[] {
   const explicit = (task.acceptanceCriteria || [])
     .map((item) => normalizeText(item))
