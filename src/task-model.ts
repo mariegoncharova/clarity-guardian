@@ -15,6 +15,10 @@ import type {
   WorkItemType
 } from './types';
 
+function normalizeTaskText(value: unknown): string {
+  return typeof value === 'string' || typeof value === 'number' ? normalizeText(value) : '';
+}
+
 function normalizeList(values: unknown): string[] {
   if (typeof values === 'string') {
     return [normalizeText(values)].filter(Boolean);
@@ -25,7 +29,7 @@ function normalizeList(values: unknown): string[] {
   }
 
   return values
-    .map((value) => normalizeText(value))
+    .map(normalizeTaskText)
     .filter(Boolean);
 }
 
@@ -235,21 +239,26 @@ export function unifiedTaskToTaskPayload(
   };
 }
 
-export function normalizeUnifiedTask(raw: Record<string, unknown>): UnifiedTask {
+export function getStableTaskId(raw: Record<string, unknown>): string {
+  return normalizeTaskText(raw.id) || normalizeTaskText(raw.key);
+}
+
+export function normalizeUnifiedTask(raw: Record<string, unknown>, fallbackId = 'task'): UnifiedTask {
   const tags = normalizeList(raw.tags);
   const labels = normalizeList(raw.labels);
   const components = normalizeList(raw.components);
   const workItemType = normalizeWorkItemType(raw.workItemType ?? raw.taskType ?? raw.task_type ?? raw.type);
   const source = normalizeTaskSource(raw.source);
-  const id = normalizeText(raw.id ?? raw.key ?? raw.title ?? `task-${Date.now()}`);
+  const title = normalizeTaskText(raw.title) || normalizeTaskText(raw.summary);
+  const id = getStableTaskId(raw) || normalizeTaskText(raw.title) || fallbackId;
 
   return {
     id,
     source,
     type: raw.taskType === 'pr' || raw.type === 'pr' ? 'pr' : 'issue',
-    key: normalizeText(raw.key) || undefined,
-    title: normalizeText(raw.title ?? raw.summary),
-    body: normalizeText(raw.body ?? raw.description),
+    key: normalizeTaskText(raw.key) || undefined,
+    title,
+    body: normalizeTaskText(raw.body) || normalizeTaskText(raw.description),
     url: normalizeText(raw.url) || undefined,
     projectKey: normalizeText(raw.projectKey ?? raw.project) || undefined,
     queue: normalizeText(raw.queue) || undefined,
@@ -265,8 +274,8 @@ export function normalizeUnifiedTask(raw: Record<string, unknown>): UnifiedTask 
     statusHistory: normalizeStatusHistory(raw.statusHistory ?? raw.status_history),
     comments: normalizeList(raw.comments),
     labels,
-    context: normalizeText(raw.context) || undefined,
-    expectedResult: normalizeText(raw.expectedResult ?? raw.expected_result) || undefined,
+    context: normalizeTaskText(raw.context) || undefined,
+    expectedResult: normalizeTaskText(raw.expectedResult) || normalizeTaskText(raw.expected_result) || undefined,
     acceptanceCriteria: normalizeList(raw.acceptanceCriteria ?? raw.acceptance_criteria),
     dependencies: normalizeList(raw.dependencies),
     workItemType,
@@ -281,17 +290,29 @@ export function normalizeUnifiedTask(raw: Record<string, unknown>): UnifiedTask 
   };
 }
 
-export function normalizeUnifiedTasks(value: unknown): UnifiedTask[] {
-  const items = Array.isArray(value)
-    ? value
-    : typeof value === 'object' && value !== null && Array.isArray((value as { tasks?: unknown[] }).tasks)
-      ? (value as { tasks: unknown[] }).tasks
-      : [];
+export function isTaskRow(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
 
-  return items
-    .filter((item): item is Record<string, unknown> =>
-      typeof item === 'object' && item !== null
-    )
-    .map(normalizeUnifiedTask)
-    .filter((task) => task.title || task.body);
+export function getTaskRows(value: unknown): unknown[] | undefined {
+  if (Array.isArray(value)) {
+    return value;
+  }
+
+  return isTaskRow(value) && Array.isArray(value.tasks) ? value.tasks : undefined;
+}
+
+export function hasTaskDescription(task: UnifiedTask): boolean {
+  return Boolean(task.body || task.context || task.expectedResult || task.acceptanceCriteria?.length);
+}
+
+export function normalizeTaskRow(raw: Record<string, unknown>, index: number): UnifiedTask | undefined {
+  const task = normalizeUnifiedTask(raw, `row:${index}`);
+  return task.title || hasTaskDescription(task) ? task : undefined;
+}
+
+export function normalizeUnifiedTasks(value: unknown): UnifiedTask[] {
+  return (getTaskRows(value) || [])
+    .map((row, index) => isTaskRow(row) ? normalizeTaskRow(row, index) : undefined)
+    .filter((task): task is UnifiedTask => task !== undefined);
 }

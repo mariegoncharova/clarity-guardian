@@ -21,6 +21,27 @@ test('normalizeUnifiedTasks preserves numeric zero text fields and ignores empty
   assert.equal(task.clarityScore, undefined);
 });
 
+test('normalizeUnifiedTasks retains structured tasks and rejects non-text descriptions', () => {
+  const input = {
+    tasks: [
+      { id: ' ', key: 'CG-1', context: 'Users lose drafts.', expected_result: 'Keep the draft.' },
+      { summary: ' ', body: '', description: 'Restore the draft on reload.' },
+      { acceptance_criteria: ['A reload keeps the draft.'] },
+      { body: { invalid: true }, acceptance_criteria: [{}] },
+      []
+    ]
+  };
+
+  const tasks = normalizeUnifiedTasks(input);
+  assert.equal(tasks.length, 3);
+  assert.equal(tasks[0].id, 'CG-1');
+  assert.equal(tasks[0].expectedResult, 'Keep the draft.');
+  assert.equal(tasks[1].body, 'Restore the draft on reload.');
+  assert.deepEqual(tasks[2].acceptanceCriteria, ['A reload keeps the draft.']);
+  assert.notEqual(tasks[1].id, tasks[2].id);
+  assert.deepEqual(normalizeUnifiedTasks(input), tasks);
+});
+
 test('unifiedTaskToTaskPayload detects language from generated body sections', () => {
   const payload = unifiedTaskToTaskPayload({
     id: 'EN-1',

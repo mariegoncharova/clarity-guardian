@@ -88,6 +88,7 @@ reports/demo/refinement-agenda.md
 reports/demo/stakeholder-update.md
 reports/demo/release-guard.md
 reports/demo/retro-report.md
+reports/demo/evidence-brief.md
 reports/demo/decision-ledger.md
 reports/demo/quick-bug-fix.md
 reports/demo/ownership-risk.md
@@ -99,7 +100,7 @@ reports/demo/ownership-risk.md
 npm run verify
 ```
 
-`verify` запускает TypeScript checks, build, smoke tests, demo generation, основные отчёты и `npm audit`.
+`verify` запускает TypeScript checks, сборку, smoke- и unit-тесты, генерацию демо и основных отчётов, а также `npm audit`.
 
 ## Рабочие сценарии
 
@@ -173,6 +174,8 @@ npm run demo
 ```bash
 npm run v2:report -- --input data/demo_tasks.json --out-dir reports/custom
 ```
+
+JSON может содержать массив задач или объект с массивом `tasks`. Для анализа достаточно заголовка, описания или отдельного поля с контекстом, ожидаемым результатом либо критериями приёмки.
 
 Запустить отдельные отчёты:
 

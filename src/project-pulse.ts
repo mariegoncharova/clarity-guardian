@@ -649,7 +649,7 @@ export function buildProjectPulseReport(
   const dashboard = buildDashboard(records);
   const actionPlan = buildActionPlanReport(records);
   const decisionLedger = buildDecisionLedgerReport(records);
-  const evidenceBrief = buildEvidenceBriefReport(records);
+  const evidenceBrief = buildEvidenceBriefReport(records, { limit: records.length });
   const ownershipRisk = buildOwnershipRiskReport(records);
   const quickBugFix = buildQuickBugFixReport(records, { includeNeedsReview: true });
   const releaseGuard = buildReleaseGuardReport(records, { includeReady: true });
@@ -811,12 +811,14 @@ export function formatProjectPulseMarkdown(report: ProjectPulseReport): string {
     '## Task Spotlight',
     '',
     ...formatTaskSpotlight(report.taskSpotlight),
-    '',
-    '## Report Map',
-    '',
-    ...report.reportMap.map((link) =>
-      `- ${link.fileName} - ${link.title}: ${link.purpose} Open when: ${link.openWhen}`
-    )
+    ...(report.reportMap.length > 0 ? [
+      '',
+      '## Report Map',
+      '',
+      ...report.reportMap.map((link) =>
+        `- ${link.fileName} - ${link.title}: ${link.purpose} Open when: ${link.openWhen}`
+      )
+    ] : [])
   ].join('\n');
 }
 
@@ -843,9 +845,15 @@ function metricHtml(label: string, value: string | number, note: string): string
 }
 
 export function formatProjectPulseHtml(report: ProjectPulseReport): string {
-  const focusRows = report.focusAreas.map((focusArea) =>
-    `<tr><td><span class="badge ${focusArea.severity}">${htmlEscape(focusArea.severity)}</span></td><td>${htmlEscape(focusArea.title)}</td><td>${htmlEscape(focusArea.ownerRole)}</td><td>${htmlEscape(focusArea.reason)}</td><td>${htmlEscape(focusArea.nextAction)}</td><td>${focusArea.sourceReports.map((source) => `<a href="${htmlEscape(source)}">${htmlEscape(source)}</a>`).join('<br>')}</td></tr>`
-  ).join('');
+  const linkedReports = new Set(report.reportMap.map((reportLink) => reportLink.fileName));
+  const focusRows = report.focusAreas.map((focusArea) => {
+    const sources = focusArea.sourceReports.map((source) => {
+      const name = htmlEscape(source);
+      return linkedReports.has(source) ? `<a href="${name}">${name}</a>` : name;
+    }).join('<br>');
+
+    return `<tr><td><span class="badge ${focusArea.severity}">${htmlEscape(focusArea.severity)}</span></td><td>${htmlEscape(focusArea.title)}</td><td>${htmlEscape(focusArea.ownerRole)}</td><td>${htmlEscape(focusArea.reason)}</td><td>${htmlEscape(focusArea.nextAction)}</td><td>${sources}</td></tr>`;
+  }).join('');
   const taskRows = report.taskSpotlight.map((task) =>
     `<tr><td>${htmlEscape(task.taskId)}</td><td>${htmlEscape(task.title)}</td><td>${htmlEscape(task.priorityScore)}</td><td>${htmlEscape(task.clarityScore)}</td><td>${htmlEscape(task.smartScore)}</td><td>${htmlEscape(task.riskLevel)}</td><td>${htmlEscape(task.assignee || 'not assigned')}</td><td>${htmlEscape(task.nextAction)}</td></tr>`
   ).join('');
@@ -916,8 +924,7 @@ export function formatProjectPulseHtml(report: ProjectPulseReport): string {
     `<table><thead><tr><th>Severity</th><th>Focus</th><th>Owner</th><th>Reason</th><th>Next action</th><th>Reports</th></tr></thead><tbody>${focusRows || '<tr><td colspan="6">No focus areas found.</td></tr>'}</tbody></table>`,
     '<h2>Task Spotlight</h2>',
     `<table><thead><tr><th>Task</th><th>Title</th><th>Priority</th><th>Clarity</th><th>SMART</th><th>Risk</th><th>Assignee</th><th>Next action</th></tr></thead><tbody>${taskRows || '<tr><td colspan="8">No task spotlight items found.</td></tr>'}</tbody></table>`,
-    '<h2>Report Map</h2>',
-    `<ul class="report-map">${reportLinks}</ul>`,
+    ...(reportLinks ? ['<h2>Report Map</h2>', `<ul class="report-map">${reportLinks}</ul>`] : []),
     '</main></body></html>'
   ].join('');
 }
@@ -954,7 +961,8 @@ async function main(): Promise<void> {
   const tasks = normalizeUnifiedTasks(readJsonFile<unknown>(inputPath));
   const records = analyzeUnifiedTasks(tasks);
   const report = buildProjectPulseReport(records, {
-    spotlightLimit: parseNumberArg(args, 'spotlight-limit') ?? 7
+    spotlightLimit: parseNumberArg(args, 'spotlight-limit') ?? 7,
+    reportMap: []
   });
   const format = inferProjectPulseFormat(outputPath, getStringArg(args, 'format'));
 

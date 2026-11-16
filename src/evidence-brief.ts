@@ -561,7 +561,7 @@ function getDecision(
   return 'clarify_before_start';
 }
 
-function toEvidenceBriefItem(record: TaskAnalysisRecord): EvidenceBriefItem {
+export function analyzeTaskEvidence(record: TaskAnalysisRecord): EvidenceBriefItem {
   const evidenceGaps = buildEvidenceGaps(record);
   const priorityScore = getPriorityScore(record, evidenceGaps);
   const questions = unique([
@@ -630,7 +630,7 @@ export function buildEvidenceBriefReport(
   const limit = options.limit ?? 10;
   const minPriorityScore = options.minPriorityScore ?? 25;
   const items = records
-    .map(toEvidenceBriefItem)
+    .map(analyzeTaskEvidence)
     .filter((item) =>
       options.includeReady ||
       (item.evidenceGaps.length > 0 && item.priorityScore >= minPriorityScore)

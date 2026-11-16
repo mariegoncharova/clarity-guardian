@@ -5,7 +5,11 @@ import {
   writeReport
 } from './report-utils';
 import {
-  normalizeUnifiedTasks
+  getStableTaskId,
+  getTaskRows,
+  hasTaskDescription,
+  isTaskRow,
+  normalizeTaskRow
 } from './task-model';
 import {
   getStringArg,
@@ -87,42 +91,8 @@ function clampScore(value: number): number {
   return Math.min(100, Math.max(0, round(value)));
 }
 
-function getRawItems(value: unknown): unknown[] {
-  if (Array.isArray(value)) {
-    return value;
-  }
-
-  if (
-    typeof value === 'object' &&
-    value !== null &&
-    Array.isArray((value as { tasks?: unknown[] }).tasks)
-  ) {
-    return (value as { tasks: unknown[] }).tasks;
-  }
-
-  return [];
-}
-
-function asRecord(value: unknown): Record<string, unknown> | null {
-  return typeof value === 'object' && value !== null
-    ? value as Record<string, unknown>
-    : null;
-}
-
-function getRawStableId(raw: Record<string, unknown>): string {
-  return normalizeText(raw.id ?? raw.key);
-}
-
 function getTaskId(task: UnifiedTask): string {
   return task.key || task.id;
-}
-
-function getRawTitle(raw: Record<string, unknown>): string {
-  return normalizeText(raw.title ?? raw.summary);
-}
-
-function getRawBody(raw: Record<string, unknown>): string {
-  return normalizeText(raw.body ?? raw.description ?? raw.context ?? raw.expectedResult);
 }
 
 function addIssue(issues: DataDoctorIssue[], issue: DataDoctorIssue): void {
@@ -249,8 +219,8 @@ function buildFieldCoverage(tasks: UnifiedTask[]): DataDoctorFieldCoverage[] {
   });
 }
 
-function inspectRawInput(rawItems: unknown[], normalizedTasks: UnifiedTask[], issues: DataDoctorIssue[]): void {
-  if (rawItems.length === 0) {
+function normalizeAndInspectRows(rawItems: unknown[] | undefined, issues: DataDoctorIssue[]): UnifiedTask[] {
+  if (!rawItems) {
     addIssue(issues, {
       code: 'empty_or_unsupported_input',
       severity: 'high',
@@ -259,53 +229,82 @@ function inspectRawInput(rawItems: unknown[], normalizedTasks: UnifiedTask[], is
       message: 'The input must be an array of tasks or an object with a tasks array.',
       recommendation: 'Export tracker data as JSON array or wrap it as { "tasks": [...] }.'
     });
-    return;
+    return [];
   }
 
-  const nonObjectItems = rawItems
-    .map((item, index) => ({ item, index }))
-    .filter(({ item }) => !asRecord(item));
+  if (rawItems.length === 0) {
+    addIssue(issues, {
+      code: 'empty_task_array',
+      severity: 'high',
+      title: 'Task export is empty',
+      taskIds: [],
+      message: 'The input format is valid, but the export has no tasks.',
+      recommendation: 'Check the tracker filters or select an export that contains tasks.'
+    });
+    return [];
+  }
 
-  if (nonObjectItems.length > 0) {
+  const tasks: UnifiedTask[] = [];
+  const nonObjectRows: string[] = [];
+  const droppedRows: string[] = [];
+  const unstableIdRows: string[] = [];
+
+  for (const [index, row] of rawItems.entries()) {
+    const rowId = `row:${index}`;
+
+    if (!isTaskRow(row)) {
+      nonObjectRows.push(rowId);
+      continue;
+    }
+
+    const task = normalizeTaskRow(row, index);
+
+    if (!task) {
+      droppedRows.push(rowId);
+      continue;
+    }
+
+    tasks.push(task);
+
+    if (!getStableTaskId(row)) {
+      unstableIdRows.push(rowId);
+    }
+  }
+
+  if (nonObjectRows.length > 0) {
     addIssue(issues, {
       code: 'non_object_items',
       severity: 'high',
       title: 'Some input rows are not objects',
-      taskIds: nonObjectItems.map(({ index }) => `row:${index}`),
-      message: `${nonObjectItems.length} rows cannot be normalized because they are not task objects.`,
+      taskIds: nonObjectRows,
+      message: `Rows with a non-object value: ${nonObjectRows.length}.`,
       recommendation: 'Remove non-object rows or map them to UnifiedTask-compatible objects.'
     });
   }
 
-  const droppedObjects = rawItems
-    .map((item, index) => ({ raw: asRecord(item), index }))
-    .filter(({ raw }) => raw && !getRawTitle(raw) && !getRawBody(raw));
-
-  if (droppedObjects.length > 0 || normalizedTasks.length < rawItems.filter(asRecord).length) {
+  if (droppedRows.length > 0) {
     addIssue(issues, {
       code: 'dropped_tasks',
       severity: 'high',
       title: 'Some rows were dropped during normalization',
-      taskIds: droppedObjects.map(({ index }) => `row:${index}`),
-      message: `${rawItems.length - normalizedTasks.length} raw rows did not become analyzable tasks.`,
-      recommendation: 'Ensure each task has at least title/summary or body/description/context fields.'
+      taskIds: droppedRows,
+      message: `${droppedRows.length} of the task objects have no analyzable content.`,
+      recommendation: 'Include a title, description, context, expected result or acceptance criteria for each task.'
     });
   }
-
-  const unstableIdRows = rawItems
-    .map((item, index) => ({ raw: asRecord(item), index }))
-    .filter(({ raw }) => raw && !getRawStableId(raw));
 
   if (unstableIdRows.length > 0) {
     addIssue(issues, {
       code: 'missing_stable_id',
       severity: 'medium',
       title: 'Tasks are missing stable id or key',
-      taskIds: unstableIdRows.map(({ index }) => `row:${index}`),
+      taskIds: unstableIdRows,
       message: `${unstableIdRows.length} rows do not have id or key, so history and deduplication can become unstable.`,
       recommendation: 'Include stable tracker id/key in every export row.'
     });
   }
+
+  return tasks;
 }
 
 function inspectNormalizedTasks(tasks: UnifiedTask[], issues: DataDoctorIssue[]): void {
@@ -328,7 +327,7 @@ function inspectNormalizedTasks(tasks: UnifiedTask[], issues: DataDoctorIssue[])
     });
   }
 
-  const missingBodyTasks = tasks.filter((task) => !normalizeText(task.body) && !task.context && !task.expectedResult);
+  const missingBodyTasks = tasks.filter((task) => !hasTaskDescription(task));
   const missingAssigneeTasks = tasks.filter((task) => !task.assignee);
   const missingWorkItemTypeTasks = tasks.filter((task) => !task.workItemType);
   const missingPriorityTasks = tasks.filter((task) => !task.priority);
@@ -461,8 +460,12 @@ function buildRecommendations(report: Omit<DataDoctorReport, 'recommendations'>)
   const codes = new Set(report.issues.map((issue) => issue.code));
   const recommendations: string[] = [];
 
-  if (codes.has('empty_or_unsupported_input') || codes.has('dropped_tasks')) {
-    recommendations.push('Fix input shape first: Clarity Guardian needs task objects with title/summary or body/description.');
+  if (codes.has('empty_task_array')) {
+    recommendations.push('Select an export that contains tasks before generating reports.');
+  }
+
+  if (codes.has('empty_or_unsupported_input') || codes.has('non_object_items') || codes.has('dropped_tasks')) {
+    recommendations.push('Use an array of task objects with a title or description fields, including structured requirements.');
   }
 
   if (codes.has('duplicate_task_ids') || codes.has('missing_stable_id')) {
@@ -496,11 +499,11 @@ export function buildDataDoctorReport(
     generatedAt?: string;
   } = {}
 ): DataDoctorReport {
-  const rawItems = getRawItems(rawInput);
-  const normalizedTasks = normalizeUnifiedTasks(rawInput);
+  const rawItems = getTaskRows(rawInput);
+  const rawItemsCount = rawItems?.length ?? 0;
   const issues: DataDoctorIssue[] = [];
+  const normalizedTasks = normalizeAndInspectRows(rawItems, issues);
 
-  inspectRawInput(rawItems, normalizedTasks, issues);
   inspectNormalizedTasks(normalizedTasks, issues);
 
   const fieldCoverage = buildFieldCoverage(normalizedTasks);
@@ -508,9 +511,9 @@ export function buildDataDoctorReport(
     generatedAt: options.generatedAt || new Date().toISOString(),
     status: 'healthy' as DataDoctorStatus,
     dataQualityScore: 100,
-    rawItemsCount: rawItems.length,
+    rawItemsCount,
     normalizedTasksCount: normalizedTasks.length,
-    droppedItemsCount: Math.max(0, rawItems.length - normalizedTasks.length),
+    droppedItemsCount: rawItemsCount - normalizedTasks.length,
     summary: {
       highIssues: countIssues(issues, 'high'),
       mediumIssues: countIssues(issues, 'medium'),

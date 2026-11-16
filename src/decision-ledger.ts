@@ -2,7 +2,7 @@ import {
   analyzeUnifiedTasks
 } from './analytics';
 import {
-  buildEvidenceBriefReport
+  analyzeTaskEvidence
 } from './evidence-brief';
 import {
   checkDefinitionOfDone
@@ -446,10 +446,8 @@ function buildRaci(record: TaskAnalysisRecord, evidence: EvidenceBriefItem | und
   };
 }
 
-function toDecisionLedgerItem(
-  record: TaskAnalysisRecord,
-  evidence: EvidenceBriefItem | undefined
-): DecisionLedgerItem {
+function toDecisionLedgerItem(record: TaskAnalysisRecord): DecisionLedgerItem {
+  const evidence = analyzeTaskEvidence(record);
   const risk = analyzeTaskRisk(record.task);
   const dor = checkDefinitionOfReady(record.task);
   const dod = checkDefinitionOfDone(record.task);
@@ -516,17 +514,8 @@ export function buildDecisionLedgerReport(
 ): DecisionLedgerReport {
   const limit = options.limit ?? 10;
   const minTraceabilityScore = options.minTraceabilityScore ?? 100;
-  const evidenceReport = buildEvidenceBriefReport(records, {
-    includeReady: true,
-    limit: records.length,
-    minPriorityScore: 0,
-    generatedAt: options.generatedAt
-  });
-  const evidenceByTaskId = new Map(
-    evidenceReport.items.map((item) => [item.taskId, item])
-  );
   const items = records
-    .map((record) => toDecisionLedgerItem(record, evidenceByTaskId.get(getTaskId(record.task))))
+    .map(toDecisionLedgerItem)
     .filter((item) =>
       options.includeReady ||
       item.decisionStatus !== 'decision_ready' ||

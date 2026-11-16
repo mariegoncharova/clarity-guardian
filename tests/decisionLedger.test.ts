@@ -60,6 +60,18 @@ test('buildDecisionLedgerReport detects missing decision traceability', () => {
   assert.equal(ready.missingLinks.length, 0);
 });
 
+test('Decision Ledger keeps evidence separate for tasks sharing a tracker key', () => {
+  const tasks = normalizeUnifiedTasks([
+    { id: 'repo-a:1', key: '1', title: 'Drafts in repo A', context: 'Users report lost drafts.' },
+    { id: 'repo-b:1', key: '1', title: 'Drafts in repo B', context: 'Users report lost drafts in support tickets.' }
+  ]);
+  const report = buildDecisionLedgerReport(analyzeUnifiedTasks(tasks), { includeReady: true });
+  const titlesWithEvidence = report.items
+    .filter((item) => item.traceLinks.some((link) => link.key === 'evidence' && link.present))
+    .map((item) => item.title);
+  assert.deepEqual(titlesWithEvidence, ['Drafts in repo B']);
+});
+
 test('buildDecisionLedgerReport flags high-risk tasks that need validation control', () => {
   const tasks = normalizeUnifiedTasks([
     {

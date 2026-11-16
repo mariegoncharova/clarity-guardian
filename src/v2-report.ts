@@ -25,6 +25,10 @@ import {
   formatDecisionLedgerMarkdown
 } from './decision-ledger';
 import {
+  buildEvidenceBriefReport,
+  formatEvidenceBriefMarkdown
+} from './evidence-brief';
+import {
   buildQuickBugFixReport,
   formatQuickBugFixMarkdown
 } from './quick-bug-fix';
@@ -75,10 +79,6 @@ import {
   writeTextFile
 } from './utils';
 
-import type {
-  UnifiedTask
-} from './types';
-
 const DEFAULT_DEMO_DATA_PATH = 'data/demo-tasks.json';
 const DEFAULT_OUT_DIR = 'reports/demo';
 
@@ -90,33 +90,13 @@ function resolveOutputPath(outDir: string, fileName: string): string {
   return path.join(outDir, fileName);
 }
 
-function loadTasksFromFile(filePath: string): UnifiedTask[] {
-  return normalizeUnifiedTasks(readJsonFile<unknown>(filePath));
-}
-
-function loadRawTasksInput(args: Record<string, string | boolean>): unknown | undefined {
+async function loadRawTasks(args: Record<string, string | boolean>): Promise<unknown> {
   const inputPath = getStringArg(args, 'input');
   const source = getStringArg(args, 'source');
   const demo = args.demo === true || source === 'demo';
 
   if (demo) {
     return readJsonFile<unknown>(getStringArg(args, 'demo-data') || DEFAULT_DEMO_DATA_PATH);
-  }
-
-  if (inputPath) {
-    return readJsonFile<unknown>(inputPath);
-  }
-
-  return undefined;
-}
-
-async function loadTasks(args: Record<string, string | boolean>): Promise<UnifiedTask[]> {
-  const inputPath = getStringArg(args, 'input');
-  const source = getStringArg(args, 'source');
-  const demo = args.demo === true || source === 'demo';
-
-  if (demo) {
-    return loadTasksFromFile(getStringArg(args, 'demo-data') || DEFAULT_DEMO_DATA_PATH);
   }
 
   if (source === 'yandex') {
@@ -129,7 +109,7 @@ async function loadTasks(args: Record<string, string | boolean>): Promise<Unifie
   }
 
   if (inputPath) {
-    return loadTasksFromFile(inputPath);
+    return readJsonFile<unknown>(inputPath);
   }
 
   throw makeCliError('Передай --demo, --source yandex или --input tasks.json');
@@ -140,8 +120,8 @@ async function main(): Promise<void> {
   const outDir = getStringArg(args, 'out-dir') || DEFAULT_OUT_DIR;
   const analyzedAt = getStringArg(args, 'analyzed-at') || new Date().toISOString();
   const config = loadConfig(getStringArg(args, 'config'));
-  const rawTasksInput = loadRawTasksInput(args);
-  const tasks = await loadTasks(args);
+  const rawTasksInput = await loadRawTasks(args);
+  const tasks = normalizeUnifiedTasks(rawTasksInput);
 
   ensureDir(outDir);
 
@@ -150,8 +130,9 @@ async function main(): Promise<void> {
   const comparison = compareBeforeAfter(records);
   const research = buildResearchData(records);
   const actionPlan = buildActionPlanReport(records);
-  const dataDoctor = buildDataDoctorReport(rawTasksInput ?? tasks, { generatedAt: analyzedAt });
+  const dataDoctor = buildDataDoctorReport(rawTasksInput, { generatedAt: analyzedAt });
   const decisionLedger = buildDecisionLedgerReport(records);
+  const evidenceBrief = buildEvidenceBriefReport(records, { generatedAt: analyzedAt });
   const quickBugFix = buildQuickBugFixReport(records, { includeNeedsReview: true });
   const ownershipRisk = buildOwnershipRiskReport(records);
   const projectPulse = buildProjectPulseReport(records, { generatedAt: analyzedAt });
@@ -178,6 +159,7 @@ async function main(): Promise<void> {
   writeJsonFile(resolveOutputPath(outDir, 'action-plan.json'), actionPlan);
   writeJsonFile(resolveOutputPath(outDir, 'data-doctor.json'), dataDoctor);
   writeJsonFile(resolveOutputPath(outDir, 'decision-ledger.json'), decisionLedger);
+  writeJsonFile(resolveOutputPath(outDir, 'evidence-brief.json'), evidenceBrief);
   writeJsonFile(resolveOutputPath(outDir, 'quick-bug-fix.json'), quickBugFix);
   writeJsonFile(resolveOutputPath(outDir, 'ownership-risk.json'), ownershipRisk);
   writeJsonFile(resolveOutputPath(outDir, 'project-pulse.json'), projectPulse);
@@ -194,6 +176,7 @@ async function main(): Promise<void> {
   writeTextFile(resolveOutputPath(outDir, 'action-plan.md'), formatActionPlanMarkdown(actionPlan));
   writeTextFile(resolveOutputPath(outDir, 'data-doctor.md'), formatDataDoctorMarkdown(dataDoctor));
   writeTextFile(resolveOutputPath(outDir, 'decision-ledger.md'), formatDecisionLedgerMarkdown(decisionLedger));
+  writeTextFile(resolveOutputPath(outDir, 'evidence-brief.md'), formatEvidenceBriefMarkdown(evidenceBrief));
   writeTextFile(resolveOutputPath(outDir, 'quick-bug-fix.md'), formatQuickBugFixMarkdown(quickBugFix));
   writeTextFile(resolveOutputPath(outDir, 'ownership-risk.md'), formatOwnershipRiskMarkdown(ownershipRisk));
   writeTextFile(resolveOutputPath(outDir, 'project-pulse.md'), formatProjectPulseMarkdown(projectPulse));
