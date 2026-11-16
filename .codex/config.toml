@@ -1,0 +1,4 @@
+[mcp_servers.clarity_guardian]
+command = "node"
+args = ["dist/pm-mcp.js", "--codex"]
+cwd = ".."
