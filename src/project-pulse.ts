@@ -144,6 +144,12 @@ const DEFAULT_REPORT_MAP: ProjectPulseReportLink[] = [
     openWhen: 'Нужно передать задачи между ролями без потери контекста.'
   },
   {
+    fileName: 'agent-handoff.md',
+    title: 'Передача задач AI-агенту',
+    purpose: 'Проверяет контекст, границы, репозиторий, критерии приёмки и план проверки.',
+    openWhen: 'Нужно выбрать задачу для AI-агента или решить, где требуется проверка человеком.'
+  },
+  {
     fileName: 'action-plan.md',
     title: 'Action Plan',
     purpose: 'Приоритизирует задачи, вопросы и конкретные правки описаний.',
@@ -204,6 +210,13 @@ const DEFAULT_REPORT_MAP: ProjectPulseReportLink[] = [
     openWhen: 'Нужен внешний анализ или портфолио-артефакт.'
   }
 ];
+
+const CHANGE_REVIEW_LINK: ProjectPulseReportLink = {
+  fileName: 'change-review.md',
+  title: 'Изменения после согласования',
+  purpose: 'Показывает, где изменились объём работ, критерии приёмки, сроки и другие согласованные условия.',
+  openWhen: 'Нужно сверить текущую постановку с согласованным снимком.'
+};
 
 function round(value: number): number {
   return Math.round(value * 10) / 10;
@@ -644,6 +657,7 @@ export function buildProjectPulseReport(
     generatedAt?: string;
     spotlightLimit?: number;
     reportMap?: ProjectPulseReportLink[];
+    includeChangeReview?: boolean;
   } = {}
 ): ProjectPulseReport {
   const dashboard = buildDashboard(records);
@@ -703,7 +717,9 @@ export function buildProjectPulseReport(
     focusAreas,
     taskSpotlight: buildTaskSpotlight(records, options.spotlightLimit ?? 7),
     nextActions: buildNextActions(focusAreas, status),
-    reportMap: options.reportMap || DEFAULT_REPORT_MAP
+    reportMap: options.reportMap ?? (options.includeChangeReview
+      ? [...DEFAULT_REPORT_MAP, CHANGE_REVIEW_LINK]
+      : DEFAULT_REPORT_MAP)
   };
 }
 

@@ -1,0 +1,77 @@
+[
+  {
+    "id": "demo-before-1",
+    "key": "CG-101",
+    "source": "demo",
+    "projectKey": "CHECKOUT",
+    "title": "Пофиксить оплату",
+    "body": "Оплата иногда не работает. Надо срочно пофиксить как обсуждали.",
+    "assignee": "Dmitry Developer"
+  },
+  {
+    "id": "demo-before-2",
+    "key": "CG-102",
+    "source": "demo",
+    "projectKey": "CHECKOUT",
+    "title": "Добавить новый экран успеха",
+    "body": "## Контекст\nНужно сделать новый экран.\n\n## Ожидаемый результат\nСделать красиво и понятно.\n\nПотом уточним детали.",
+    "assignee": "Anna Frontend"
+  },
+  {
+    "id": "demo-before-3",
+    "key": "CG-103",
+    "source": "demo",
+    "projectKey": "CHECKOUT",
+    "title": "Story: улучшить checkout",
+    "body": "## Context\nUsers complain about checkout.\n\n## Expected result\nImprove UX everywhere.\n\n## Acceptance criteria\n- TBD",
+    "assignee": "Ivan Backend"
+  },
+  {
+    "id": "demo-before-4",
+    "key": "CG-104",
+    "source": "demo",
+    "projectKey": "PROFILE",
+    "title": "Обновить профиль пользователя",
+    "body": "## Контекст\nПользователь не понимает, где изменить email.\n\n## Ожидаемый результат\nВ профиле появляется понятная ссылка на изменение email.\n\n## Критерии приёмки\n- Ссылка видна авторизованному пользователю.\n- При клике открывается форма изменения email.\n\nКак обсуждали, финальный текст подсказки согласуем позже.",
+    "assignee": "Anna Frontend"
+  },
+  {
+    "id": "demo-after-1",
+    "key": "CG-201",
+    "source": "demo",
+    "projectKey": "CHECKOUT",
+    "title": "Bug: 3DS payment returns user to loading state",
+    "body": "## Context\nAfter successful 3DS confirmation, some buyers return to checkout and see an endless loading state. This blocks paid orders and increases support tickets.\n\n## Steps to reproduce\n- Start card payment as a buyer.\n- Complete 3DS confirmation in the bank flow.\n- Return to checkout.\n\n## Actual result\nCheckout stays in loading state and the order is not visibly confirmed.\n\n## Expected result\nThe buyer sees the success page, and the order status is paid.\n\n## Acceptance criteria\n- Successful 3DS redirects the buyer to the success page.\n- The order status changes to paid.\n- Bank errors show a clear retry message.\n- QA checks desktop and mobile checkout.",
+    "assignee": "Ivan Backend"
+  },
+  {
+    "id": "demo-after-2",
+    "key": "CG-202",
+    "source": "demo",
+    "projectKey": "CHECKOUT",
+    "title": "Story: checkout success page explains payment status",
+    "body": "## Context\nBuyers need a clear confirmation after payment, because support receives questions about whether the order was paid.\n\n## User story\nAs a buyer, I want to see a success page after payment, so that I know my order is paid and what happens next.\n\n## Expected result\nAfter successful payment, the buyer sees order number, paid status, delivery summary, and next step.\n\n## Acceptance criteria\n- Success page shows order number and paid status.\n- Delivery summary is visible for delivery orders.\n- The page has a retry-safe state after refresh.\n- QA checks desktop, mobile, and a11y labels.",
+    "assignee": "Anna Frontend"
+  },
+  {
+    "id": "demo-after-3",
+    "key": "CG-203",
+    "source": "demo",
+    "projectKey": "PROFILE",
+    "title": "Add email change hint to user profile",
+    "body": "## Context\nUsers contact support because they cannot find where to change email. The profile page should make the path visible.\n\n## Expected result\nAn authenticated user sees a clear email change hint near the email field and can open the change flow.\n\n## Acceptance criteria\n- Hint is visible only to authenticated users.\n- Hint text explains that email confirmation is required.\n- Clicking the hint opens the email change flow.\n- QA checks the mobile layout for active users.",
+    "repository": "demo-store/profile-web",
+    "scope": "Update the profile email settings view for active users. Keep the email change API as it is.",
+    "verification": "Open the profile as an active user and check the email hint in a mobile viewport.",
+    "deadline": "2026-04-13",
+    "assignee": "Dmitry Developer"
+  },
+  {
+    "id": "demo-archived-1",
+    "key": "CG-200",
+    "source": "demo",
+    "projectKey": "PROFILE",
+    "title": "Draft a separate help page for email settings",
+    "body": "The initial plan included a separate help page for email settings."
+  }
+]

@@ -13,6 +13,8 @@ import {
   buildActionPlanReport,
   formatActionPlanMarkdown
 } from './action-plan';
+import { buildAgentHandoffReport, formatAgentHandoffMarkdown } from './agent-handoff';
+import { buildChangeReview, formatChangeReviewMarkdown } from './change-review';
 import {
   loadConfig
 } from './config';
@@ -80,6 +82,7 @@ import {
 } from './utils';
 
 const DEFAULT_DEMO_DATA_PATH = 'data/demo-tasks.json';
+const DEFAULT_DEMO_BASELINE_PATH = 'data/demo-scope-baseline.json';
 const DEFAULT_OUT_DIR = 'reports/demo';
 
 function ensureDir(dirPath: string): void {
@@ -122,6 +125,9 @@ async function main(): Promise<void> {
   const config = loadConfig(getStringArg(args, 'config'));
   const rawTasksInput = await loadRawTasks(args);
   const tasks = normalizeUnifiedTasks(rawTasksInput);
+  const usesDefaultDemo = (args.demo === true || args.source === 'demo') && !getStringArg(args, 'demo-data');
+  const baselinePath = getStringArg(args, 'baseline') || (usesDefaultDemo ? DEFAULT_DEMO_BASELINE_PATH : undefined);
+  const changeReview = baselinePath ? buildChangeReview(readJsonFile(baselinePath), rawTasksInput) : undefined;
 
   ensureDir(outDir);
 
@@ -130,12 +136,16 @@ async function main(): Promise<void> {
   const comparison = compareBeforeAfter(records);
   const research = buildResearchData(records);
   const actionPlan = buildActionPlanReport(records);
+  const agentHandoff = buildAgentHandoffReport(records);
   const dataDoctor = buildDataDoctorReport(rawTasksInput, { generatedAt: analyzedAt });
   const decisionLedger = buildDecisionLedgerReport(records);
   const evidenceBrief = buildEvidenceBriefReport(records, { generatedAt: analyzedAt });
   const quickBugFix = buildQuickBugFixReport(records, { includeNeedsReview: true });
   const ownershipRisk = buildOwnershipRiskReport(records);
-  const projectPulse = buildProjectPulseReport(records, { generatedAt: analyzedAt });
+  const projectPulse = buildProjectPulseReport(records, {
+    generatedAt: analyzedAt,
+    includeChangeReview: changeReview !== undefined
+  });
   const taskHealth = buildTaskHealthReport(records, {
     includeHealthy: true,
     riskThresholds: config.riskThresholds
@@ -157,6 +167,7 @@ async function main(): Promise<void> {
   writeJsonFile(resolveOutputPath(outDir, 'task-history.json'), buildTaskScoreHistory(records));
   writeJsonFile(resolveOutputPath(outDir, 'analysis-records.json'), records);
   writeJsonFile(resolveOutputPath(outDir, 'action-plan.json'), actionPlan);
+  writeJsonFile(resolveOutputPath(outDir, 'agent-handoff.json'), agentHandoff);
   writeJsonFile(resolveOutputPath(outDir, 'data-doctor.json'), dataDoctor);
   writeJsonFile(resolveOutputPath(outDir, 'decision-ledger.json'), decisionLedger);
   writeJsonFile(resolveOutputPath(outDir, 'evidence-brief.json'), evidenceBrief);
@@ -174,6 +185,7 @@ async function main(): Promise<void> {
   writeTextFile(resolveOutputPath(outDir, 'retro-report.md'), formatRetroReportMarkdown(dashboard, comparison));
   writeTextFile(resolveOutputPath(outDir, 'research-report.md'), formatResearchReportMarkdown(research));
   writeTextFile(resolveOutputPath(outDir, 'action-plan.md'), formatActionPlanMarkdown(actionPlan));
+  writeTextFile(resolveOutputPath(outDir, 'agent-handoff.md'), formatAgentHandoffMarkdown(agentHandoff));
   writeTextFile(resolveOutputPath(outDir, 'data-doctor.md'), formatDataDoctorMarkdown(dataDoctor));
   writeTextFile(resolveOutputPath(outDir, 'decision-ledger.md'), formatDecisionLedgerMarkdown(decisionLedger));
   writeTextFile(resolveOutputPath(outDir, 'evidence-brief.md'), formatEvidenceBriefMarkdown(evidenceBrief));
@@ -187,6 +199,11 @@ async function main(): Promise<void> {
   writeTextFile(resolveOutputPath(outDir, 'stakeholder-update.md'), formatStakeholderUpdateMarkdown(stakeholderUpdate));
   writeTextFile(resolveOutputPath(outDir, 'team-handoff.md'), formatTeamHandoffMarkdown(teamHandoff));
   writeTextFile(resolveOutputPath(outDir, 'tasks.csv'), formatTasksCsv(records));
+
+  if (changeReview) {
+    writeJsonFile(resolveOutputPath(outDir, 'change-review.json'), changeReview);
+    writeTextFile(resolveOutputPath(outDir, 'change-review.md'), formatChangeReviewMarkdown(changeReview));
+  }
 
   process.stdout.write(`Clarity Guardian V2 report generated in ${outDir}\n`);
 }

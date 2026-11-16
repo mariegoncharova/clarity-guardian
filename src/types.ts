@@ -70,6 +70,7 @@ export interface UnifiedTask {
   key?: string;
   url?: string;
   projectKey?: string;
+  repository?: string;
   queue?: string;
   status?: string;
   assignee?: string;
@@ -86,6 +87,8 @@ export interface UnifiedTask {
   workItemType?: WorkItemType;
   context?: string;
   expectedResult?: string;
+  scope?: string;
+  verification?: string;
   acceptanceCriteria?: string[];
   dependencies?: string[];
   priority?: string;

@@ -2,6 +2,8 @@
 
 **Clarity Guardian** - локальный инструмент PM analytics для команд, которые хотят управлять качеством задач, снижать delivery-риск и обсуждать backlog на фактах, а не на ощущениях.
 
+Два сценария для PM в демо: проверить задачу перед передачей AI-агенту и сверить обновлённое ТЗ с версией, которую согласовал заказчик.
+
 Он анализирует задачи из GitHub, Jira, Yandex Tracker и JSON-файлов, приводит их к единой модели, считает **Clarity Score** и **SMART Score**, находит слабые требования, подсвечивает риски для разработки и QA, а затем собирает управленческие отчёты для planning, refinement, ретро и release readiness.
 
 Проект сделан как профессиональный CLI-first product demo: без базы данных, тяжёлого backend и внешних AI/API-зависимостей в ядре. Вся аналитика детерминирована, типизирована и запускается локально через TypeScript/Node.js, npm scripts и JSON-данные.
@@ -82,6 +84,8 @@ reports/demo/dashboard.html
 reports/demo/project-pulse.md
 reports/demo/data-doctor.md
 reports/demo/team-handoff.md
+reports/demo/agent-handoff.md
+reports/demo/change-review.md
 reports/demo/action-plan.md
 reports/demo/task-health-profile.md
 reports/demo/refinement-agenda.md
@@ -149,6 +153,8 @@ Clarity Guardian закрывает несколько реальных PM/engin
 | Project Pulse | Первая страница demo bundle: executive summary, health score, focus areas, task spotlight и карта отчётов. |
 | Data Doctor | Предпроверка входных данных: сколько задач нормализовалось, где дубли, битые даты и слабое покрытие полей. |
 | Team Handoff Matrix | Матрица передачи задач между Analyst, Developer и QA: blockers, ready signals, meeting и open reports. |
+| Agent Handoff | Показывает, какие задачи можно передать AI-агенту, где добавить детали и где подключить человека. Для подготовленных задач формирует бриф. |
+| Change Review | Сравнивает согласованный и текущий снимок. Показывает точные изменения условий, новые задачи и задачи, отсутствующие в текущей выгрузке. |
 | Dashboard | Общая картина качества задач, Clarity Score, SMART Score, top problems и trend. |
 | Task Health Profile | Компактный профиль каждой задачи: что не так, какой риск и какой следующий шаг. |
 | Refinement Agenda | Готовая повестка refinement: что обсуждать, кто нужен и какое решение зафиксировать. |
@@ -176,6 +182,20 @@ npm run v2:report -- --input data/demo_tasks.json --out-dir reports/custom
 ```
 
 JSON может содержать массив задач или объект с массивом `tasks`. Для анализа достаточно заголовка, описания или отдельного поля с контекстом, ожидаемым результатом либо критериями приёмки.
+
+### Передача AI-агенту и согласование изменений
+
+В демо откройте Agent Handoff из Project Pulse. Задача CG-203 содержит бриф с репозиторием, объёмом работ, критериями приёмки и планом проверки. Задача CG-204 затрагивает оплату и требует проверки человеком. Для своего экспорта добавьте поля `repository`, `scope` и `verification` или секции Markdown «Репозиторий», «Объём работ» и «План проверки». Отчёт работает локально. Передачу и приёмку подтверждает команда.
+
+В Change Review видно, что в CG-203 добавилась проверка для заблокированного аккаунта и изменился срок. Используйте в обоих снимках одинаковые фильтры и стабильные `id` или `key`. Сравнение учитывает источник и проект, отмечает изменения описания и условий, пропускает обновления статуса и останавливается на дублях. Файл согласованного снимка выбирает команда.
+
+```bash
+npm run agent:handoff -- --input data/demo-tasks.json --output reports/agent-handoff.md
+npm run change:review -- --baseline data/demo-scope-baseline.json --input data/demo-tasks.json --output reports/change-review.md
+npm run v2:report -- --input data/demo-tasks.json --baseline data/demo-scope-baseline.json --out-dir reports/custom
+```
+
+Оба отчёта доступны в Markdown и JSON. Без параметра `--baseline` пользовательский комплект отчётов включает Agent Handoff. Change Review появляется, когда передан согласованный снимок.
 
 Запустить отдельные отчёты:
 
