@@ -24,7 +24,7 @@ function toolCall(name: string, args: object, callId: string) {
   return { status: 'completed', output: [{ type: 'function_call', name, call_id: callId, arguments: JSON.stringify(args) }] };
 }
 
-function finalResponse(taskRef: string) {
+function finalResponse(taskRef: string, draftTasks: object[] = []) {
   return {
     status: 'completed',
     output: [{
@@ -36,7 +36,8 @@ function finalResponse(taskRef: string) {
           findings: [{ text: 'Срок изменился с 20 на 24 ноября.', taskRefs: [taskRef] }],
           nextActions: [{ text: 'PM подтверждает срок с заказчиком.', taskRefs: [taskRef] }],
           questions: [],
-          draftMessage: 'Добрый день! Предлагаю подтвердить срок 24 ноября.'
+          draftMessage: 'Добрый день! Предлагаю подтвердить срок 24 ноября.',
+          draftTasks
         })
       }]
     }]
@@ -131,4 +132,46 @@ test('PM agent keeps separate references for identical tracker IDs and for basel
   const changes = context.call('review_changes', { query: '', offset: 0 });
   assert.deepEqual(changes.refs, ['T1', 'T2', 'B1']);
   assert.equal(context.sources.get('B1')?.taskId, 'WEB-20');
+});
+
+const note = 'Добавить проверку подсказки профиля на мобильном экране.';
+const draftUpdate = {
+  operation: 'update',
+  targetRef: 'T1',
+  title: 'Проверить попап справки на мобильном экране',
+  context: 'Во время созвона команда попросила добавить проверку мобильного сценария.',
+  expectedResult: 'Подсказка открывает справку на мобильном экране.',
+  acceptanceCriteria: ['Ссылка открывается при ширине 390 px.'],
+  sourceQuote: note
+};
+
+async function reviewDrafts(drafts: object[]) {
+  const replies = [
+    toolCall('list_tasks', { query: 'WEB-12', scope: 'all', offset: 0 }, 'lookup'),
+    finalResponse('T1', drafts)
+  ];
+
+  return runPmAgent(createPmAgentTools([current]), 'Собери черновики из заметок.', {
+    apiKey: 'mock-api-key',
+    notes: `Итоги встречи.\n${note}`,
+    prepareTaskDrafts: true,
+    fetcher: async () => Response.json(replies.shift())
+  });
+}
+
+test('PM agent attaches a verified meeting quote and the existing task to an update draft', async () => {
+  const report = await reviewDrafts([
+    draftUpdate,
+    { ...draftUpdate, operation: 'create', targetRef: null, title: 'Подготовить примеры для проверки' }
+  ]);
+  assert.equal(report.draftTasks[0].target?.taskId, 'WEB-12');
+  assert.equal(report.draftTasks[0].sourceQuote, note);
+  assert.equal(report.draftTasks[1].target, null);
+  assert.match(formatPmAgentMarkdown(report), /Черновики задач для проверки/);
+});
+
+test('PM agent rejects unsupported quotes and duplicate proposals', async () => {
+  await assert.rejects(reviewDrafts([{ ...draftUpdate, sourceQuote: 'Срок согласовали с заказчиком.' }]), /не подтверждён цитатой/);
+  await assert.rejects(reviewDrafts([{ ...draftUpdate, operation: 'create', targetRef: null, title: current.title }]), /дублирует/);
+  await assert.rejects(reviewDrafts([draftUpdate, draftUpdate]), /отдельную текущую задачу/);
 });
