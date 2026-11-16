@@ -22,6 +22,7 @@
     "readiness": "npm run build --silent && node dist/readiness-report.js",
     "sprint-health": "npm run build --silent && node dist/sprint-health-report.js",
     "data:doctor": "npm run build --silent && node dist/data-doctor.js",
+    "pm:agent": "npm run build --silent && node dist/pm-agent.js",
     "agent:handoff": "npm run build --silent && node dist/agent-handoff.js",
     "change:review": "npm run build --silent && node dist/change-review.js",
     "team:handoff": "npm run build --silent && node dist/team-handoff.js",
