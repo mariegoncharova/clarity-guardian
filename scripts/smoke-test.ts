@@ -1126,6 +1126,14 @@ function smokeV2Reports(): void {
   assert(projectPulseMarkdown.includes('Project Pulse'), 'V2 demo should include Project Pulse markdown');
   assert(projectPulseHtml.includes('Clarity Guardian Project Pulse'), 'V2 demo should include Project Pulse index HTML');
   assert(projectPulseHtml.includes('href="dashboard.html"'), 'Project Pulse index should link to dashboard HTML');
+  for (const [, target] of projectPulseHtml.matchAll(/href="([^"]+)"/g)) {
+    assert(fs.existsSync(path.join(outDir, target)), `Project Pulse links to a missing file: ${target}`);
+  }
+  const evidenceBrief = readJson<{ totalTasks: number }>(path.join(outDir, 'evidence-brief.json'));
+  assert(evidenceBrief.totalTasks === 8, 'V2 demo should include Evidence Brief JSON');
+  const standalonePulse = path.join(tmpDir, 'standalone-pulse.html');
+  runNode(['dist/project-pulse.js', '--input', 'data/demo-tasks.json', '--output', standalonePulse]);
+  assert(!fs.readFileSync(standalonePulse, 'utf8').includes('href="'), 'Standalone Project Pulse should not link to files it did not generate');
   assert(taskHealth.summary?.totalTasks === 8, 'V2 demo should include Task Health Profile JSON');
   assert(taskHealthMarkdown.includes('Task Health Profile'), 'V2 demo should include Task Health Profile markdown');
   assert(refinementAgenda.totalTasks === 8, 'V2 demo should include Refinement Agenda JSON');

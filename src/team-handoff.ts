@@ -2,7 +2,7 @@ import {
   analyzeUnifiedTasks
 } from './analytics';
 import {
-  buildEvidenceBriefReport
+  analyzeTaskEvidence
 } from './evidence-brief';
 import {
   checkDefinitionOfDone
@@ -42,9 +42,6 @@ import {
   readJsonFile
 } from './utils';
 
-import type {
-  EvidenceBriefItem
-} from './evidence-brief';
 import type {
   ReportFormat
 } from './report-utils';
@@ -185,13 +182,10 @@ function roleStatus(score: number, blockers: string[], hardBlockerPatterns: RegE
   return 'ready';
 }
 
-function buildAnalystHandoff(
-  record: TaskAnalysisRecord,
-  evidence: EvidenceBriefItem | undefined
-): RoleHandoff {
+function buildAnalystHandoff(record: TaskAnalysisRecord): RoleHandoff {
   const blockers: string[] = [];
   const readySignals: string[] = [];
-  const evidenceGapCodes = evidence?.evidenceGaps.map((gap) => gap.code) || [];
+  const evidenceGapCodes = analyzeTaskEvidence(record).evidenceGaps.map((gap) => gap.code);
 
   if (hasContext(record.task)) {
     readySignals.push('problem context is present');
@@ -211,7 +205,7 @@ function buildAnalystHandoff(
     blockers.push('weak SMART framing');
   }
 
-  if (evidence && evidence.evidenceGaps.length === 0) {
+  if (evidenceGapCodes.length === 0) {
     readySignals.push('evidence brief has no gaps');
   } else if (evidenceGapCodes.includes('missing_evidence_source')) {
     blockers.push('missing evidence source');
@@ -395,12 +389,9 @@ function getOpenReports(item: Pick<TeamHandoffItem, 'analyst' | 'developer' | 'q
   return unique(reports);
 }
 
-function toTeamHandoffItem(
-  record: TaskAnalysisRecord,
-  evidenceByTaskId: Map<string, EvidenceBriefItem>
-): TeamHandoffItem {
+function toTeamHandoffItem(record: TaskAnalysisRecord): TeamHandoffItem {
   const taskId = getTaskId(record.task);
-  const analyst = buildAnalystHandoff(record, evidenceByTaskId.get(taskId));
+  const analyst = buildAnalystHandoff(record);
   const developer = buildDeveloperHandoff(record);
   const qa = buildQaHandoff(record);
   const baseItem = {
@@ -489,10 +480,8 @@ export function buildTeamHandoffReport(
     includeReady?: boolean;
   } = {}
 ): TeamHandoffReport {
-  const evidence = buildEvidenceBriefReport(records, { includeReady: true });
-  const evidenceByTaskId = new Map(evidence.items.map((item) => [item.taskId, item]));
   const allItems = records
-    .map((record) => toTeamHandoffItem(record, evidenceByTaskId))
+    .map(toTeamHandoffItem)
     .sort((a, b) => itemSortScore(b) - itemSortScore(a) || a.taskId.localeCompare(b.taskId));
   const items = allItems
     .filter((item) => options.includeReady || item.overallStatus !== 'ready')

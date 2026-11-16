@@ -65,6 +65,30 @@ test('buildTeamHandoffReport separates Analyst, Developer and QA blockers', () =
   assert.ok(report.recommendations.some((recommendation) => /Analyst|QA|Developer/i.test(recommendation)));
 });
 
+test('handoff checks evidence for every task, even when tracker keys repeat', () => {
+  const tasks = normalizeUnifiedTasks(Array.from({ length: 12 }, (_, index) => ({
+    id: `project-${index}:1`,
+    key: '1',
+    source: 'github',
+    title: `Restore draft in project ${index}`,
+    context: index === 0
+      ? 'Support tickets show that users report lost drafts on reload.'
+      : 'Users report lost drafts on reload.',
+    expectedResult: 'Restore the saved draft after reload.',
+    acceptanceCriteria: ['After reloading the page, the draft text is restored.'],
+    workItemType: 'task'
+  })));
+  const report = buildTeamHandoffReport(analyzeUnifiedTasks(tasks), { includeReady: true });
+
+  assert.equal(report.items.length, 12);
+  assert.deepEqual(
+    report.items
+      .filter((item) => !item.analyst.blockers.includes('missing evidence source'))
+      .map((item) => item.title),
+    ['Restore draft in project 0']
+  );
+});
+
 test('formatTeamHandoffMarkdown includes role distribution and handoff queue', () => {
   const tasks = normalizeUnifiedTasks([
     {

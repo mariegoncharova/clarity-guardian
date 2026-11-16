@@ -54,6 +54,35 @@ test('buildDataDoctorReport detects dropped rows, duplicate ids, unstable ids an
   assert.ok(report.recommendations.some((recommendation) => /Stabilize task identity/i.test(recommendation)));
 });
 
+test('Data Doctor identifies the exact dropped rows and counts accepted structured descriptions', () => {
+  const report = buildDataDoctorReport({
+    tasks: [
+      { id: '', key: 'DATA-1', context: 'Users lose their drafts.' },
+      null,
+      { id: 'DATA-3' },
+      { id: 'DATA-4', acceptance_criteria: ['A reload keeps the draft.'] }
+    ]
+  });
+
+  assert.equal(report.normalizedTasksCount, 2);
+  assert.equal(report.droppedItemsCount, 2);
+  assert.equal(report.summary.unstableIds, 0);
+  assert.equal(report.summary.missingBodyTasks, 0);
+  assert.deepEqual(report.issues.find(({ code }) => code === 'non_object_items')?.taskIds, ['row:1']);
+  const dropped = report.issues.find(({ code }) => code === 'dropped_tasks');
+  assert.deepEqual(dropped?.taskIds, ['row:2']);
+  assert.match(dropped?.message || '', /^1 /);
+});
+
+test('Data Doctor distinguishes a valid empty export from an unsupported format', () => {
+  const empty = buildDataDoctorReport({ tasks: [] });
+  assert.equal(empty.issues[0].code, 'empty_task_array');
+  assert.equal(empty.droppedItemsCount, 0);
+
+  const invalid = buildDataDoctorReport({ issues: [] });
+  assert.equal(invalid.issues[0].code, 'empty_or_unsupported_input');
+});
+
 test('formatDataDoctorMarkdown exposes dataset health and field coverage', () => {
   const report = buildDataDoctorReport([
     {

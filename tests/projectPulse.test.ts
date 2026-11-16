@@ -78,6 +78,18 @@ test('buildProjectPulseReport creates a prioritized executive entrypoint', () =>
   assert.ok(report.reportMap.some((link) => link.fileName === 'index.html'));
 });
 
+test('Project Pulse counts evidence reviews beyond the Evidence Brief display limit', () => {
+  const tasks = normalizeUnifiedTasks(Array.from({ length: 12 }, (_, index) => ({
+    id: `PULSE-RISK-${index}`,
+    title: 'Fix payment',
+    body: 'Payment fails.',
+    workItemType: 'bug'
+  })));
+  const report = buildProjectPulseReport(analyzeUnifiedTasks(tasks));
+
+  assert.equal(report.metrics.evidenceReviewTasks, 12);
+});
+
 test('Project Pulse markdown and html expose the navigation map', () => {
   const tasks = normalizeUnifiedTasks([
     {
