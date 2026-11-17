@@ -1139,6 +1139,10 @@ function smokeV2Reports(): void {
   assert(!releaseSection.includes('CG-101'), 'Workspace should exclude historical tasks from the release decision');
   assert(projectPulseHtml.includes('id="meeting-command"') && projectPulseHtml.includes('$meeting-drafts'), 'Workspace should lead to the demo meeting workflow');
   assert(projectPulseHtml.includes('class="primary-action" href="#release"'), 'A release concern should become the primary workspace action');
+  assert(projectPulseHtml.includes('href="meeting-review.html"'), 'Demo should link to the meeting review without an AI session');
+  const meetingReviewHtml = fs.readFileSync(path.join(outDir, 'meeting-review.html'), 'utf8');
+  assert(meetingReviewHtml.includes('Скачать одобренные задачи') && meetingReviewHtml.includes('Правка · CG-203'), 'Meeting review should show an example change and support exporting approved drafts');
+  assert(meetingReviewHtml.includes('class="delta added">Добавлено</span> The hint remains visible'), 'Meeting review should label the added criterion');
   const evidenceBrief = readJson<{ totalTasks: number }>(path.join(outDir, 'evidence-brief.json'));
   assert(evidenceBrief.totalTasks === 8, 'V2 demo should include Evidence Brief JSON');
   const handoff = readJson<{ summary: { readyForAgent: number; humanReview: number } }>(path.join(outDir, 'agent-handoff.json'));

@@ -49,6 +49,11 @@ export function csvEscape(value: unknown): string {
   return text;
 }
 
+export function escapeHtml(value: unknown): string {
+  return String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
 export function writeReport(outputPath: string, content: string): void {
   writeTextFile(outputPath, content);
 }

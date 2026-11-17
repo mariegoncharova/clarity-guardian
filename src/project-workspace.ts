@@ -1,4 +1,5 @@
 import { CHANGE_REVIEW_FIELD_LABELS, type buildChangeReview } from './change-review';
+import { escapeHtml } from './report-utils';
 import type { buildAgentHandoffReport } from './agent-handoff';
 import type { ProjectPulseReport } from './project-pulse';
 import type { RefinementAgendaReport } from './refinement-agenda';
@@ -10,11 +11,6 @@ interface Workspace {
   refinement: RefinementAgendaReport;
   handoff: ReturnType<typeof buildAgentHandoffReport>;
   changes?: ReturnType<typeof buildChangeReview>;
-}
-
-function escapeHtml(value: unknown): string {
-  return String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 function textList(items: string[]): string {
@@ -115,8 +111,9 @@ function meetingSection(demo: boolean): string {
     ? 'Отправьте команду в чат проекта Clarity Guardian в Codex.'
     : 'Положите выгрузку в data/local/tasks.json, приложите заметки в чате проекта Codex и отправьте команду.';
   return `<section id="meeting" class="panel"><h2>Итоги встречи</h2>
-    <p>${instructions} Codex сохранит черновики и вопросы в Markdown и JSON.</p>
+    <p>${instructions} Черновики и вопросы откроются на странице ревью.</p>
     <button id="copy-command" type="button">Скопировать команду</button>
+    ${demo ? '<a class="review-example" href="meeting-review.html">Попробовать ревью на примере</a>' : ''}
     <span id="copy-status" role="status"></span>
     <details><summary>Показать команду</summary>
     <label for="meeting-command">Команда для чата Codex</label>
@@ -174,6 +171,7 @@ button,.primary-action{color:#fff;background:var(--accent);border:0;border-radiu
 .primary-action{display:inline-block;text-decoration:none;margin-top:12px;font-weight:650}
 .primary-action:hover,button:hover{color:#fff;background:#184b40}
 #copy-command{margin-top:10px}#copy-status{display:inline-block;margin-left:8px;font-size:.9rem;color:var(--muted)}
+.review-example{display:inline-block;margin:10px 0 0 12px;font-size:.9rem;font-weight:650}
 .library ul{columns:2}.library li{break-inside:avoid;margin-bottom:4px}
 @media(max-width:540px){main{padding:20px 13px 32px}.panel,.library{padding:15px}.diff{grid-template-columns:1fr}.library ul{columns:1}}
 </style></head>

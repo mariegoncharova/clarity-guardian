@@ -3,8 +3,9 @@ import { existsSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import path from 'node:path';
 import type { fromJsonSchema } from '@modelcontextprotocol/server';
 import { PM_AGENT_TOOLS, createPmAgentTools } from './pm-agent-tools';
-import { TASK_DRAFT_SCHEMA, validateMeetingQuestions, validateTaskDrafts } from './pm-task-drafts';
-import { formatMeetingReview, listMeetings, readMeeting, recheckMeeting, type Dataset, type MeetingQueue } from './pm-meeting-review';
+import { TASK_DRAFT_SCHEMA } from './pm-task-drafts';
+import { buildMeetingQueue, formatMeetingReview, listMeetings, readMeeting, recheckMeeting, type Dataset } from './pm-meeting-review';
+import { formatMeetingReviewHtml, MEETING_REVIEW_HTML } from './pm-meeting-review-html';
 import { writeReport } from './report-utils';
 import { isTaskRow } from './task-model';
 import { makeCliError, readJsonFile } from './utils';
@@ -68,7 +69,7 @@ export const WORKSPACE_TOOLS: Array<{
   },
   {
     name: 'save_drafts',
-    description: 'Validate task drafts and open questions against meeting notes and the reviewed backlog snapshot. Writes local JSON and Markdown for review.',
+    description: 'Validate task drafts and open questions against the notes and backlog. Saves JSON, Markdown and an interactive HTML review.',
     parameters: {
       type: 'object',
       properties: {
@@ -137,9 +138,14 @@ export function createWorkspaceTools(projectDir: string) {
           throw makeCliError('Укажи целое неотрицательное смещение offset.');
         }
         const meetings = listMeetings(reportsDir, args.dataset, args.offset);
-        return { ...meetings, items: meetings.items.map((meeting) => ({
-          ...meeting, reportPath: path.join('reports', 'codex', meeting.meetingId, 'meeting-review.md')
-        })) };
+        return { ...meetings, items: meetings.items.map((meeting) => {
+          const folder = path.join(reportsDir, meeting.meetingId);
+          const html = path.join(folder, MEETING_REVIEW_HTML);
+          return {
+            ...meeting, reportPath: path.relative(projectDir, path.join(folder, 'meeting-review.md')),
+            ...(existsSync(html) ? { reviewPath: path.relative(projectDir, html) } : {})
+          };
+        }) };
       }
 
       const snapshot = load(args.dataset);
@@ -187,30 +193,29 @@ export function createWorkspaceTools(projectDir: string) {
         throw makeCliError('Передай исходный текст заметок.');
       }
 
-      const drafts = validateTaskDrafts(args.drafts, args.notes, snapshot.tools.sources, snapshot.retrieved);
-      const questions = validateMeetingQuestions(args.questions, args.notes);
-      const currentTasks = Object.fromEntries(drafts.flatMap(({ target }) =>
-        target ? [[target.ref, snapshot.tools.getRequirements(target.ref)]] : []
-      ));
-      const queue: MeetingQueue = {
-        status: 'review_required', drafts,
-        review: { dataset: args.dataset, snapshotId: snapshot.id, createdAt: new Date().toISOString(), questions, currentTasks }
-      };
+      const queue = buildMeetingQueue({
+        dataset: args.dataset, snapshotId: snapshot.id, createdAt: new Date().toISOString(),
+        notes: args.notes, drafts: args.drafts, questions: args.questions
+      }, snapshot.tools, snapshot.retrieved);
 
       mkdirSync(reportsDir, { recursive: true });
       const directory = mkdtempSync(path.join(reportsDir, 'meeting-'));
+      const meetingId = path.basename(directory);
       const reportPath = path.join(directory, 'meeting-review.md');
+      const reviewPath = path.join(directory, MEETING_REVIEW_HTML);
       const outputPath = path.join(directory, 'backlog-drafts.json');
       try {
         writeReport(reportPath, formatMeetingReview(queue));
+        writeReport(reviewPath, formatMeetingReviewHtml(queue, { meetingId }));
         writeReport(outputPath, `${JSON.stringify(queue, null, 2)}\n`);
       } catch (error) {
         rmSync(directory, { recursive: true, force: true });
         throw error;
       }
       return {
-        meetingId: path.basename(directory), path: path.relative(projectDir, outputPath), reportPath: path.relative(projectDir, reportPath),
-        status: queue.status, savedDrafts: drafts.length, savedQuestions: questions.length
+        meetingId, path: path.relative(projectDir, outputPath), reportPath: path.relative(projectDir, reportPath),
+        reviewPath: path.relative(projectDir, reviewPath), status: queue.status,
+        savedDrafts: queue.drafts.length, savedQuestions: queue.review.questions.length
       };
     }
   };

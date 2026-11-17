@@ -1,11 +1,11 @@
 import { existsSync, lstatSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import { taskIdentity, type createPmAgentTools } from './pm-agent-tools';
-import { draftTitleKey, type PmTaskDraft, type validateMeetingQuestions } from './pm-task-drafts';
+import { draftTitleKey, validateMeetingQuestions, validateTaskDrafts, type PmTaskDraft } from './pm-task-drafts';
 import { makeCliError, readJsonFile } from './utils';
 
 export type Dataset = 'working' | 'demo';
-type Requirements = Pick<PmTaskDraft, 'context' | 'expectedResult' | 'acceptanceCriteria'>;
+export type Requirements = Pick<PmTaskDraft, 'context' | 'expectedResult' | 'acceptanceCriteria'>;
 
 export interface MeetingQueue {
   status: 'review_required';
@@ -16,6 +16,22 @@ export interface MeetingQueue {
     createdAt: string;
     questions: ReturnType<typeof validateMeetingQuestions>;
     currentTasks: Record<string, Requirements>;
+  };
+}
+
+export function buildMeetingQueue(
+  input: { dataset: Dataset; snapshotId: string; createdAt: string; notes: string; drafts: unknown; questions: unknown },
+  tools: ReturnType<typeof createPmAgentTools>,
+  retrieved: Set<string>
+): MeetingQueue {
+  const drafts = validateTaskDrafts(input.drafts, input.notes, tools.sources, retrieved);
+  const questions = validateMeetingQuestions(input.questions, input.notes);
+  const currentTasks = Object.fromEntries(drafts.flatMap(({ target }) =>
+    target ? [[target.ref, tools.getRequirements(target.ref)]] : []
+  ));
+  return {
+    status: 'review_required', drafts,
+    review: { dataset: input.dataset, snapshotId: input.snapshotId, createdAt: input.createdAt, questions, currentTasks }
   };
 }
 
