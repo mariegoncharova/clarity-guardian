@@ -1,5 +1,6 @@
 import { existsSync, lstatSync, readdirSync } from 'node:fs';
 import path from 'node:path';
+import { CHANGE_REVIEW_FIELD_LABELS } from './change-review';
 import { taskIdentity, type createPmAgentTools } from './pm-agent-tools';
 import { draftTitleKey, validateMeetingQuestions, validateTaskDrafts, type PmTaskDraft } from './pm-task-drafts';
 import { makeCliError, readJsonFile } from './utils';
@@ -112,23 +113,71 @@ export function listMeetings(directory: string, dataset: Dataset, offset: number
 
 const reviewedFields: Array<keyof Requirements> = ['context', 'expectedResult', 'acceptanceCriteria'];
 
-export function recheckMeeting(queue: MeetingQueue, tools: ReturnType<typeof createPmAgentTools>, snapshotId: string) {
+export type DraftsForReview = { drafts: PmTaskDraft[]; review: Pick<MeetingQueue['review'], 'currentTasks'> };
+
+export function recheckDrafts(queue: DraftsForReview, tools: ReturnType<typeof createPmAgentTools>) {
   const tasks = [...tools.sources.values()].filter(({ ref }) => ref.startsWith('T'));
-  const drafts = queue.drafts.map(({ title, target }) => {
+  return queue.drafts.map(({ title, target }) => {
     if (!target) {
       const matches = tasks.filter((task) => draftTitleKey(task.title) === draftTitleKey(title));
-      return { title, status: matches.length ? 'title_exists' : 'unchanged', matches };
+      return { title, status: matches.length ? 'title_exists' as const : 'unchanged' as const, matches };
     }
 
     const matches = tasks.filter((task) => taskIdentity(task) === taskIdentity(target));
-    if (matches.length !== 1) return { title, status: matches.length ? 'target_ambiguous' : 'target_missing', target };
+    if (matches.length !== 1) {
+      return { title, status: matches.length ? 'target_ambiguous' as const : 'target_missing' as const, target };
+    }
 
     const before = queue.review.currentTasks[target.ref];
     if (!before) throw makeCliError(`В разборе отсутствуют исходные требования для ${target.taskId}.`);
-    const now = tools.getRequirements(matches[0].ref);
-    const fields = reviewedFields.filter((key) => JSON.stringify(before[key]) !== JSON.stringify(now[key]));
-    return { title, status: fields.length ? 'target_changed' : 'unchanged', target: matches[0], fields };
+    const [current] = matches;
+    const now = tools.getRequirements(current.ref);
+    const fields: Array<keyof Requirements | 'title'> = reviewedFields
+      .filter((key) => JSON.stringify(before[key]) !== JSON.stringify(now[key]));
+    if (current.title !== target.title) fields.unshift('title');
+    return { title, status: fields.length ? 'target_changed' as const : 'unchanged' as const, target: current, fields };
   });
+}
 
-  return { backlogChanged: queue.review.snapshotId !== snapshotId, drafts };
+export function recheckMeeting(queue: MeetingQueue, tools: ReturnType<typeof createPmAgentTools>, snapshotId: string) {
+  return { backlogChanged: queue.review.snapshotId !== snapshotId, drafts: recheckDrafts(queue, tools) };
+}
+
+export function formatTransferReview(queue: DraftsForReview, tools: ReturnType<typeof createPmAgentTools>): string {
+  const ready: string[] = [];
+  const conflicts: string[] = [];
+
+  for (const [index, result] of recheckDrafts(queue, tools).entries()) {
+    const title = inline(result.title);
+    const target = result.target ? inline([result.target.project, result.target.taskId].filter(Boolean).join(' / ')) : '';
+    switch (result.status) {
+      case 'unchanged':
+        ready.push(`### ${target ? `Правка · ${target}` : 'Новая задача'} — ${title}`, '',
+          ...requirementsMarkdown(queue.drafts[index]), '');
+        break;
+      case 'title_exists':
+        conflicts.push(`- ${title} — такое название уже есть в бэклоге (${result.matches.map(({ taskId, project }) =>
+          inline([project, taskId].filter(Boolean).join(' / '))).join(', ')}). Сверьте существующие карточки.`);
+        break;
+      case 'target_changed':
+        conflicts.push(`- ${target} · ${title} — изменились поля «${result.fields.map((field) =>
+          CHANGE_REVIEW_FIELD_LABELS[field]).join('», «')}». Сверьте правку с текущей карточкой.`);
+        break;
+      case 'target_ambiguous':
+        conflicts.push(`- ${target} · ${title} — в выгрузке несколько совпадений. Уточните целевую карточку.`);
+        break;
+      case 'target_missing':
+        conflicts.push(`- ${target} · ${title} — карточка отсутствует в выгрузке. Проверьте её в трекере.`);
+        break;
+    }
+  }
+
+  return [
+    '# Проверка перед переносом', '',
+    `Проверено одобренных задач — ${queue.drafts.length}. На уточнение — ${conflicts.length}.`, '',
+    '## Можно переносить по этому снимку', '',
+    ...(ready.length ? ready : ['Готовых задач нет.', '']),
+    '## Нужно проверить', '',
+    ...(conflicts.length ? conflicts : ['Конфликтов в этой выгрузке нет.'])
+  ].join('\n') + '\n';
 }

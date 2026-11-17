@@ -89,7 +89,11 @@ ul{margin:4px 0;padding-left:21px}li+li{margin-top:4px}details{margin:10px 0}sum
 ${drafts.length ? `<div class="bar">
   <p id="selection-summary" role="status">Одобрено 0 из ${drafts.length}</p>
   <button id="download-approved" type="button" disabled>Скачать одобренные задачи</button>
-</div>` : '<p class="card">Черновиков для переноса нет.</p>'}
+</div>
+<details><summary>Сверить перед переносом</summary>
+  <p class="meta">Скачайте одобренные задачи. Запустите из папки проекта, указав путь к скачанному файлу и свежей выгрузке.</p>
+  <p><code>npm run --silent drafts:check -- --approved approved-drafts.json --input ${review.dataset === 'demo' ? 'data/demo-tasks.json' : 'data/local/tasks.json'}</code></p>
+</details>` : '<p class="card">Черновиков для переноса нет.</p>'}
 ${cards}
 ${review.questions.length ? `<section class="card"><h2>Открытые вопросы</h2><ul>
   ${review.questions.map(({ question, sourceQuote }) => `<li>${escapeHtml(question)}

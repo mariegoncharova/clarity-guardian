@@ -24,6 +24,7 @@
     "data:doctor": "npm run build --silent && node dist/data-doctor.js",
     "pm:mcp": "npm run build --silent && node dist/pm-mcp.js",
     "pm:agent": "npm run build --silent && node dist/pm-agent.js",
+    "drafts:check": "npm run build --silent && node dist/pm-draft-transfer.js",
     "backlog:import": "npm run build --silent && node dist/backlog-import.js",
     "agent:handoff": "npm run build --silent && node dist/agent-handoff.js",
     "change:review": "npm run build --silent && node dist/change-review.js",
