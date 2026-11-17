@@ -34,12 +34,41 @@ function compact(text: string): string {
   return normalizeText(text).replace(/\s+/g, ' ');
 }
 
+export function draftTitleKey(title: string): string {
+  return compact(title).toLowerCase();
+}
+
 function requiredText(value: unknown, label: string): string {
   if (typeof value !== 'string' || !value.trim()) {
     throw makeCliError(`В черновике задачи отсутствует поле «${label}».`);
   }
 
   return value.trim();
+}
+
+function evidenceQuote(value: unknown, meetingText: string, subject: string): string {
+  const sourceQuote = requiredText(value, 'Цитата из заметок');
+  const quote = compact(sourceQuote);
+
+  if (quote.length < 12 || !meetingText.includes(quote)) {
+    throw makeCliError(`${subject} не подтверждён цитатой из заметок встречи.`);
+  }
+
+  return sourceQuote;
+}
+
+export function validateMeetingQuestions(questions: unknown, notes: string) {
+  if (questions === undefined) return [];
+  if (!Array.isArray(questions)) {
+    throw makeCliError('Открытые вопросы должны быть списком.');
+  }
+
+  const meetingText = compact(notes);
+  return questions.map((entry: unknown) => {
+    if (!isTaskRow(entry)) throw makeCliError('Для открытого вопроса нужны текст и цитата из заметок.');
+    const question = requiredText(entry.question, 'Открытый вопрос');
+    return { question, sourceQuote: evidenceQuote(entry.sourceQuote, meetingText, `Вопрос «${question}»`) };
+  });
 }
 
 export function validateTaskDrafts(
@@ -55,7 +84,7 @@ export function validateTaskDrafts(
   const meetingText = compact(notes || '');
   const currentTitles = new Set([...sources.values()]
     .filter(({ ref }) => ref.startsWith('T'))
-    .map(({ title }) => compact(title).toLowerCase()));
+    .map(({ title }) => draftTitleKey(title)));
   const updated = new Set<string>();
 
   return drafts.map((draft) => {
@@ -64,12 +93,7 @@ export function validateTaskDrafts(
     }
 
     const title = requiredText(draft.title, 'Название');
-    const sourceQuote = requiredText(draft.sourceQuote, 'Цитата из заметок');
-    const quote = compact(sourceQuote);
-
-    if (quote.length < 12 || !meetingText.includes(quote)) {
-      throw makeCliError(`Черновик «${title}» не подтверждён цитатой из заметок встречи.`);
-    }
+    const sourceQuote = evidenceQuote(draft.sourceQuote, meetingText, `Черновик «${title}»`);
 
     let target: AgentSource | null = null;
 
@@ -86,7 +110,7 @@ export function validateTaskDrafts(
       updated.add(source.ref);
       target = source;
     } else {
-      const key = compact(title).toLowerCase();
+      const key = draftTitleKey(title);
 
       if (draft.targetRef !== null || currentTitles.has(key)) {
         throw makeCliError(`Черновик «${title}» дублирует существующую задачу или другой черновик.`);
