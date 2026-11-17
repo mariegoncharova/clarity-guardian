@@ -37,6 +37,8 @@ import {
 import {
   buildTaskHealthReport
 } from './task-health-profile';
+import { formatProjectPulseHtml } from './project-workspace';
+import { isDoneStatus } from './task-signals';
 import {
   getStringArg,
   makeCliError,
@@ -47,6 +49,8 @@ import {
 import type {
   TaskAnalysisRecord
 } from './types';
+
+export { formatProjectPulseHtml };
 
 export type ProjectPulseStatus = 'healthy' | 'watch' | 'critical';
 export type ProjectPulseSeverity = 'low' | 'medium' | 'high';
@@ -296,14 +300,6 @@ function inferProjectPulseFormat(outputPath: string, explicitFormat?: string): P
   throw makeCliError('Неподдерживаемый формат отчёта: укажи --format markdown|json|csv|html или output с расширением .md, .json, .csv, .html');
 }
 
-function htmlEscape(value: unknown): string {
-  return String(value ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
-
 function getTaskId(record: TaskAnalysisRecord): string {
   return record.task.key || record.task.id;
 }
@@ -480,7 +476,8 @@ function getOpenReports(record: TaskAnalysisRecord): string[] {
 }
 
 function buildTaskSpotlight(records: TaskAnalysisRecord[], limit: number): ProjectPulseTaskSpotlight[] {
-  return [...records]
+  return records
+    .filter(({ task }) => !isDoneStatus(task.status))
     .map((record) => ({
       record,
       priorityScore: getTaskPriorityScore(record)
@@ -836,113 +833,6 @@ export function formatProjectPulseMarkdown(report: ProjectPulseReport): string {
       )
     ] : [])
   ].join('\n');
-}
-
-function statusClass(status: ProjectPulseStatus): string {
-  if (status === 'critical') {
-    return 'critical';
-  }
-
-  if (status === 'watch') {
-    return 'watch';
-  }
-
-  return 'healthy';
-}
-
-function metricHtml(label: string, value: string | number, note: string): string {
-  return [
-    '<div class="metric">',
-    `<div class="metric-label">${htmlEscape(label)}</div>`,
-    `<div class="metric-value">${htmlEscape(value)}</div>`,
-    `<div class="metric-note">${htmlEscape(note)}</div>`,
-    '</div>'
-  ].join('');
-}
-
-export function formatProjectPulseHtml(report: ProjectPulseReport): string {
-  const linkedReports = new Set(report.reportMap.map((reportLink) => reportLink.fileName));
-  const focusRows = report.focusAreas.map((focusArea) => {
-    const sources = focusArea.sourceReports.map((source) => {
-      const name = htmlEscape(source);
-      return linkedReports.has(source) ? `<a href="${name}">${name}</a>` : name;
-    }).join('<br>');
-
-    return `<tr><td><span class="badge ${focusArea.severity}">${htmlEscape(focusArea.severity)}</span></td><td>${htmlEscape(focusArea.title)}</td><td>${htmlEscape(focusArea.ownerRole)}</td><td>${htmlEscape(focusArea.reason)}</td><td>${htmlEscape(focusArea.nextAction)}</td><td>${sources}</td></tr>`;
-  }).join('');
-  const taskRows = report.taskSpotlight.map((task) =>
-    `<tr><td>${htmlEscape(task.taskId)}</td><td>${htmlEscape(task.title)}</td><td>${htmlEscape(task.priorityScore)}</td><td>${htmlEscape(task.clarityScore)}</td><td>${htmlEscape(task.smartScore)}</td><td>${htmlEscape(task.riskLevel)}</td><td>${htmlEscape(task.assignee || 'not assigned')}</td><td>${htmlEscape(task.nextAction)}</td></tr>`
-  ).join('');
-  const reportLinks = report.reportMap
-    .filter((link) => link.fileName !== 'index.html')
-    .map((link) =>
-      `<li><a href="${htmlEscape(link.fileName)}">${htmlEscape(link.title)}</a><span>${htmlEscape(link.purpose)}</span></li>`
-    ).join('');
-
-  return [
-    '<!doctype html>',
-    '<html lang="ru">',
-    '<head>',
-    '<meta charset="utf-8">',
-    '<meta name="viewport" content="width=device-width, initial-scale=1">',
-    '<title>Clarity Guardian Project Pulse</title>',
-    '<style>',
-    ':root{color-scheme:light;--text:#172033;--muted:#5b667a;--line:#d9e0ea;--surface:#fff;--bg:#f4f7fb;--green:#0f7a4f;--amber:#9a6200;--red:#b42318;--blue:#2458a7}',
-    '*{box-sizing:border-box}',
-    'body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,Arial,sans-serif;line-height:1.45}',
-    'main{max-width:1180px;margin:0 auto;padding:28px 20px 44px}',
-    'header{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px;align-items:end;border-bottom:1px solid var(--line);padding-bottom:18px;margin-bottom:18px}',
-    'h1{font-size:34px;line-height:1.1;margin:0 0 8px}',
-    'h2{font-size:20px;margin:28px 0 12px}',
-    'p{margin:0;color:var(--muted)}',
-    '.status{border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:14px 16px;min-width:190px}',
-    '.status strong{display:block;font-size:28px}',
-    '.status.critical strong{color:var(--red)}.status.watch strong{color:var(--amber)}.status.healthy strong{color:var(--green)}',
-    '.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(172px,1fr));gap:10px}',
-    '.metric{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:13px}',
-    '.metric-label{font-size:12px;text-transform:uppercase;color:var(--muted);font-weight:700}',
-    '.metric-value{font-size:28px;font-weight:800;margin-top:2px}',
-    '.metric-note{font-size:12px;color:var(--muted)}',
-    '.actions{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px 18px}',
-    '.actions li{margin:7px 0}',
-    'table{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--line)}',
-    'th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;font-size:14px}',
-    'th{background:#eaf0f7;color:#263246}',
-    'a{color:var(--blue);text-decoration:none;font-weight:700}a:hover{text-decoration:underline}',
-    '.badge{display:inline-block;border-radius:6px;padding:2px 7px;font-weight:800;font-size:12px;color:#fff}.badge.high{background:var(--red)}.badge.medium{background:var(--amber)}.badge.low{background:var(--green)}',
-    '.report-map{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px;padding:0;margin:0;list-style:none}',
-    '.report-map li{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px}.report-map span{display:block;margin-top:5px;color:var(--muted);font-size:13px}',
-    '@media(max-width:760px){header{grid-template-columns:1fr}h1{font-size:28px}table{display:block;overflow-x:auto;white-space:nowrap}}',
-    '</style>',
-    '</head>',
-    '<body><main>',
-    '<header>',
-    '<div>',
-    '<h1>Clarity Guardian Project Pulse</h1>',
-    `<p>${htmlEscape(report.executiveSummary)}</p>`,
-    `<p>Generated at: ${htmlEscape(report.generatedAt)}</p>`,
-    '</div>',
-    `<div class="status ${statusClass(report.status)}"><span>Status</span><strong>${htmlEscape(report.status)}</strong><span>Health ${report.projectHealthScore}/100</span></div>`,
-    '</header>',
-    '<section class="metrics">',
-    metricHtml('Tasks', report.metrics.totalTasks, 'analyzed work items'),
-    metricHtml('Clarity', `${report.metrics.averageClarityScore}/100`, 'description quality'),
-    metricHtml('SMART', `${report.metrics.averageSmartScore}/100`, 'goal quality'),
-    metricHtml('Ready', `${report.metrics.readyTasksPercent}%`, 'Definition of Ready'),
-    metricHtml('Release', report.metrics.releaseDecision, `${report.metrics.releaseReadinessScore}/100 readiness`),
-    metricHtml('Critical Owners', report.metrics.criticalOwners, 'ownership risk'),
-    metricHtml('QA Gaps', report.metrics.qaGapTasks, 'verification gaps'),
-    metricHtml('Quick Fixes', report.metrics.quickFixReady, 'ready bug fixes'),
-    '</section>',
-    '<h2>What To Do Next</h2>',
-    `<ol class="actions">${report.nextActions.map((action) => `<li>${htmlEscape(action)}</li>`).join('')}</ol>`,
-    '<h2>Focus Areas</h2>',
-    `<table><thead><tr><th>Severity</th><th>Focus</th><th>Owner</th><th>Reason</th><th>Next action</th><th>Reports</th></tr></thead><tbody>${focusRows || '<tr><td colspan="6">No focus areas found.</td></tr>'}</tbody></table>`,
-    '<h2>Task Spotlight</h2>',
-    `<table><thead><tr><th>Task</th><th>Title</th><th>Priority</th><th>Clarity</th><th>SMART</th><th>Risk</th><th>Assignee</th><th>Next action</th></tr></thead><tbody>${taskRows || '<tr><td colspan="8">No task spotlight items found.</td></tr>'}</tbody></table>`,
-    ...(reportLinks ? ['<h2>Report Map</h2>', `<ul class="report-map">${reportLinks}</ul>`] : []),
-    '</main></body></html>'
-  ].join('');
 }
 
 function formatProjectPulse(report: ProjectPulseReport, format: ProjectPulseFormat): string {

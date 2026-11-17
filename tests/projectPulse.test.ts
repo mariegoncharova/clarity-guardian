@@ -74,6 +74,7 @@ test('buildProjectPulseReport creates a prioritized executive entrypoint', () =>
   assert.ok(report.focusAreas.some((area) => area.code === 'readiness_gap'));
   assert.ok(report.focusAreas.some((area) => area.sourceReports.includes('release-guard.md')));
   assert.ok(report.taskSpotlight.some((task) => task.taskId === 'PULSE-1'));
+  assert.ok(report.taskSpotlight.every((task) => task.status !== 'Done'));
   assert.ok(report.nextActions.length > 0);
   assert.ok(report.reportMap.some((link) => link.fileName === 'index.html'));
 });
@@ -110,5 +111,7 @@ test('Project Pulse markdown and html expose the navigation map', () => {
   assert.match(markdown, /Report Map/);
   assert.match(html, /Clarity Guardian Project Pulse/);
   assert.match(html, /href="dashboard\.html"/);
-  assert.match(html, /Task Spotlight/);
+  assert.match(html, /Рабочая сводка проекта/);
+  assert.match(html, /Задачи для разбора/);
+  assert.match(html, /<details class="library"><summary>Подробные отчёты и выгрузки/);
 });

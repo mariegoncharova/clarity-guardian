@@ -239,7 +239,7 @@ function buildReleaseRisks(record: TaskAnalysisRecord): ReleaseGuardRisk[] {
       title: 'Нет признака тестирования',
       severity: 'high',
       ownerRole: 'QA',
-      recommendation: 'Добавить QA passed / проверено / результат проверки перед выпуском.'
+      recommendation: 'Зафиксировать результат проверки по критериям приёмки перед выпуском.'
     });
   }
 

@@ -157,6 +157,15 @@ async function main(): Promise<void> {
   const releaseGuard = buildReleaseGuardReport(records, {
     includeReady: true
   });
+  // The built-in demo bundles earlier tasks for comparison. The workspace shows the current sample.
+  const workspaceRecords = usesDefaultDemo ? records.filter(({ task }) => task.period === 'after') : records;
+  const workspace = {
+    demo: usesDefaultDemo,
+    release: usesDefaultDemo ? buildReleaseGuardReport(workspaceRecords) : releaseGuard,
+    refinement: buildRefinementAgendaReport(workspaceRecords),
+    handoff: usesDefaultDemo ? buildAgentHandoffReport(workspaceRecords) : agentHandoff,
+    changes: changeReview
+  };
   const stakeholderUpdate = buildStakeholderUpdateReport(records);
   const teamHandoff = buildTeamHandoffReport(records, {
     includeReady: true
@@ -192,7 +201,7 @@ async function main(): Promise<void> {
   writeTextFile(resolveOutputPath(outDir, 'quick-bug-fix.md'), formatQuickBugFixMarkdown(quickBugFix));
   writeTextFile(resolveOutputPath(outDir, 'ownership-risk.md'), formatOwnershipRiskMarkdown(ownershipRisk));
   writeTextFile(resolveOutputPath(outDir, 'project-pulse.md'), formatProjectPulseMarkdown(projectPulse));
-  writeTextFile(resolveOutputPath(outDir, 'index.html'), formatProjectPulseHtml(projectPulse));
+  writeTextFile(resolveOutputPath(outDir, 'index.html'), formatProjectPulseHtml(projectPulse, workspace));
   writeTextFile(resolveOutputPath(outDir, 'task-health-profile.md'), formatTaskHealthMarkdown(taskHealth));
   writeTextFile(resolveOutputPath(outDir, 'refinement-agenda.md'), formatRefinementAgendaMarkdown(refinementAgenda));
   writeTextFile(resolveOutputPath(outDir, 'release-guard.md'), formatReleaseGuardMarkdown(releaseGuard));

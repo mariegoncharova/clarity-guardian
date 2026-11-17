@@ -4,7 +4,7 @@ import { getAcceptanceCriteria, getContext, getExecutionDetails, getExpectedResu
 import { getStringArg, makeCliError, parseArgs, readJsonFile } from './utils';
 import type { UnifiedTask } from './types';
 
-const FIELD_LABELS = {
+export const CHANGE_REVIEW_FIELD_LABELS = {
   title: 'Название',
   repository: 'Репозиторий',
   context: 'Контекст',
@@ -18,7 +18,7 @@ const FIELD_LABELS = {
   assignee: 'Ответственный'
 };
 
-type ReviewedField = keyof typeof FIELD_LABELS;
+type ReviewedField = keyof typeof CHANGE_REVIEW_FIELD_LABELS;
 type ChangeValue = string | string[];
 
 function normalizeList(values: string[]): string[] {
@@ -82,7 +82,7 @@ function compareTasks(previous: UnifiedTask, current: UnifiedTask) {
   const before = getReviewedFields(previous);
   const after = getReviewedFields(current);
 
-  return (Object.keys(FIELD_LABELS) as ReviewedField[])
+  return (Object.keys(CHANGE_REVIEW_FIELD_LABELS) as ReviewedField[])
     .filter((field) => JSON.stringify(before[field]) !== JSON.stringify(after[field]))
     .map((field) => ({ field, before: before[field], after: after[field] }));
 }
@@ -161,7 +161,7 @@ export function formatChangeReviewMarkdown(report: ReturnType<typeof buildChange
       '| Поле | Было | Стало |',
       '| --- | --- | --- |',
       ...task.changes.map(({ field, before, after }) =>
-        `| ${FIELD_LABELS[field]} | ${displayValue(before)} | ${displayValue(after)} |`
+        `| ${CHANGE_REVIEW_FIELD_LABELS[field]} | ${displayValue(before)} | ${displayValue(after)} |`
       )
     ]),
     ...(report.added.length > 0 ? ['', '## Новые задачи', '', ...report.added.map((task) => `- ${displayTask(task)}`)] : []),
