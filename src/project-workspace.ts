@@ -139,6 +139,7 @@ export function formatProjectPulseHtml(report: ProjectPulseReport, workspace?: W
   const primary = workspace && nextStep(workspace);
   const shortcuts = [
     { href: '#release', label: 'Релиз' }, { href: '#tasks', label: 'Подготовка задач' },
+    { href: 'team-workspace.html', label: 'Команда' },
     ...(workspace?.changes ? [{ href: '#scope', label: 'Изменения ТЗ' }] : []),
     { href: '#meeting', label: 'Итоги встречи' }
   ].filter((link) => link.href !== primary?.href);

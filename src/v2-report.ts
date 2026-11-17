@@ -74,6 +74,7 @@ import {
   buildTeamHandoffReport,
   formatTeamHandoffMarkdown
 } from './team-handoff';
+import { formatTeamWorkspaceHtml, TEAM_WORKSPACE_HTML } from './team-workspace';
 import { createYandexTrackerProviderFromEnv } from './yandex-tracker';
 import {
   getStringArg,
@@ -213,6 +214,7 @@ async function main(): Promise<void> {
     writeTextFile(resolveOutputPath(outDir, MEETING_REVIEW_HTML), formatMeetingReviewHtml(meeting, { demo: true }));
   }
   writeTextFile(resolveOutputPath(outDir, 'index.html'), formatProjectPulseHtml(projectPulse, workspace));
+  writeTextFile(resolveOutputPath(outDir, TEAM_WORKSPACE_HTML), formatTeamWorkspaceHtml(workspaceRecords, analyzedAt));
   writeTextFile(resolveOutputPath(outDir, 'task-health-profile.md'), formatTaskHealthMarkdown(taskHealth));
   writeTextFile(resolveOutputPath(outDir, 'refinement-agenda.md'), formatRefinementAgendaMarkdown(refinementAgenda));
   writeTextFile(resolveOutputPath(outDir, 'release-guard.md'), formatReleaseGuardMarkdown(releaseGuard));

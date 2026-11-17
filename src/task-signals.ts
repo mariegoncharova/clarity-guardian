@@ -220,7 +220,11 @@ export function hasTestingSignal(task: UnifiedTask): boolean {
 }
 
 export function hasOpenBlocker(task: UnifiedTask): boolean {
-  return hasAnyKeyword(getTaskText(task), BLOCKER_KEYWORDS);
+  const labels = [task.status, ...(task.labels || []), ...(task.tags || [])];
+  const section = extractFirstMarkdownSection(task.body, ['Blockers', 'Блокеры']);
+  return labels.some((label) => normalizeText(label).toLowerCase() === 'blocked') ||
+    /^blocked\b/i.test(normalizeText(section)) ||
+    hasAnyKeyword(getTaskText(task), BLOCKER_KEYWORDS);
 }
 
 export function hasExternalDependency(task: UnifiedTask): boolean {

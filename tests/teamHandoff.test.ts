@@ -11,6 +11,8 @@ import {
 import {
   normalizeUnifiedTasks
 } from '../src/task-model';
+import { hasExternalDependency } from '../src/task-signals';
+import { buildReleaseGuardItem } from '../src/release-guard';
 
 test('buildTeamHandoffReport separates Analyst, Developer and QA blockers', () => {
   const tasks = normalizeUnifiedTasks([
@@ -87,6 +89,34 @@ test('handoff checks evidence for every task, even when tracker keys repeat', ()
       .map((item) => item.title),
     ['Restore draft in project 0']
   );
+});
+
+test('QA can prepare from a verification plan without mistaking account states for blockers', () => {
+  const example = {
+    title: 'Show a hint for blocked accounts',
+    source: 'file',
+    status: 'In Progress',
+    workItemType: 'task',
+    expectedResult: 'The hint explains why an account is locked.',
+    acceptanceCriteria: ['Show the hint on mobile when the user account is blocked.']
+  };
+  const plan = '## Verification\nOpen the profile as a blocked user at a mobile viewport.';
+  const records = analyzeUnifiedTasks(normalizeUnifiedTasks([
+    { ...example, id: 'HAND-10', description: plan },
+    { ...example, id: 'HAND-11' },
+    { ...example, id: 'HAND-12', description: plan, status: 'Blocked' },
+    { ...example, id: 'HAND-13', description: plan, status: 'Review' },
+    { ...example, id: 'HAND-14', description: 'Delivery is blocked by the payments team.' }
+  ]));
+  const { items } = buildTeamHandoffReport(records, { includeReady: true });
+  const qa = (key: string) => items.find(({ taskId }) => taskId === key)?.qa;
+
+  assert.equal(qa('HAND-10')?.status, 'ready');
+  assert.ok(qa('HAND-11')?.blockers.includes('missing verification plan'));
+  assert.ok(qa('HAND-12')?.blockers.includes('open blocker prevents QA handoff'));
+  assert.equal(hasExternalDependency(records[0].task), false);
+  assert.equal(hasExternalDependency(records[4].task), true);
+  assert.ok(buildReleaseGuardItem(records[3]).releaseRisks.some(({ code }) => code === 'missing_testing_evidence'));
 });
 
 test('formatTeamHandoffMarkdown includes role distribution and handoff queue', () => {

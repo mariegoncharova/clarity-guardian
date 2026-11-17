@@ -24,6 +24,7 @@ import {
 } from './task-model';
 import {
   getTaskId,
+  getExecutionDetails,
   hasAcceptanceCriteria,
   hasContext,
   hasDependencyInfo,
@@ -36,6 +37,7 @@ import {
   isDoneStatus
 } from './task-signals';
 import {
+  extractFirstMarkdownSection,
   getStringArg,
   makeCliError,
   parseArgs,
@@ -291,6 +293,11 @@ function buildDeveloperHandoff(record: TaskAnalysisRecord): RoleHandoff {
 
 function buildQaHandoff(record: TaskAnalysisRecord): RoleHandoff {
   const dod = checkDefinitionOfDone(record.task);
+  const done = isDoneStatus(record.task.status);
+  const tested = hasTestingSignal(record.task);
+  const { verification } = getExecutionDetails(record.task);
+  const reproduction = extractFirstMarkdownSection(record.task.body, ['Steps to reproduce', 'Шаги воспроизведения']);
+  const hasPlan = verification.trim().length >= 20 || Boolean(reproduction?.trim());
   const blockers: string[] = [];
   const readySignals: string[] = [];
 
@@ -306,25 +313,31 @@ function buildQaHandoff(record: TaskAnalysisRecord): RoleHandoff {
     blockers.push('missing acceptance criteria');
   }
 
-  if (record.task.workItemType === 'bug' && !hasTestingSignal(record.task)) {
-    blockers.push('bug lacks reproduction or testing signal');
+  if (!tested && !hasPlan) {
+    if (record.task.workItemType === 'bug') {
+      blockers.push('bug lacks reproduction or testing signal');
+    } else if (!done) {
+      blockers.push('missing verification plan');
+    }
   }
 
   if (hasOpenBlocker(record.task)) {
     blockers.push('open blocker prevents QA handoff');
   }
 
-  if (isDoneStatus(record.task.status)) {
+  if (done) {
     if (dod.dodPassed) {
       readySignals.push('Definition of Done passed');
     } else {
       blockers.push(`DoD not passed: ${dod.failedChecks.slice(0, 3).join(', ')}`);
     }
-  } else if (hasTestingSignal(record.task)) {
+  } else if (tested) {
     readySignals.push('testing signal is present');
+  } else if (hasPlan) {
+    readySignals.push('verification plan is present');
   }
 
-  const score = roleScore(isDoneStatus(record.task.status) ? dod.dodScore : 75, blockers);
+  const score = roleScore(done ? dod.dodScore : 100, blockers);
   const status = roleStatus(score, blockers, [/missing acceptance criteria/, /missing expected result/, /open blocker/]);
 
   return {
@@ -389,7 +402,7 @@ function getOpenReports(item: Pick<TeamHandoffItem, 'analyst' | 'developer' | 'q
   return unique(reports);
 }
 
-function toTeamHandoffItem(record: TaskAnalysisRecord): TeamHandoffItem {
+export function buildTeamHandoffItem(record: TaskAnalysisRecord): TeamHandoffItem {
   const taskId = getTaskId(record.task);
   const analyst = buildAnalystHandoff(record);
   const developer = buildDeveloperHandoff(record);
@@ -481,7 +494,7 @@ export function buildTeamHandoffReport(
   } = {}
 ): TeamHandoffReport {
   const allItems = records
-    .map(toTeamHandoffItem)
+    .map(buildTeamHandoffItem)
     .sort((a, b) => itemSortScore(b) - itemSortScore(a) || a.taskId.localeCompare(b.taskId));
   const items = allItems
     .filter((item) => options.includeReady || item.overallStatus !== 'ready')
