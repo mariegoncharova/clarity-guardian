@@ -14,6 +14,9 @@ import {
   formatActionPlanMarkdown
 } from './action-plan';
 import { buildAgentHandoffReport, formatAgentHandoffMarkdown } from './agent-handoff';
+import { loadTrackerBacklog } from './backlog-import';
+import { buildDemoMeetingReview } from './pm-meeting-review-demo';
+import { formatMeetingReviewHtml, MEETING_REVIEW_HTML } from './pm-meeting-review-html';
 import { buildChangeReview, formatChangeReviewMarkdown } from './change-review';
 import {
   loadConfig
@@ -71,6 +74,7 @@ import {
   buildTeamHandoffReport,
   formatTeamHandoffMarkdown
 } from './team-handoff';
+import { formatTeamWorkspaceHtml, TEAM_WORKSPACE_HTML } from './team-workspace';
 import { createYandexTrackerProviderFromEnv } from './yandex-tracker';
 import {
   getStringArg,
@@ -111,11 +115,15 @@ async function loadRawTasks(args: Record<string, string | boolean>): Promise<unk
     }).listTasks();
   }
 
+  if (source === 'linear' || source === 'gitlab') {
+    return loadTrackerBacklog(args);
+  }
+
   if (inputPath) {
     return readJsonFile<unknown>(inputPath);
   }
 
-  throw makeCliError('Передай --demo, --source yandex или --input tasks.json');
+  throw makeCliError('Передай --demo, --input tasks.json или --source yandex|linear|gitlab.');
 }
 
 async function main(): Promise<void> {
@@ -201,7 +209,12 @@ async function main(): Promise<void> {
   writeTextFile(resolveOutputPath(outDir, 'quick-bug-fix.md'), formatQuickBugFixMarkdown(quickBugFix));
   writeTextFile(resolveOutputPath(outDir, 'ownership-risk.md'), formatOwnershipRiskMarkdown(ownershipRisk));
   writeTextFile(resolveOutputPath(outDir, 'project-pulse.md'), formatProjectPulseMarkdown(projectPulse));
+  if (usesDefaultDemo) {
+    const meeting = buildDemoMeetingReview(rawTasksInput, analyzedAt);
+    writeTextFile(resolveOutputPath(outDir, MEETING_REVIEW_HTML), formatMeetingReviewHtml(meeting, { demo: true }));
+  }
   writeTextFile(resolveOutputPath(outDir, 'index.html'), formatProjectPulseHtml(projectPulse, workspace));
+  writeTextFile(resolveOutputPath(outDir, TEAM_WORKSPACE_HTML), formatTeamWorkspaceHtml(workspaceRecords, analyzedAt));
   writeTextFile(resolveOutputPath(outDir, 'task-health-profile.md'), formatTaskHealthMarkdown(taskHealth));
   writeTextFile(resolveOutputPath(outDir, 'refinement-agenda.md'), formatRefinementAgendaMarkdown(refinementAgenda));
   writeTextFile(resolveOutputPath(outDir, 'release-guard.md'), formatReleaseGuardMarkdown(releaseGuard));

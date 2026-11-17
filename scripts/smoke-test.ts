@@ -1138,6 +1138,21 @@ function smokeV2Reports(): void {
   assert(releaseSection.includes('CG-204') && releaseSection.includes('Нет признака тестирования'), 'Workspace should show the current release evidence and assignee role');
   assert(!releaseSection.includes('CG-101'), 'Workspace should exclude historical tasks from the release decision');
   assert(projectPulseHtml.includes('id="meeting-command"') && projectPulseHtml.includes('$meeting-drafts'), 'Workspace should lead to the demo meeting workflow');
+  assert(projectPulseHtml.includes('class="primary-action" href="#release"'), 'A release concern should become the primary workspace action');
+  assert(projectPulseHtml.includes('href="meeting-review.html"'), 'Demo should link to the meeting review without an AI session');
+  const meetingReviewHtml = fs.readFileSync(path.join(outDir, 'meeting-review.html'), 'utf8');
+  assert(meetingReviewHtml.includes('Скачать одобренные задачи') && meetingReviewHtml.includes('Правка · CG-203'), 'Meeting review should show an example change and support exporting approved drafts');
+  assert(meetingReviewHtml.includes('class="delta added">Добавлено</span> The hint remains visible'), 'Meeting review should label the added criterion');
+  assert(projectPulseHtml.includes('href="team-workspace.html"'), 'Project Pulse should link to the team workspace');
+  const teamWorkspaceHtml = fs.readFileSync(path.join(outDir, 'team-workspace.html'), 'utf8');
+  for (const role of ['developer', 'qa', 'analyst', 'lead']) {
+    assert(teamWorkspaceHtml.includes(`data-switch="${role}"`), `Team workspace should show the ${role} view`);
+  }
+  assert(teamWorkspaceHtml.includes('CG-203') && teamWorkspaceHtml.includes('Можно готовить проверку'), 'QA should be able to prepare checks for the current task');
+  assert(teamWorkspaceHtml.includes('demo-store/profile-web'), 'Developers should see the implementation repository');
+  assert(teamWorkspaceHtml.includes('Что добавить в постановку') && teamWorkspaceHtml.includes('Указать дату, дедлайн или момент'), 'Analysts should see actionable suggestions when the framing needs work');
+  assert(teamWorkspaceHtml.includes('Нет признака тестирования'), 'QA should see missing testing evidence for release work');
+  assert(!teamWorkspaceHtml.includes('CG-101'), 'Team workspace should exclude historical demo tasks');
   const evidenceBrief = readJson<{ totalTasks: number }>(path.join(outDir, 'evidence-brief.json'));
   assert(evidenceBrief.totalTasks === 8, 'V2 demo should include Evidence Brief JSON');
   const handoff = readJson<{ summary: { readyForAgent: number; humanReview: number } }>(path.join(outDir, 'agent-handoff.json'));

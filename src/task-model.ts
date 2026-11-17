@@ -145,6 +145,8 @@ function normalizeTaskSource(value: unknown): TaskSource {
     normalized === 'github' ||
     normalized === 'jira' ||
     normalized === 'yandex-tracker' ||
+    normalized === 'linear' ||
+    normalized === 'gitlab' ||
     normalized === 'demo' ||
     normalized === 'file'
   ) {

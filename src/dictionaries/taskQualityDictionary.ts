@@ -576,7 +576,9 @@ export const TASK_SIGNAL_KEYWORDS = {
     'release'
   ],
   externalDependencyKeywords: [
-    'blocked',
+    'blocked by',
+    'blocked on',
+    'blocked until',
     'блокер',
     'зависимость',
     'ждём',
@@ -619,7 +621,13 @@ export const TASK_SIGNAL_KEYWORDS = {
     'регрессия пройдена'
   ],
   blockerKeywords: [
-    'blocked',
+    'blocked by',
+    'blocked on',
+    'blocked until',
+    'blocked:',
+    'task is blocked',
+    'work is blocked',
+    'release is blocked',
     'блокер',
     'не можем завершить',
     'ждём',

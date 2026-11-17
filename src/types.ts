@@ -9,7 +9,7 @@ export type WorkItemType = 'bug' | 'task' | 'story' | 'research' | 'tech_debt';
 export type TemplateLanguage = 'ru' | 'en';
 export type ConfigLanguage = TemplateLanguage | 'auto';
 export type ClarityMode = 'strict' | 'non-strict';
-export type TaskSource = 'github' | 'jira' | 'yandex-tracker' | 'demo' | 'file';
+export type TaskSource = 'github' | 'jira' | 'yandex-tracker' | 'linear' | 'gitlab' | 'demo' | 'file';
 export type TaskPeriod = 'before' | 'after';
 export type ReportFormatName = 'markdown' | 'json' | 'csv';
 

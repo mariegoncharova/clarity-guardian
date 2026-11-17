@@ -2,7 +2,6 @@ import { analyzeUnifiedTasks } from './analytics';
 import { inferReportFormat, tableCell, writeReport } from './report-utils';
 import { normalizeUnifiedTasks } from './task-model';
 import {
-  BLOCKER_KEYWORDS,
   findKeywords,
   getAcceptanceCriteria,
   getContext,
@@ -13,10 +12,11 @@ import {
   hasAcceptanceCriteria,
   hasContext,
   hasExpectedResult,
+  hasOpenBlocker,
   isDoneStatus,
   RISKY_DOMAIN_KEYWORDS
 } from './task-signals';
-import { extractFirstMarkdownSection, getStringArg, makeCliError, parseArgs, readJsonFile } from './utils';
+import { getStringArg, makeCliError, parseArgs, readJsonFile } from './utils';
 import type { TaskAnalysisRecord } from './types';
 
 type HandoffStatus = 'ready_for_agent' | 'needs_clarification' | 'human_review';
@@ -56,15 +56,9 @@ function analyzeHandoff(record: TaskAnalysisRecord) {
     !hasInstruction(verification) && 'Как воспроизвести проверку результата?'
   ].filter((item): item is string => Boolean(item));
   const riskyDomains = findKeywords([getTaskText(task), scope, verification].join('\n'), RISKY_DOMAIN_KEYWORDS);
-  const blockerSignals = [
-    task.status,
-    ...(task.labels || []),
-    ...(task.tags || []),
-    extractFirstMarkdownSection(task.body, ['Blockers', 'Блокеры'])
-  ].filter(Boolean).join('\n');
   const reviewReasons = [
     riskyDomains.length > 0 && `Рискованные области: ${riskyDomains.join(', ')}.`,
-    findKeywords(blockerSignals, BLOCKER_KEYWORDS).length > 0 && 'В задаче есть открытый блокер.',
+    hasOpenBlocker(task) && 'В задаче есть открытый блокер.',
     record.riskLevel === 'high' && missing.length === 0 && 'Риск выполнения задачи оценён как высокий.'
   ].filter((item): item is string => Boolean(item));
   const status: HandoffStatus = reviewReasons.length > 0

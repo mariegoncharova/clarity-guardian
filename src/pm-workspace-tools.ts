@@ -3,8 +3,9 @@ import { existsSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import path from 'node:path';
 import type { fromJsonSchema } from '@modelcontextprotocol/server';
 import { PM_AGENT_TOOLS, createPmAgentTools } from './pm-agent-tools';
-import { TASK_DRAFT_SCHEMA, validateMeetingQuestions, validateTaskDrafts } from './pm-task-drafts';
-import { formatMeetingReview, listMeetings, readMeeting, recheckMeeting, type Dataset, type MeetingQueue } from './pm-meeting-review';
+import { TASK_DRAFT_SCHEMA } from './pm-task-drafts';
+import { buildMeetingQueue, formatMeetingReview, listMeetings, readMeeting, recheckMeeting, type Dataset } from './pm-meeting-review';
+import { formatMeetingReviewHtml, MEETING_REVIEW_HTML } from './pm-meeting-review-html';
 import { writeReport } from './report-utils';
 import { isTaskRow } from './task-model';
 import { makeCliError, readJsonFile } from './utils';
@@ -14,8 +15,10 @@ const DATASET_SCHEMA = {
   enum: ['working', 'demo'],
   description: 'Use working for the local export. Use demo only for an explicitly requested demo.'
 };
+const MEETING_QUERY_LIMIT = 8;
+const CANDIDATES_PER_QUERY = 2;
 
-export const CODEX_PM_TOOLS: Array<{
+export const WORKSPACE_TOOLS: Array<{
   name: string;
   description: string;
   parameters: Parameters<typeof fromJsonSchema>[0];
@@ -28,6 +31,22 @@ export const CODEX_PM_TOOLS: Array<{
       required: [...tool.parameters.required, 'dataset']
     }
   })),
+  {
+    name: 'prepare_meeting',
+    description: 'Search the backlog in one batch using IDs and short phrases from meeting notes. Returns the top candidate cards with requirements, verification and snapshot ID for drafting.',
+    parameters: {
+      type: 'object',
+      properties: {
+        dataset: DATASET_SCHEMA,
+        queries: {
+          type: 'array', minItems: 1, maxItems: MEETING_QUERY_LIMIT, items: { type: 'string', minLength: 1 },
+          description: 'Include mentioned task IDs and a few short phrases for distinct actions. Use the language of the backlog.'
+        }
+      },
+      required: ['dataset', 'queries'],
+      additionalProperties: false
+    }
+  },
   {
     name: 'list_meetings',
     description: 'Find saved meeting reviews in newest-first order, including recorded open questions. Start at offset 0.',
@@ -50,12 +69,12 @@ export const CODEX_PM_TOOLS: Array<{
   },
   {
     name: 'save_drafts',
-    description: 'Validate task drafts and open questions against meeting notes and the reviewed backlog snapshot. Writes local JSON and Markdown for review.',
+    description: 'Validate task drafts and open questions against the notes and backlog. Saves JSON, Markdown and an interactive HTML review.',
     parameters: {
       type: 'object',
       properties: {
         dataset: DATASET_SCHEMA,
-        snapshotId: { type: 'string', description: 'Snapshot ID returned by list_tasks and the task review tools.' },
+        snapshotId: { type: 'string', description: 'Snapshot ID returned by prepare_meeting or list_tasks.' },
         notes: { type: 'string', description: 'Original meeting notes. Preserve the exact text.' },
         drafts: TASK_DRAFT_SCHEMA,
         questions: {
@@ -82,7 +101,7 @@ type Snapshot = {
   retrieved: Set<string>;
 };
 
-export function createCodexDraftTools(projectDir: string) {
+export function createWorkspaceTools(projectDir: string) {
   const snapshots = new Map<Dataset, Snapshot>();
   const reportsDir = path.join(projectDir, 'reports', 'codex');
 
@@ -119,12 +138,34 @@ export function createCodexDraftTools(projectDir: string) {
           throw makeCliError('Укажи целое неотрицательное смещение offset.');
         }
         const meetings = listMeetings(reportsDir, args.dataset, args.offset);
-        return { ...meetings, items: meetings.items.map((meeting) => ({
-          ...meeting, reportPath: path.join('reports', 'codex', meeting.meetingId, 'meeting-review.md')
-        })) };
+        return { ...meetings, items: meetings.items.map((meeting) => {
+          const folder = path.join(reportsDir, meeting.meetingId);
+          const html = path.join(folder, MEETING_REVIEW_HTML);
+          return {
+            ...meeting, reportPath: path.relative(projectDir, path.join(folder, 'meeting-review.md')),
+            ...(existsSync(html) ? { reviewPath: path.relative(projectDir, html) } : {})
+          };
+        }) };
       }
 
       const snapshot = load(args.dataset);
+
+      if (name === 'prepare_meeting') {
+        if (!Array.isArray(args.queries) || !args.queries.length || args.queries.length > MEETING_QUERY_LIMIT ||
+          !args.queries.every((query: unknown) => typeof query === 'string' && query.trim())) {
+          throw makeCliError(`Передай от 1 до ${MEETING_QUERY_LIMIT} ключей или фраз из заметок.`);
+        }
+        const queries = [...new Set(args.queries.map((query: string) => query.trim().toLowerCase()))];
+        const matches = queries.map((query) => {
+          const { data, refs } = snapshot.tools.findTasks(query, 'all', 0);
+          return { query, total: data.total, taskRefs: refs.slice(0, CANDIDATES_PER_QUERY) };
+        });
+        const taskRefs = [...new Set(matches.flatMap((match) => match.taskRefs))];
+        const candidates = taskRefs.map((taskRef) => snapshot.tools.call('inspect_task', { taskRef }).data);
+        snapshot.searched = true;
+        taskRefs.forEach((taskRef) => snapshot.retrieved.add(taskRef));
+        return { snapshotId: snapshot.id, hasBaseline: snapshot.tools.snapshot.hasBaseline, matches, candidates, taskRefs };
+      }
 
       if (name === 'recheck_drafts') {
         const meeting = readMeeting(reportsDir, args.meetingId);
@@ -146,36 +187,35 @@ export function createCodexDraftTools(projectDir: string) {
       }
 
       if (args.snapshotId !== snapshot.id || !snapshot.searched) {
-        throw makeCliError('Нужен актуальный поиск по бэклогу. Вызови list_tasks и повтори сверку.');
+        throw makeCliError('Нужен актуальный поиск по бэклогу. Вызови prepare_meeting или list_tasks и повтори сверку.');
       }
       if (typeof args.notes !== 'string' || !args.notes.trim()) {
         throw makeCliError('Передай исходный текст заметок.');
       }
 
-      const drafts = validateTaskDrafts(args.drafts, args.notes, snapshot.tools.sources, snapshot.retrieved);
-      const questions = validateMeetingQuestions(args.questions, args.notes);
-      const currentTasks = Object.fromEntries(drafts.flatMap(({ target }) =>
-        target ? [[target.ref, snapshot.tools.getRequirements(target.ref)]] : []
-      ));
-      const queue: MeetingQueue = {
-        status: 'review_required', drafts,
-        review: { dataset: args.dataset, snapshotId: snapshot.id, createdAt: new Date().toISOString(), questions, currentTasks }
-      };
+      const queue = buildMeetingQueue({
+        dataset: args.dataset, snapshotId: snapshot.id, createdAt: new Date().toISOString(),
+        notes: args.notes, drafts: args.drafts, questions: args.questions
+      }, snapshot.tools, snapshot.retrieved);
 
       mkdirSync(reportsDir, { recursive: true });
       const directory = mkdtempSync(path.join(reportsDir, 'meeting-'));
+      const meetingId = path.basename(directory);
       const reportPath = path.join(directory, 'meeting-review.md');
+      const reviewPath = path.join(directory, MEETING_REVIEW_HTML);
       const outputPath = path.join(directory, 'backlog-drafts.json');
       try {
         writeReport(reportPath, formatMeetingReview(queue));
+        writeReport(reviewPath, formatMeetingReviewHtml(queue, { meetingId }));
         writeReport(outputPath, `${JSON.stringify(queue, null, 2)}\n`);
       } catch (error) {
         rmSync(directory, { recursive: true, force: true });
         throw error;
       }
       return {
-        meetingId: path.basename(directory), path: path.relative(projectDir, outputPath), reportPath: path.relative(projectDir, reportPath),
-        status: queue.status, savedDrafts: drafts.length, savedQuestions: questions.length
+        meetingId, path: path.relative(projectDir, outputPath), reportPath: path.relative(projectDir, reportPath),
+        reviewPath: path.relative(projectDir, reviewPath), status: queue.status,
+        savedDrafts: queue.drafts.length, savedQuestions: queue.review.questions.length
       };
     }
   };

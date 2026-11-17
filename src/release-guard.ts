@@ -418,7 +418,7 @@ function buildRollbackNotes(record: TaskAnalysisRecord, risks: ReleaseGuardRisk[
   return notes;
 }
 
-function toReleaseGuardItem(record: TaskAnalysisRecord): ReleaseGuardItem {
+export function buildReleaseGuardItem(record: TaskAnalysisRecord): ReleaseGuardItem {
   const releaseRisks = buildReleaseRisks(record);
   const releaseImpactScore = getReleaseImpactScore(record, releaseRisks);
   const guardStatus = getGuardStatus(releaseRisks, releaseImpactScore);
@@ -528,7 +528,7 @@ export function buildReleaseGuardReport(
 ): ReleaseGuardReport {
   const limit = options.limit ?? 12;
   const minImpactScore = options.minImpactScore ?? 15;
-  const allItems = records.map(toReleaseGuardItem);
+  const allItems = records.map(buildReleaseGuardItem);
   const items = allItems
     .filter((item) =>
       options.includeReady ||

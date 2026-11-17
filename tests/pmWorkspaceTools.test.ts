@@ -3,28 +3,35 @@ import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSy
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
-import { createCodexDraftTools } from '../src/pm-codex-drafts';
+import { formatMeetingReviewHtml } from '../src/pm-meeting-review-html';
+import { createWorkspaceTools } from '../src/pm-workspace-tools';
 
-test('Codex drafts use the reviewed working export and preserve each validated queue', (t) => {
+test('Workspace drafts use the reviewed export and preserve each validated queue', (t) => {
   const projectDir = mkdtempSync(path.join(tmpdir(), 'clarity-codex-'));
   t.after(() => rmSync(projectDir, { recursive: true, force: true }));
 
-  const tools = createCodexDraftTools(projectDir);
+  const tools = createWorkspaceTools(projectDir);
   const search = { dataset: 'working', query: 'CG-203', scope: 'all', offset: 0 };
   assert.throws(() => tools.call('list_tasks', search), /data\/local\/tasks\.json/);
 
   const tasksPath = path.join(projectDir, 'data/local/tasks.json');
   mkdirSync(path.dirname(tasksPath), { recursive: true });
   copyFileSync('data/demo-tasks.json', tasksPath);
-  const first = tools.call('list_tasks', search);
-  assert.ok('taskRefs' in first);
+  const batch = { dataset: 'working', queries: ['CG-203', ' Mobile blocked ', 'MOBILE BLOCKED'] };
+  assert.throws(() => tools.call('prepare_meeting', { ...batch, queries: [' '] }), /ключей или фраз/);
+  const first = tools.call('prepare_meeting', batch);
+  assert.ok('matches' in first && first.matches && first.taskRefs);
   assert.equal(first.taskRefs.length, 1);
+  const [targetRef] = first.taskRefs;
+  assert.equal(first.matches.length, 2);
+  assert.ok(first.matches.every(({ taskRefs }) => taskRefs[0] === targetRef));
+  assert.match(JSON.stringify(first.candidates), /Check the hint at a mobile viewport/);
 
   const action = 'Добавить проверку на планшете для заблокированного аккаунта.';
   const question = 'У QA уточнить, нужна ли проверка поворота экрана.';
   const notes = `${action}\n${question}`;
   const draft = {
-    operation: 'update', targetRef: first.taskRefs[0], title: 'Расширить проверку подсказки на планшеты',
+    operation: 'update', targetRef, title: 'Расширить проверку подсказки на планшеты',
     context: 'Пользователь с заблокированным аккаунтом может зайти с планшета.',
     expectedResult: 'Добавлена проверка на ширине экрана планшета.',
     acceptanceCriteria: ['Подсказка видна в профиле заблокированного аккаунта на планшете.'],
@@ -54,10 +61,17 @@ test('Codex drafts use the reviewed working export and preserve each validated q
   assert.match(markdown, /Сейчас в бэклоге[\s\S]+Hint is visible only to authenticated users/);
   assert.match(markdown, /Предложение[\s\S]+Подсказка видна в профиле заблокированного аккаунта на планшете/);
   assert.match(markdown, /У QA уточнить, нужна ли проверка поворота экрана/);
+  assert.ok(typeof saved.reviewPath === 'string');
+  const html = readFileSync(path.join(projectDir, saved.reviewPath), 'utf8');
+  assert.match(html, /Ревью встречи/);
+  assert.match(html, /Сейчас[\s\S]+Hint is visible only to authenticated users/);
+  assert.match(html, /Предложение[\s\S]+Подсказка видна в профиле заблокированного аккаунта на планшете/);
 
-  const history = createCodexDraftTools(projectDir).call('list_meetings', { dataset: 'working', offset: 0 });
+  const history = createWorkspaceTools(projectDir).call('list_meetings', { dataset: 'working', offset: 0 });
   assert.ok('items' in history && Array.isArray(history.items) && 'questions' in history.items[0]);
   assert.deepEqual(history.items[0].questions, args.questions);
+  assert.ok('reviewPath' in history.items[0]);
+  assert.equal(history.items[0].reviewPath, saved.reviewPath);
   const demoHistory = tools.call('list_meetings', { dataset: 'demo', offset: 0 });
   assert.deepEqual(demoHistory, { items: [], total: 0, nextOffset: null });
 
@@ -91,4 +105,20 @@ test('Codex drafts use the reviewed working export and preserve each validated q
   const emptyQueue = JSON.parse(readFileSync(path.join(projectDir, empty.path), 'utf8'));
   assert.deepEqual(emptyQueue.drafts, []);
   assert.deepEqual(emptyQueue.review.questions, []);
+});
+
+test('Meeting review keeps the literal note out of executable HTML', () => {
+  const sourceQuote = '</script><script>throw Error("note text")</script>';
+  const html = formatMeetingReviewHtml({
+    status: 'review_required',
+    drafts: [{
+      operation: 'create', target: null, title: 'Check the note', context: 'Example', expectedResult: 'Record the text',
+      acceptanceCriteria: ['Keep the original quotation.'], sourceQuote
+    }],
+    review: { dataset: 'demo', snapshotId: 'snapshot', createdAt: '2026-11-17T00:00:00Z', questions: [], currentTasks: {} }
+  });
+  assert.ok(!html.includes(sourceQuote));
+  const match = html.match(/<script type="application\/json" id="meeting-data">([^<]+)<\/script>/);
+  assert.ok(match);
+  assert.equal(JSON.parse(match[1]).drafts[0].sourceQuote, sourceQuote);
 });
