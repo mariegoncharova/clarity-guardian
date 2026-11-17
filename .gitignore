@@ -3,6 +3,7 @@ dist/
 .smoke-dist/
 .test-dist/
 reports/
+data/local/
 
 clarity-event.json
 clarity-analysis-comment.md
