@@ -134,6 +134,17 @@ test('PM agent keeps separate references for identical tracker IDs and for basel
   assert.equal(context.sources.get('B1')?.taskId, 'WEB-20');
 });
 
+test('PM agent searches requirements even when the title omits the terms, with exact IDs first', () => {
+  const context = createPmAgentTools([
+    { source: 'jira', id: '1944', key: 'WEB-14', title: 'Profile follow-up', body: 'Check WEB-12 after release.' },
+    current
+  ]);
+  const search = (query: string) => context.call('list_tasks', { query, scope: 'all', offset: 0 }).refs;
+  assert.deepEqual(search('current tab toolbar'), ['T2']);
+  assert.deepEqual(search('WEB-12'), ['T2', 'T1']);
+  assert.deepEqual(search(''), ['T1', 'T2']);
+});
+
 const note = 'Добавить проверку подсказки профиля на мобильном экране.';
 const draftUpdate = {
   operation: 'update',

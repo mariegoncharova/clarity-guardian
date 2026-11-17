@@ -1118,7 +1118,8 @@ function smokeV2Reports(): void {
   assert(Boolean(projectPulse.status), 'Project Pulse should include project status');
   assert(typeof projectPulse.projectHealthScore === 'number', 'Project Pulse should include health score');
   assert((projectPulse.focusAreas || []).length > 0, 'Project Pulse should include focus areas');
-  assert((projectPulse.taskSpotlight || []).length > 0, 'Project Pulse should include task spotlight');
+  assert(Array.isArray(projectPulse.taskSpotlight), 'V2 demo should include the task spotlight field');
+  assert(!projectPulse.taskSpotlight?.some((task) => /^CG-10\d$/.test(task.taskId || '')), 'Task spotlight should exclude completed demo history');
   assert(
     Boolean((projectPulse.reportMap || []).some((link) => link.fileName === 'dashboard.html')),
     'Project Pulse should include report map links'
@@ -1127,8 +1128,16 @@ function smokeV2Reports(): void {
   assert(projectPulseHtml.includes('Clarity Guardian Project Pulse'), 'V2 demo should include Project Pulse index HTML');
   assert(projectPulseHtml.includes('href="dashboard.html"'), 'Project Pulse index should link to dashboard HTML');
   for (const [, target] of projectPulseHtml.matchAll(/href="([^"]+)"/g)) {
-    assert(fs.existsSync(path.join(outDir, target)), `Project Pulse links to a missing file: ${target}`);
+    if (target.startsWith('#')) {
+      assert(projectPulseHtml.includes(`id="${target.slice(1)}"`), `Project Pulse links to a missing section: ${target}`);
+    } else {
+      assert(fs.existsSync(path.join(outDir, target)), `Project Pulse links to a missing file: ${target}`);
+    }
   }
+  const releaseSection = projectPulseHtml.match(/<section id="release"[\s\S]*?<\/section>/)?.[0] || '';
+  assert(releaseSection.includes('CG-204') && releaseSection.includes('Нет признака тестирования'), 'Workspace should show the current release evidence and assignee role');
+  assert(!releaseSection.includes('CG-101'), 'Workspace should exclude historical tasks from the release decision');
+  assert(projectPulseHtml.includes('id="meeting-command"') && projectPulseHtml.includes('$meeting-drafts'), 'Workspace should lead to the demo meeting workflow');
   const evidenceBrief = readJson<{ totalTasks: number }>(path.join(outDir, 'evidence-brief.json'));
   assert(evidenceBrief.totalTasks === 8, 'V2 demo should include Evidence Brief JSON');
   const handoff = readJson<{ summary: { readyForAgent: number; humanReview: number } }>(path.join(outDir, 'agent-handoff.json'));

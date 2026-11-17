@@ -2,8 +2,9 @@ import { buildAgentHandoffReport } from './agent-handoff';
 import { analyzeUnifiedTasks } from './analytics';
 import { buildChangeReview } from './change-review';
 import { getTaskRows, isTaskRow, normalizeUnifiedTasks } from './task-model';
-import { getAcceptanceCriteria, getContext, getExecutionDetails, getExpectedResult, getTaskId, isDoneStatus } from './task-signals';
+import { getAcceptanceCriteria, getContext, getExecutionDetails, getExpectedResult, getTaskId, getTaskText, isDoneStatus } from './task-signals';
 import { makeCliError } from './utils';
+import type { UnifiedTask } from './types';
 
 const PAGE_SIZE = 10;
 const FIELD_LIMIT = 1200;
@@ -24,8 +25,9 @@ function defineTool(name: string, description: string, properties: Record<string
 }
 
 export const PM_AGENT_TOOLS = [
-  defineTool('list_tasks', 'Find tracker tasks. Returns compact records with task references, status, owner and risk.', {
+  defineTool('list_tasks', 'Find tracker tasks by ID, title, project or keywords in requirements. Exact IDs rank first. Returns compact task records.', {
     ...searchParameters,
+    query: { type: 'string', description: 'Use a task ID or a few keywords from the title, description or criteria. Empty string lists all.' },
     scope: { type: 'string', enum: ['active', 'all'] }
   }),
   defineTool('inspect_task', 'Read one known task reference and its requirements, QA criteria and analysis signals.', {
@@ -50,7 +52,7 @@ export interface AgentSource {
 
 type TaskIdentity = Pick<AgentSource, 'id' | 'source' | 'project'>;
 
-function identity(task: TaskIdentity): string {
+export function taskIdentity(task: TaskIdentity): string {
   return JSON.stringify([task.source, task.project || '', task.id]);
 }
 
@@ -71,6 +73,21 @@ function page<T>(items: T[], offset: number, size = PAGE_SIZE) {
 function matches(source: AgentSource, query: string): boolean {
   return [source.ref, source.taskId, source.id, source.title, source.project]
     .some((value) => value?.toLowerCase().includes(query));
+}
+
+function taskSearchRank(source: AgentSource, searchText: string, query: string, terms: string[]): number {
+  if ([source.ref, source.taskId, source.id].some((value) => value.toLowerCase() === query)) return 4;
+  if (matches(source, query)) return 3;
+  if (searchText.includes(query)) return 2;
+  return Number(terms.every((term) => searchText.includes(term)));
+}
+
+function taskRequirements(task: UnifiedTask) {
+  return {
+    context: getContext(task),
+    expectedResult: getExpectedResult(task),
+    acceptanceCriteria: getAcceptanceCriteria(task)
+  };
 }
 
 function describeSource(source: AgentSource) {
@@ -104,6 +121,7 @@ export function createPmAgentTools(input: unknown, baseline?: unknown) {
     return {
       source,
       task,
+      searchText: [source.project, getTaskText(task), task.scope, task.verification].filter(Boolean).join('\n').toLowerCase(),
       record: byTask.get(task),
       handoff: handoffByTask.get(task)
     };
@@ -111,7 +129,7 @@ export function createPmAgentTools(input: unknown, baseline?: unknown) {
   const active = entries.filter(({ task }) => !isDoneStatus(task.status));
   const sources = new Map(entries.map(({ source }) => [source.ref, source]));
   const byRef = new Map(entries.map((entry) => [entry.source.ref, entry]));
-  const byIdentity = new Map(entries.map(({ source }) => [identity(source), source]));
+  const byIdentity = new Map(entries.map(({ source }) => [taskIdentity(source), source]));
   const changeReview = baseline === undefined ? undefined : buildChangeReview(baseline, input);
   const sourcesMissing = changeReview?.missing.map((task, index) => {
     const source = { ...task, ref: `B${index + 1}` };
@@ -142,15 +160,16 @@ export function createPmAgentTools(input: unknown, baseline?: unknown) {
 
       const { source, task, record } = entry;
       const execution = getExecutionDetails(task);
+      const { context, expectedResult, acceptanceCriteria } = taskRequirements(task);
       return {
         data: {
           ...describeSource(source),
           status: excerpt(task.status),
           owner: excerpt(task.assignee),
           deadline: excerpt(task.deadline || task.dueDate),
-          context: excerpt(getContext(task)),
-          expectedResult: excerpt(getExpectedResult(task)),
-          acceptanceCriteria: getAcceptanceCriteria(task).slice(0, 10).map((criterion) => excerpt(criterion)),
+          context: excerpt(context),
+          expectedResult: excerpt(expectedResult),
+          acceptanceCriteria: acceptanceCriteria.slice(0, 10).map((criterion) => excerpt(criterion)),
           description: excerpt(task.body),
           dependencies: (task.dependencies || []).slice(0, 10).map((dependency) => excerpt(dependency)),
           scope: excerpt(execution.scope),
@@ -176,7 +195,13 @@ export function createPmAgentTools(input: unknown, baseline?: unknown) {
     const offset = args.offset;
 
     if (name === 'list_tasks' && (args.scope === 'all' || args.scope === 'active')) {
-      const items = (args.scope === 'active' ? active : entries).filter(({ source }) => matches(source, query));
+      const scope = args.scope === 'active' ? active : entries;
+      const terms = query.split(/\s+/);
+      const items = query ? scope
+        .map((entry) => ({ entry, rank: taskSearchRank(entry.source, entry.searchText, query, terms) }))
+        .filter(({ rank }) => rank > 0)
+        .sort((left, right) => right.rank - left.rank)
+        .map(({ entry }) => entry) : scope;
       const result = page(items, offset);
       return {
         data: {
@@ -216,7 +241,7 @@ export function createPmAgentTools(input: unknown, baseline?: unknown) {
 
       const items = [
         ...changeReview.changed.map((task) => ({
-          source: byIdentity.get(identity(task))!,
+          source: byIdentity.get(taskIdentity(task))!,
           kind: 'changed',
           changes: task.changes.map(({ field, before, after }) => ({
             field,
@@ -224,7 +249,7 @@ export function createPmAgentTools(input: unknown, baseline?: unknown) {
             after: excerpt(Array.isArray(after) ? after.join('\n') : after, 500)
           }))
         })),
-        ...changeReview.added.map((task) => ({ source: byIdentity.get(identity(task))!, kind: 'added' })),
+        ...changeReview.added.map((task) => ({ source: byIdentity.get(taskIdentity(task))!, kind: 'added' })),
         ...sourcesMissing.map((source) => ({ source, kind: 'missing_from_current_snapshot' }))
       ].filter(({ source }) => matches(source, query));
       const result = page(items, offset, 4);
@@ -241,5 +266,10 @@ export function createPmAgentTools(input: unknown, baseline?: unknown) {
     return { data: { error: 'Unsupported tool or filter.' }, refs: [] };
   }
 
-  return { call, sources, snapshot, handoff, changeReview };
+  return {
+    call, sources, snapshot, handoff, changeReview,
+    getRequirements(taskRef: string) {
+      return taskRequirements(byRef.get(taskRef)!.task);
+    }
+  };
 }
