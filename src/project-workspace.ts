@@ -112,20 +112,39 @@ function meetingSection(demo: boolean): string {
     ? '$meeting-drafts Разбери демозаметки из data/demo-meeting-notes.txt, сверь их с демобэклогом и сохрани черновики и вопросы.'
     : '$meeting-drafts Сверь эти заметки с рабочим бэклогом и сохрани черновики и открытые вопросы.';
   const instructions = demo
-    ? 'Откройте корень Clarity Guardian как доверенный проект в Codex и отправьте команду из поля ниже.'
-    : 'Откройте корень Clarity Guardian как доверенный проект в Codex. Положите выгрузку в data/local/tasks.json, приложите заметки и отправьте команду.';
+    ? 'Отправьте команду в чат проекта Clarity Guardian в Codex.'
+    : 'Положите выгрузку в data/local/tasks.json, приложите заметки в чате проекта Codex и отправьте команду.';
   return `<section id="meeting" class="panel"><h2>Итоги встречи</h2>
-    <p>${instructions} Получите Markdown для ревью и JSON с черновиками и вопросами.</p>
-    <label for="meeting-command">Команда для чата Codex</label>
-    <textarea id="meeting-command" rows="3" readonly>${escapeHtml(command)}</textarea>
+    <p>${instructions} Codex сохранит черновики и вопросы в Markdown и JSON.</p>
     <button id="copy-command" type="button">Скопировать команду</button>
     <span id="copy-status" role="status"></span>
+    <details><summary>Показать команду</summary>
+    <label for="meeting-command">Команда для чата Codex</label>
+    <textarea id="meeting-command" rows="3" readonly>${escapeHtml(command)}</textarea>
+    </details>
   </section>`;
+}
+
+function nextStep({ release, refinement, changes }: Workspace) {
+  if (release.totalTasks && release.releaseDecision !== 'go') {
+    return { href: '#release', label: 'Проверить готовность релиза' };
+  }
+  if (refinement.items.length) return { href: '#tasks', label: 'Уточнить задачи к спринту' };
+  if (changes && (changes.summary.changed || changes.summary.added || changes.summary.missing)) {
+    return { href: '#scope', label: 'Сверить изменения ТЗ' };
+  }
+  return { href: '#meeting', label: 'Разобрать встречу' };
 }
 
 export function formatProjectPulseHtml(report: ProjectPulseReport, workspace?: Workspace): string {
   const links = report.reportMap.filter((link) => link.fileName !== 'index.html');
   const title = 'Clarity Guardian Project Pulse';
+  const primary = workspace && nextStep(workspace);
+  const shortcuts = [
+    { href: '#release', label: 'Релиз' }, { href: '#tasks', label: 'Подготовка задач' },
+    ...(workspace?.changes ? [{ href: '#scope', label: 'Изменения ТЗ' }] : []),
+    { href: '#meeting', label: 'Итоги встречи' }
+  ].filter((link) => link.href !== primary?.href);
 
   return `<!doctype html>
 <html lang="ru">
@@ -151,15 +170,18 @@ details{margin-top:12px}summary{color:var(--accent);font-weight:650;cursor:point
 .field{margin-top:11px}.diff{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:5px}
 .diff p{margin:0;padding:8px 10px;border:1px solid var(--line);border-radius:7px;white-space:pre-wrap;font-size:.9rem}.diff strong{display:block;color:var(--muted)}
 label{display:block;font-weight:600;margin-top:10px;font-size:.9rem}textarea{width:100%;padding:9px;margin:3px 0 7px;color:var(--ink);background:#f3f7f4;border:1px solid var(--line);border-radius:7px;font:inherit;font-size:.9rem;resize:vertical}
-button{color:#fff;background:var(--accent);border:0;border-radius:7px;padding:9px 12px;font:inherit;font-size:.9rem;cursor:pointer}#copy-status{display:inline-block;margin-left:8px;font-size:.9rem;color:var(--muted)}
+button,.primary-action{color:#fff;background:var(--accent);border:0;border-radius:7px;padding:9px 12px;font:inherit;font-size:.9rem;cursor:pointer}
+.primary-action{display:inline-block;text-decoration:none;margin-top:12px;font-weight:650}
+.primary-action:hover,button:hover{color:#fff;background:#184b40}
+#copy-command{margin-top:10px}#copy-status{display:inline-block;margin-left:8px;font-size:.9rem;color:var(--muted)}
 .library ul{columns:2}.library li{break-inside:avoid;margin-bottom:4px}
 @media(max-width:540px){main{padding:20px 13px 32px}.panel,.library{padding:15px}.diff{grid-template-columns:1fr}.library ul{columns:1}}
 </style></head>
 <body><main>
 <header><p class="brand">Clarity Guardian</p><h1>Рабочая сводка проекта</h1>
-<p class="meta">${workspace?.demo ? 'Демо · текущая версия задач' : 'По загруженной выгрузке'} · Отчёт от ${escapeHtml(report.generatedAt.slice(0, 10))}</p></header>
-${workspace ? `<nav aria-label="Сценарии"><a href="#release">Релиз</a><a href="#tasks">Подготовка задач</a>
-${workspace.changes ? '<a href="#scope">Изменения ТЗ</a>' : ''}<a href="#meeting">Итоги встречи</a></nav>
+<p class="meta">${workspace?.demo ? 'Демо · текущая версия задач' : 'По загруженной выгрузке'} · Отчёт от ${escapeHtml(report.generatedAt.slice(0, 10))}</p>
+${primary ? `<a class="primary-action" href="${primary.href}">${primary.label}</a>` : ''}</header>
+${workspace ? `<nav aria-label="Другие сценарии">${shortcuts.map(({ href, label }) => `<a href="${href}">${label}</a>`).join('')}</nav>
 ${releaseSection(workspace.release)}${tasksSection(workspace.refinement, workspace.handoff)}
 ${workspace.changes ? changeSection(workspace.changes) : ''}${meetingSection(workspace.demo)}`
   : `<section class="panel"><h2>Следующие шаги</h2><p>${escapeHtml(report.executiveSummary)}</p>${textList(report.nextActions)}
@@ -177,6 +199,7 @@ document.getElementById('copy-command').addEventListener('click', async () => {
     await navigator.clipboard.writeText(command.value);
     status.textContent = 'Команда скопирована';
   } catch {
+    command.closest('details').open = true;
     command.focus();
     command.select();
     status.textContent = 'Команда выделена. Скопируйте её.';

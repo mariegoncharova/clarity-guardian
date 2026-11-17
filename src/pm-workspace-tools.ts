@@ -14,8 +14,10 @@ const DATASET_SCHEMA = {
   enum: ['working', 'demo'],
   description: 'Use working for the local export. Use demo only for an explicitly requested demo.'
 };
+const MEETING_QUERY_LIMIT = 8;
+const CANDIDATES_PER_QUERY = 2;
 
-export const CODEX_PM_TOOLS: Array<{
+export const WORKSPACE_TOOLS: Array<{
   name: string;
   description: string;
   parameters: Parameters<typeof fromJsonSchema>[0];
@@ -28,6 +30,22 @@ export const CODEX_PM_TOOLS: Array<{
       required: [...tool.parameters.required, 'dataset']
     }
   })),
+  {
+    name: 'prepare_meeting',
+    description: 'Search the backlog in one batch using IDs and short phrases from meeting notes. Returns the top candidate cards with requirements, verification and snapshot ID for drafting.',
+    parameters: {
+      type: 'object',
+      properties: {
+        dataset: DATASET_SCHEMA,
+        queries: {
+          type: 'array', minItems: 1, maxItems: MEETING_QUERY_LIMIT, items: { type: 'string', minLength: 1 },
+          description: 'Include mentioned task IDs and a few short phrases for distinct actions. Use the language of the backlog.'
+        }
+      },
+      required: ['dataset', 'queries'],
+      additionalProperties: false
+    }
+  },
   {
     name: 'list_meetings',
     description: 'Find saved meeting reviews in newest-first order, including recorded open questions. Start at offset 0.',
@@ -55,7 +73,7 @@ export const CODEX_PM_TOOLS: Array<{
       type: 'object',
       properties: {
         dataset: DATASET_SCHEMA,
-        snapshotId: { type: 'string', description: 'Snapshot ID returned by list_tasks and the task review tools.' },
+        snapshotId: { type: 'string', description: 'Snapshot ID returned by prepare_meeting or list_tasks.' },
         notes: { type: 'string', description: 'Original meeting notes. Preserve the exact text.' },
         drafts: TASK_DRAFT_SCHEMA,
         questions: {
@@ -82,7 +100,7 @@ type Snapshot = {
   retrieved: Set<string>;
 };
 
-export function createCodexDraftTools(projectDir: string) {
+export function createWorkspaceTools(projectDir: string) {
   const snapshots = new Map<Dataset, Snapshot>();
   const reportsDir = path.join(projectDir, 'reports', 'codex');
 
@@ -126,6 +144,23 @@ export function createCodexDraftTools(projectDir: string) {
 
       const snapshot = load(args.dataset);
 
+      if (name === 'prepare_meeting') {
+        if (!Array.isArray(args.queries) || !args.queries.length || args.queries.length > MEETING_QUERY_LIMIT ||
+          !args.queries.every((query: unknown) => typeof query === 'string' && query.trim())) {
+          throw makeCliError(`Передай от 1 до ${MEETING_QUERY_LIMIT} ключей или фраз из заметок.`);
+        }
+        const queries = [...new Set(args.queries.map((query: string) => query.trim().toLowerCase()))];
+        const matches = queries.map((query) => {
+          const { data, refs } = snapshot.tools.findTasks(query, 'all', 0);
+          return { query, total: data.total, taskRefs: refs.slice(0, CANDIDATES_PER_QUERY) };
+        });
+        const taskRefs = [...new Set(matches.flatMap((match) => match.taskRefs))];
+        const candidates = taskRefs.map((taskRef) => snapshot.tools.call('inspect_task', { taskRef }).data);
+        snapshot.searched = true;
+        taskRefs.forEach((taskRef) => snapshot.retrieved.add(taskRef));
+        return { snapshotId: snapshot.id, hasBaseline: snapshot.tools.snapshot.hasBaseline, matches, candidates, taskRefs };
+      }
+
       if (name === 'recheck_drafts') {
         const meeting = readMeeting(reportsDir, args.meetingId);
         if (meeting.review.dataset !== args.dataset) throw makeCliError('Разбор относится к другому набору бэклога.');
@@ -146,7 +181,7 @@ export function createCodexDraftTools(projectDir: string) {
       }
 
       if (args.snapshotId !== snapshot.id || !snapshot.searched) {
-        throw makeCliError('Нужен актуальный поиск по бэклогу. Вызови list_tasks и повтори сверку.');
+        throw makeCliError('Нужен актуальный поиск по бэклогу. Вызови prepare_meeting или list_tasks и повтори сверку.');
       }
       if (typeof args.notes !== 'string' || !args.notes.trim()) {
         throw makeCliError('Передай исходный текст заметок.');

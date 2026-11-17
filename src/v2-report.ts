@@ -14,6 +14,7 @@ import {
   formatActionPlanMarkdown
 } from './action-plan';
 import { buildAgentHandoffReport, formatAgentHandoffMarkdown } from './agent-handoff';
+import { loadTrackerBacklog } from './backlog-import';
 import { buildChangeReview, formatChangeReviewMarkdown } from './change-review';
 import {
   loadConfig
@@ -111,11 +112,15 @@ async function loadRawTasks(args: Record<string, string | boolean>): Promise<unk
     }).listTasks();
   }
 
+  if (source === 'linear' || source === 'gitlab') {
+    return loadTrackerBacklog(args);
+  }
+
   if (inputPath) {
     return readJsonFile<unknown>(inputPath);
   }
 
-  throw makeCliError('Передай --demo, --source yandex или --input tasks.json');
+  throw makeCliError('Передай --demo, --input tasks.json или --source yandex|linear|gitlab.');
 }
 
 async function main(): Promise<void> {

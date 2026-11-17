@@ -1138,6 +1138,7 @@ function smokeV2Reports(): void {
   assert(releaseSection.includes('CG-204') && releaseSection.includes('Нет признака тестирования'), 'Workspace should show the current release evidence and assignee role');
   assert(!releaseSection.includes('CG-101'), 'Workspace should exclude historical tasks from the release decision');
   assert(projectPulseHtml.includes('id="meeting-command"') && projectPulseHtml.includes('$meeting-drafts'), 'Workspace should lead to the demo meeting workflow');
+  assert(projectPulseHtml.includes('class="primary-action" href="#release"'), 'A release concern should become the primary workspace action');
   const evidenceBrief = readJson<{ totalTasks: number }>(path.join(outDir, 'evidence-brief.json'));
   assert(evidenceBrief.totalTasks === 8, 'V2 demo should include Evidence Brief JSON');
   const handoff = readJson<{ summary: { readyForAgent: number; humanReview: number } }>(path.join(outDir, 'agent-handoff.json'));

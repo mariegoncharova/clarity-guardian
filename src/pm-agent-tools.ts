@@ -145,6 +145,27 @@ export function createPmAgentTools(input: unknown, baseline?: unknown) {
     hasBaseline: changeReview !== undefined
   };
 
+  function findTasks(query: string, scope: 'all' | 'active', offset: number) {
+    const candidates = scope === 'active' ? active : entries;
+    const terms = query.split(/\s+/);
+    const items = query ? candidates
+      .map((entry) => ({ entry, rank: taskSearchRank(entry.source, entry.searchText, query, terms) }))
+      .filter(({ rank }) => rank > 0)
+      .sort((left, right) => right.rank - left.rank)
+      .map(({ entry }) => entry) : candidates;
+    const result = page(items, offset);
+    return {
+      data: {
+        ...result,
+        snapshot,
+        items: result.items.map(({ source, task, record }) => ({
+          ...describeSource(source), status: excerpt(task.status), owner: excerpt(task.assignee), risk: record?.riskLevel
+        }))
+      },
+      refs: result.items.map(({ source }) => source.ref)
+    };
+  }
+
   function call(name: string, args: unknown) {
     if (!isTaskRow(args)) {
       return { data: { error: 'Tool arguments must be a JSON object.' }, refs: [] };
@@ -195,24 +216,7 @@ export function createPmAgentTools(input: unknown, baseline?: unknown) {
     const offset = args.offset;
 
     if (name === 'list_tasks' && (args.scope === 'all' || args.scope === 'active')) {
-      const scope = args.scope === 'active' ? active : entries;
-      const terms = query.split(/\s+/);
-      const items = query ? scope
-        .map((entry) => ({ entry, rank: taskSearchRank(entry.source, entry.searchText, query, terms) }))
-        .filter(({ rank }) => rank > 0)
-        .sort((left, right) => right.rank - left.rank)
-        .map(({ entry }) => entry) : scope;
-      const result = page(items, offset);
-      return {
-        data: {
-          ...result,
-          snapshot,
-          items: result.items.map(({ source, task, record }) => ({
-            ...describeSource(source), status: excerpt(task.status), owner: excerpt(task.assignee), risk: record?.riskLevel
-          }))
-        },
-        refs: result.items.map(({ source }) => source.ref)
-      };
+      return findTasks(query, args.scope, offset);
     }
 
     if (name === 'review_handoff' &&
@@ -267,7 +271,7 @@ export function createPmAgentTools(input: unknown, baseline?: unknown) {
   }
 
   return {
-    call, sources, snapshot, handoff, changeReview,
+    call, findTasks, sources, snapshot, handoff, changeReview,
     getRequirements(taskRef: string) {
       return taskRequirements(byRef.get(taskRef)!.task);
     }
