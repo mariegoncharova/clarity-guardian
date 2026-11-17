@@ -1034,6 +1034,37 @@ async function smokeYandexTrackerApi(): Promise<void> {
   assert(Boolean(searchCall?.body.includes('"queue":"CG"')), 'Yandex request should search by queue');
 }
 
+function smokeApprovedTransfer(meetingReviewHtml: string): void {
+  const embedded = meetingReviewHtml.match(/<script type="application\/json" id="meeting-data">([^<]+)<\/script>/);
+  assert(Boolean(embedded), 'Meeting review should embed the source of the approval export');
+  const { drafts: [update, create], review } = JSON.parse(embedded![1]) as {
+    drafts: Array<{ title: string }>;
+    review: Record<string, unknown>;
+  };
+  const command = ['dist/pm-draft-transfer.js', '--approved'];
+  const approve = (...drafts: Array<{ title: string }>) => writeJson('approved-drafts.json', {
+    status: 'approved_for_transfer', drafts, review: { ...review, questions: [] }
+  });
+  const demoInput = path.join(rootDir, 'data/demo-tasks.json');
+  const ready = runNode([...command, approve(update), '--input', demoInput]).stdout;
+  assert(ready.includes('Правка · PROFILE / CG-203') && ready.includes('after rotating a smartphone'), 'The selected update should be ready to transfer');
+  assert(!ready.includes(create.title), 'An unselected draft should stay out of the transfer report');
+
+  const tasks = readJson<Array<{ key: string; title: string }>>(demoInput);
+  const fresh = writeJson('transfer-current.json', { tasks: [
+    ...tasks.map((task) => task.key === 'CG-203' ? { ...task, title: 'Updated task title', expectedResult: 'Updated scope from the team.' } : task),
+    { id: 'existing-article', key: 'CG-999', title: create.title.toUpperCase(), source: 'demo' }
+  ] });
+  const conflicts = runNode([...command, approve(update, create), '--input', fresh]).stdout;
+  assert(conflicts.includes('Готовых задач нет.') && conflicts.includes('изменились поля «Название», «Ожидаемый результат»'), 'A renamed or changed target should require review');
+  assert(conflicts.includes('такое название уже есть в бэклоге (CG-999)'), 'An existing task should block creating a duplicate');
+  assert(!conflicts.includes('after rotating a smartphone'), 'The report should withhold the text of conflicting drafts');
+
+  const unapproved = writeJson('unapproved-drafts.json', { status: 'review_required', drafts: [update], review });
+  const rejected = spawnSync(process.execPath, [...command, unapproved, '--input', demoInput], { encoding: 'utf8', cwd: rootDir });
+  assert(rejected.status === 1 && rejected.stderr.includes('approved-drafts.json') && !rejected.stdout, 'The transfer command should reject drafts that have not been approved');
+}
+
 function smokeV2Reports(): void {
   const outDir = path.join(tmpDir, 'v2-report');
 
@@ -1143,6 +1174,8 @@ function smokeV2Reports(): void {
   const meetingReviewHtml = fs.readFileSync(path.join(outDir, 'meeting-review.html'), 'utf8');
   assert(meetingReviewHtml.includes('Скачать одобренные задачи') && meetingReviewHtml.includes('Правка · CG-203'), 'Meeting review should show an example change and support exporting approved drafts');
   assert(meetingReviewHtml.includes('class="delta added">Добавлено</span> The hint remains visible'), 'Meeting review should label the added criterion');
+  assert(meetingReviewHtml.includes('Сверить перед переносом') && meetingReviewHtml.includes('drafts:check'), 'Meeting review should point to the transfer check');
+  smokeApprovedTransfer(meetingReviewHtml);
   assert(projectPulseHtml.includes('href="team-workspace.html"'), 'Project Pulse should link to the team workspace');
   const teamWorkspaceHtml = fs.readFileSync(path.join(outDir, 'team-workspace.html'), 'utf8');
   for (const role of ['developer', 'qa', 'analyst', 'lead']) {
